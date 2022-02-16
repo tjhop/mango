@@ -2,14 +2,22 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 
+	"github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
-func run(ctx context.Context) error {
+const (
+	programName = "mango"
+)
+
+func mango(ctx context.Context) error {
 	log.Info("Mango server started")
 	defer log.Info("Mango server finished")
 
@@ -27,13 +35,34 @@ func run(ctx context.Context) error {
 }
 
 func main() {
+	// prep and read config file
+	home, err := homedir.Dir()
+	if err != nil {
+		// log and continue on, home directory retreival doesn't have to be a hard failure
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("Failed to retreive home directory when checking for configuration files")
+	}
+
+	viper.SetConfigName(programName)
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath(filepath.Join("/etc", programName))
+	viper.AddConfigPath(filepath.Join(home, programName))
+	viper.AddConfigPath(".")
+
+	if err := viper.ReadInConfig(); err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Fatal("Failed to read configuration file")
+	}
+
+	// run mango daemon
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	if err := run(ctx); err != nil {
+	if err := mango(ctx); err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
-		}).Error("Mango server recieved error")
-		os.Exit(1)
+		}).Fatal("Mango server recieved error")
 	}
 }

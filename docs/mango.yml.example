@@ -1,0 +1,5 @@
+template:
+  engine: go # default use go's built in text templating
+  directory: "/etc/mango/template/files" #default directory to pull source template files from
+
+managers: {}
