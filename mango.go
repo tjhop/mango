@@ -58,6 +58,13 @@ func main() {
 		}).Fatal("Failed to read configuration file")
 	}
 
+	viper.OnConfigChange(func(e fsnotify.Event) {
+		log.WithFields(log.Fields{
+			"file": e.Name,
+		}).Info("Mango config reloaded")
+	})
+	viper.WatchConfig()
+
 	// run mango daemon
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
