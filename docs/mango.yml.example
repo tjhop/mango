@@ -3,3 +3,6 @@ template:
   directory: "/etc/mango/template/files" #default directory to pull source template files from
 
 managers: {}
+
+logging:
+  level: info

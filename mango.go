@@ -11,6 +11,8 @@ import (
 	"github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+
+	"github.com/tjhop/mango/logging"
 )
 
 const (
