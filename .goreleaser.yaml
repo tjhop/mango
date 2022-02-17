@@ -1,0 +1,56 @@
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    ldflags:
+      - -X github.com/tjhop/mango/config.BuildDate={{ .CommitDate }}
+      - -X github.com/tjhop/mango/config.Version={{ .Version }}
+      - -X github.com/tjhop/mango/config.Commit={{ .Commit }}
+    binary: mango
+archives:
+  - replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+nfpms:
+  - package_name: 'mango'
+    homepage: 'https://github.com/tjhop/mango'
+    maintainer: 'TJ Hoplock <t.hoplock@gmail.com>'
+    description: 'Configuration management tool written in Go'
+    formats:
+      - apk
+      - deb
+      - rpm
+    bindir: /usr/bin
+    contents:
+      - src: ./README.md
+        dst: /usr/share/doc/tjhop/mango/README.md
+      - src: ./packaging/etc/mango.yml
+        dst: /usr/share/doc/tjhop/mango/example/mango.yml
+      - src: ./packaging/systemd/mango.service
+        dst: /lib/systemd/system/mango.service
+        type: config
+        file_info:
+          mode: 0644
+          owner: root
+          group: root
+    scripts:
+      preinstall: ./packaging/scripts/preinstall.sh
+      postinstall: ./packaging/scripts/postinstall.sh
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^Merge pull request'
+      - '^ci(?:\(\w+\))?\!?:'
+      - '^docs(?:\(\w+\))?\!?:'
+      - '^test(?:\(\w+\))?\!?:'
