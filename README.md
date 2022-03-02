@@ -30,6 +30,10 @@ List of features that I plan to at least try and implement:
         - start/stop
         - enable/disable
         - mask/unmask
+    - `command`
+        - provide ability to run abstract shell commands
+        - provide support for an additional `check` type command to validate success/failure for idempotency
 - a way to specify ordering/dependencies (ie, write this unit file before attempting to start the service it creates)
+- a way to include/override/merge configs
 - high concurrency (yay goroutines!)
 - native prometheus metrics
