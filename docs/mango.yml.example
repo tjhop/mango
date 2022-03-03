@@ -6,3 +6,6 @@ managers: {}
 
 logging:
   level: info
+
+prometheus:
+  port: 9555

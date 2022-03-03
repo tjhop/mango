@@ -12,7 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
-	"github.com/tjhop/mango/logging"
+	"github.com/tjhop/mango/metrics"
 )
 
 const (
@@ -25,6 +25,8 @@ func mango(ctx context.Context) error {
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	go metrics.ExportPrometheusMetrics()
 
 	for {
 		select {
