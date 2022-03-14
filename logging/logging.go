@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"path"
+	"path/filepath"
 	"runtime"
 
 	log "github.com/sirupsen/logrus"
@@ -38,8 +38,8 @@ func init() {
 	log.SetReportCaller(true)
 	log.SetFormatter(&log.TextFormatter{
 		CallerPrettyfier: func(f *runtime.Frame) (string, string) {
-			fileName := path.Base(f.File)
-			funcName := path.Base(f.Function)
+			fileName := filepath.Base(f.File)
+			funcName := filepath.Base(f.Function)
 			return fmt.Sprintf("%s()", funcName), fmt.Sprintf("%s:%d", fileName, f.Line)
 		},
 	})
