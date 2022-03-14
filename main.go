@@ -45,6 +45,7 @@ func run(ctx context.Context) error {
 func main() {
 	// prep and parse flags
 	flag.String("config", "", "Path to configuration file to use")
+	flag.String("mango.tree", "", "Path to mango configuration tree")
 
 	flag.Parse()
 	viper.BindPFlags(flag.CommandLine)
