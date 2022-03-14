@@ -10,16 +10,18 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
+	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
 	"github.com/tjhop/mango/metrics"
+	"github.com/tjhop/mango/internal/mango"
 )
 
 const (
 	programName = "mango"
 )
 
-func mango(ctx context.Context) error {
+func run(ctx context.Context) error {
 	log.Info("Mango server started")
 	defer log.Info("Mango server finished")
 
@@ -27,6 +29,8 @@ func mango(ctx context.Context) error {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	go metrics.ExportPrometheusMetrics()
+
+	mango.InitTree()
 
 	for {
 		select {
@@ -39,6 +43,12 @@ func mango(ctx context.Context) error {
 }
 
 func main() {
+	// prep and parse flags
+	flag.String("config", "", "Path to configuration file to use")
+
+	flag.Parse()
+	viper.BindPFlags(flag.CommandLine)
+
 	// prep and read config file
 	home, err := homedir.Dir()
 	if err != nil {
@@ -71,7 +81,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	if err := mango(ctx); err != nil {
+	if err := run(ctx); err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
 		}).Fatal("Mango server recieved error")
