@@ -1,6 +1,6 @@
 module github.com/tjhop/mango/internal/mango
 
-go 1.17
+go 1.18
 
 require (
 	github.com/prometheus/client_golang v1.12.1
