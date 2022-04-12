@@ -6,12 +6,11 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/exp/slices"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-
-	"github.com/tjhop/mango/internal/utils"
 )
 
 var (
@@ -37,7 +36,7 @@ var (
 )
 
 func IsMangoExtValid(path string) bool {
-	return utils.IsStringInStringSlice(filepath.Ext(path), mangoExts)
+	return slices.Contains(mangoExts, filepath.Ext(path))
 }
 
 type Mango struct {

@@ -6,7 +6,7 @@ require (
 	github.com/prometheus/client_golang v1.12.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/viper v1.10.1
-	github.com/tjhop/mango/internal/utils v0.0.0-20220314141932-7d98fdf0a0f6
+	golang.org/x/exp v0.0.0-20220414153411-bcd21879b8fd
 )
 
 require (
