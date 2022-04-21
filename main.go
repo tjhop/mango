@@ -34,7 +34,11 @@ func run(ctx context.Context) error {
 
 	for {
 		select {
-		case <-sigs:
+		case sig := <-sigs:
+			log.WithFields(log.Fields{
+				"signal": sig,
+			}).Info("Caught signal, waiting for work to finish and terminating")
+
 			return nil
 		case <-ctx.Done():
 			return nil
