@@ -34,12 +34,12 @@ func (m *BaseManager) String() string { return m.ID }
 
 // NewManager returns a ID'd BaseManager, suitable for use initializers for future Manager types
 func NewManager(id string) BaseManager {
-	m := BaseManager {
+	m := BaseManager{
 		ID: id,
 		Logger: log.WithFields(log.Fields{
 			"id": id,
 		}),
-		Things: map[string]thing.Thing
+		Things: make(map[string]thing.Thing),
 	}
 
 	return m
