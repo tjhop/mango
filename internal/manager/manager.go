@@ -30,6 +30,14 @@ type BaseManager struct {
 	Things map[string]thing.Thing
 }
 
+// ManageAll is required to implement Manager interface.
+// A BaseManager has no things to manage, so it just returns nil.
+func (m *BaseManager) ManageAll() error { return nil }
+
+// RefreshAll is required to implement Manager interface.
+// A BaseManager has no things to refresh, so it just returns nil.
+func (m *BaseManager) RefreshAll() error { return nil }
+
 func (m *BaseManager) String() string { return m.ID }
 
 // NewManager returns a ID'd BaseManager, suitable for use initializers for future Manager types
