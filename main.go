@@ -50,6 +50,7 @@ func main() {
 	// prep and parse flags
 	flag.String("config", "", "Path to configuration file to use")
 	flag.String("mango.tree", "", "Path to mango configuration tree")
+	flag.String("logging.level", "", "Logging level may be one of: trace, debug, info, warning, error, fatal and panic")
 
 	flag.Parse()
 	viper.BindPFlags(flag.CommandLine)
@@ -81,6 +82,16 @@ func main() {
 		}).Info("Mango config reloaded")
 	})
 	viper.WatchConfig()
+
+	// set log level based on config
+	level, err := log.ParseLevel(viper.GetString("logging.level"))
+	if err != nil {
+		// if log level couldn't be parsed from config, default to info level
+		log.SetLevel(log.InfoLevel)
+	} else {
+		log.SetLevel(level)
+		log.Infof("Log level set to: %s", level)
+	}
 
 	// run mango daemon
 	ctx, cancel := context.WithCancel(context.Background())

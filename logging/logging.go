@@ -43,12 +43,4 @@ func init() {
 			return fmt.Sprintf("%s()", funcName), fmt.Sprintf("%s:%d", fileName, f.Line)
 		},
 	})
-
-	level, err := log.ParseLevel(viper.GetString("logging.level"))
-	if err != nil {
-		// if log level couldn't be parsed from config, default to info level
-		log.SetLevel(log.InfoLevel)
-	} else {
-		log.SetLevel(level)
-	}
 }
