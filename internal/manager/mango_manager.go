@@ -12,6 +12,10 @@ var (
 	globalMangoManager MangoManager
 )
 
+// Manager interface is the set of methods that any specific manager type (file, systemd, etc) must ipmlement
+// in order to be registerd with and managed by the main Mango manager.
+// - ManageAll should call the Manage() method for each thing it is managing
+// - RefreshAll should have the Manager refresh it's list of things it is managing.
 type Manager interface {
 	ManageAll() error
 	RefreshAll() error
