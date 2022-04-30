@@ -1,6 +1,7 @@
 package mango
 
 import (
+	"fmt"
 	"io/fs"
 	"path/filepath"
 	"sync"
@@ -40,7 +41,7 @@ func IsMangoExtValid(path string) bool {
 }
 
 type Mango struct {
-	config *viper.Viper
+	Config *viper.Viper
 
 	ID string
 }
@@ -62,7 +63,7 @@ func NewMango(path string) Mango {
 
 	m := Mango{
 		ID:     path,
-		config: v,
+		Config: v,
 	}
 
 	return m
@@ -127,4 +128,29 @@ func InitTree() {
 	once.Do(func() {
 		DefaultTree.Reload(viper.GetString("mango.tree"))
 	})
+}
+
+// GetCombinedMangoForThing will search all discovered mangoes for the requested thing type,
+// collect the data from all mangoes, and merge it into a combined config map containing all
+// of the things of the given type. Intended for consumption by individual Manager ipmlementations
+// as they will need to refresh the list of things they manage periodically.
+func GetCombinedMangoForThing(thingType string) Mango {
+	v := viper.New()
+
+	// TODO: handle dependencies/ordering/imports?
+	// right now, this just squishes all the returned thing types back together
+	for _, m := range DefaultTree.mangoes {
+		thingData := map[string]any{
+			thingType: m.Config.Get("things." + thingType),
+		}
+
+		v.MergeConfigMap(thingData)
+	}
+
+	m := Mango{
+		ID: "combined-" + thingType + "-thing",
+		Config: v,
+	}
+
+	return m
 }
