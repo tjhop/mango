@@ -13,8 +13,8 @@ import (
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/tjhop/mango/metrics"
 	"github.com/tjhop/mango/internal/mango"
+	"github.com/tjhop/mango/metrics"
 )
 
 const (

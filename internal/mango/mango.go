@@ -1,17 +1,16 @@
 package mango
 
 import (
-	"fmt"
 	"io/fs"
 	"path/filepath"
 	"sync"
 	"time"
 
-	"golang.org/x/exp/slices"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"golang.org/x/exp/slices"
 )
 
 var (
@@ -148,7 +147,7 @@ func GetCombinedMangoForThing(thingType string) Mango {
 	}
 
 	m := Mango{
-		ID: "combined-" + thingType + "-thing",
+		ID:     "combined-" + thingType + "-thing",
 		Config: v,
 	}
 
