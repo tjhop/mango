@@ -6,9 +6,9 @@ builds:
       - windows
       - darwin
     ldflags:
-      - -X github.com/tjhop/mango/config.BuildDate={{ .CommitDate }}
-      - -X github.com/tjhop/mango/config.Version={{ .Version }}
-      - -X github.com/tjhop/mango/config.Commit={{ .Commit }}
+      - -X github.com/tjhop/mango/internal/config.BuildDate={{ .CommitDate }}
+      - -X github.com/tjhop/mango/internal/config.Version={{ .Version }}
+      - -X github.com/tjhop/mango/internal/config.Commit={{ .Commit }}
     binary: mango
 archives:
   - replacements:
