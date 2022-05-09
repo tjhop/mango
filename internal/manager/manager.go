@@ -4,8 +4,30 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/tjhop/mango/internal/thing"
+)
+
+var (
+	// prometheus metrics
+	// exported so that it can be set by each package that implements the Manager interface
+	MetricManagerThingsTotal = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "mango_manager_things_total",
+			Help: "Total number of things being managed by the labeled Manager",
+		},
+		[]string{"type", "id"},
+	)
+
+	MetricManagerRefreshesTotal = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "mango_manager_refreshes_total",
+			Help: "Total number of times the labeled Manager has refreshed the Things it's managing",
+		},
+		[]string{"type", "id"},
+	)
 )
 
 // Thing interface is the set of methods that any specific thing type (file, systemd, etc) must
