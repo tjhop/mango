@@ -3,7 +3,37 @@ package thing
 import (
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	log "github.com/sirupsen/logrus"
+)
+
+var (
+	// prometheus metrics
+	// exported so that it can be set by each package that implements the Thing interface
+	MetricThingsLastRunTimestamp = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "mango_thing_last_run_seconds",
+			Help: "Timestamp of the last Run the labeled thing has performed, in seconds since the epoch",
+		},
+		[]string{"type", "id"},
+	)
+
+	MetricRunCountTotal = prometheus.NewCounterVec(
+		prometheus.GaugeOpts{
+			Name: "mango_thing_run_count_total",
+			Help: "A count of the total number of runs that have been performed to manage the labeled thing",
+		},
+		[]string{"type", "id", "result"},
+	)
+
+	MetricCheckCountTotal = prometheus.NewCounterVec(
+		prometheus.GaugeOpts{
+			Name: "mango_thing_check_count_total",
+			Help: "A count of the total number of checks that have been performed to determine if the labeled thing is in the desired state",
+		},
+		[]string{"type", "id"},
+	)
 )
 
 // RunStat tracks various runtime information about the Thing.
