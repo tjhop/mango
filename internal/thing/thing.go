@@ -70,12 +70,12 @@ func (t *BaseThing) Manage() error { return nil }
 func NewThing(id, thingType string) BaseThing {
 	t := BaseThing{
 		RunStats: Runstat{},
-		ID: id,
-		Type: thingType,
+		ID:       id,
+		Type:     thingType,
 		Logger: log.WithFields(log.Fields{
 			"thing": thingType,
-			"id": id,
-		})
+			"id":    id,
+		}),
 	}
 
 	return t
