@@ -13,6 +13,7 @@ import (
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
+	_ "github.com/tjhop/mango/internal/logging"
 	"github.com/tjhop/mango/internal/mango"
 	"github.com/tjhop/mango/internal/metrics"
 )

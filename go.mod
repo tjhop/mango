@@ -8,6 +8,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.11.0
+	github.com/tjhop/mango/internal/logging v0.0.0-20220511031926-6460a1320acf
 	github.com/tjhop/mango/internal/mango v0.0.0-20220421193550-62096b2d1773
 	github.com/tjhop/mango/internal/metrics v0.0.0-20220509195744-aeca763b9936
 )
