@@ -9,7 +9,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.11.0
 	github.com/tjhop/mango/internal/mango v0.0.0-20220421193550-62096b2d1773
-	github.com/tjhop/mango/metrics v0.0.0-20220421193550-62096b2d1773
+	github.com/tjhop/mango/internal/metrics v0.0.0-20220509195744-aeca763b9936
 )
 
 require (
@@ -30,7 +30,7 @@ require (
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
-	github.com/tjhop/mango/config v0.0.0-20220302165709-4fafb08b7009 // indirect
+	github.com/tjhop/mango/internal/config v0.0.0-20220507012813-1da530b67909 // indirect
 	golang.org/x/exp v0.0.0-20220414153411-bcd21879b8fd // indirect
 	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
 	golang.org/x/text v0.3.7 // indirect

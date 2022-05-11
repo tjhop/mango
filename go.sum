@@ -239,12 +239,12 @@ github.com/stretchr/testify v1.7.1 h1:5TQK59W5E3v0r2duFAb7P95B6hEeOyEnHRa8MjYSMT
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/subosito/gotenv v1.2.0 h1:Slr1R9HxAlEKefgq5jn9U+DnETlIUa6HfgEzj0g5d7s=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
-github.com/tjhop/mango/config v0.0.0-20220302165709-4fafb08b7009 h1:5IwAxrakakoW3oeP3uDgKO7VM7R/FAW4HXRRdpNu0yI=
-github.com/tjhop/mango/config v0.0.0-20220302165709-4fafb08b7009/go.mod h1:f4shMjgIslW83rJt/USqlQSeSXYnFjhXAXGpk4MbPkU=
+github.com/tjhop/mango/internal/config v0.0.0-20220507012813-1da530b67909 h1:+wfzlJA1nG+au4mR70Bg75HABGxMQDg/Zw454piXYmM=
+github.com/tjhop/mango/internal/config v0.0.0-20220507012813-1da530b67909/go.mod h1:X8a0W/w2NeOK3dA4Zxtb/NbqsZnMuWEKHH3sdalGw+k=
 github.com/tjhop/mango/internal/mango v0.0.0-20220421193550-62096b2d1773 h1:y+4ddRjwdBvV/YU817m1BzIEqNhtYwZNiEHHmXNpqck=
 github.com/tjhop/mango/internal/mango v0.0.0-20220421193550-62096b2d1773/go.mod h1:PlSDIzyRsz0uoyUeRVmyPtbCO1aFZWiwOX89mYLlBZI=
-github.com/tjhop/mango/metrics v0.0.0-20220421193550-62096b2d1773 h1:QP9AD3UQwtEiSPP+f+4NOdy2DKFkIQkHJRulbe5mJ18=
-github.com/tjhop/mango/metrics v0.0.0-20220421193550-62096b2d1773/go.mod h1:Z4phYDzKwaUu4GdX0sruJIZL8Bk6xzIWVED2a8glfF0=
+github.com/tjhop/mango/internal/metrics v0.0.0-20220509195744-aeca763b9936 h1:rpx0W10h6wB15uPKye7o+Wc3Ba/zb/7P9HVGFERFEXU=
+github.com/tjhop/mango/internal/metrics v0.0.0-20220509195744-aeca763b9936/go.mod h1:1FbI1T8plRRYNfZnyBihGngIDVDWcGpnMhL3DHlfQQ8=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=

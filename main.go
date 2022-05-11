@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/tjhop/mango/internal/mango"
-	"github.com/tjhop/mango/metrics"
+	"github.com/tjhop/mango/internal/metrics"
 )
 
 const (
