@@ -53,5 +53,5 @@ func init() {
 
 // Register takes an object that satisfies the Manager interface and adds it to the map of Managers that the Mango Manager will manage (boy, what a mouthful)
 func Register(m Manager) {
-	globalMangoManager[m] = m
+	globalMangoManager[m.String()] = m
 }

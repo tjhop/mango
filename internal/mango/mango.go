@@ -15,7 +15,7 @@ import (
 
 var (
 	once        sync.Once
-	DefaultTree Tree
+	globalTree Tree
 
 	mangoExts = []string{".mango", ".yaml", ".yml"}
 
@@ -73,11 +73,19 @@ func (m Mango) String() string {
 }
 
 type Tree struct {
-	mangoes []Mango
+	mangoes map[string]Mango
+}
+
+func NewTree() Tree {
+    t := Tree{
+	mangoes: make(map[string]Mango),
+    }
+
+    return t
 }
 
 func (t *Tree) AddMango(m Mango) {
-	t.mangoes = append(t.mangoes, m)
+	t.mangoes[m.String()] = m
 
 	log.WithFields(log.Fields{
 		"mango": m,
@@ -85,9 +93,8 @@ func (t *Tree) AddMango(m Mango) {
 }
 
 func (t *Tree) Reload(tree string) {
-	// stash old mangoes and clear list
+	// stash old mangoes
 	old := t.mangoes
-	t.mangoes = nil
 
 	err := filepath.WalkDir(tree,
 		func(path string, d fs.DirEntry, err error) error {
@@ -125,7 +132,8 @@ func (t *Tree) Reload(tree string) {
 func InitTree() {
 	// on first load, do an initial search for all mangos in specified path
 	once.Do(func() {
-		DefaultTree.Reload(viper.GetString("mango.tree"))
+		globalTree := NewTree()
+		globalTree.Reload(viper.GetString("mango.tree"))
 	})
 }
 
@@ -138,9 +146,9 @@ func GetCombinedMangoForThing(thingType string) Mango {
 
 	// TODO: handle dependencies/ordering/imports?
 	// right now, this just squishes all the returned thing types back together
-	for _, m := range DefaultTree.mangoes {
+	for m, data := range globalTree.mangoes {
 		thingData := map[string]any{
-			thingType: m.Config.Get("things." + thingType),
+			thingType: data.Config.Get("things." + thingType),
 		}
 
 		v.MergeConfigMap(thingData)
