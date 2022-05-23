@@ -114,6 +114,7 @@ func ReloadTree(path string) {
 func (t *Tree) Reload(path string) {
 	// stash old mangoes
 	old := t.mangoes
+	t.mangoes = make(map[string]Mango)
 
 	err := filepath.WalkDir(path,
 		func(path string, d fs.DirEntry, err error) error {
