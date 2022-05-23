@@ -84,6 +84,12 @@ func NewTree() Tree {
     return t
 }
 
+// AddMango adds a given Mango m to the default tree (named `globalTree` internally)
+func AddMangoToTree(m Mango) {
+	globalTree.AddMango(m)
+}
+
+// AddMango adds a given Mango m to Tree t
 func (t *Tree) AddMango(m Mango) {
 	t.mangoes[m.String()] = m
 
@@ -92,11 +98,17 @@ func (t *Tree) AddMango(m Mango) {
 	}).Info("Added mango to tree")
 }
 
-func (t *Tree) Reload(tree string) {
+// ReloadTree reloads the default tree (named `globalTree` internally) from the specified filepath
+func ReloadTree(path string) {
+	globalTree.Reload(path)
+}
+
+// Reload reloads Tree t from the specified filepath
+func (t *Tree) Reload(path string) {
 	// stash old mangoes
 	old := t.mangoes
 
-	err := filepath.WalkDir(tree,
+	err := filepath.WalkDir(path,
 		func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
@@ -117,7 +129,7 @@ func (t *Tree) Reload(tree string) {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
-			"tree":  tree,
+			"tree":  path,
 		}).Error("Failed to reload mangoes for tree")
 
 		// replace old list of mangoes, simce we failed to reload
@@ -132,8 +144,10 @@ func (t *Tree) Reload(tree string) {
 func InitTree() {
 	// on first load, do an initial search for all mangos in specified path
 	once.Do(func() {
+		mangoTree := viper.GetString("mango.tree")
+
 		globalTree := NewTree()
-		globalTree.Reload(viper.GetString("mango.tree"))
+		globalTree.Reload(mangoTree)
 	})
 }
 
@@ -146,7 +160,7 @@ func GetCombinedMangoForThing(thingType string) Mango {
 
 	// TODO: handle dependencies/ordering/imports?
 	// right now, this just squishes all the returned thing types back together
-	for m, data := range globalTree.mangoes {
+	for _, data := range globalTree.mangoes {
 		thingData := map[string]any{
 			thingType: data.Config.Get("things." + thingType),
 		}
