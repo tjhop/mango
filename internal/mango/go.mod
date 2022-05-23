@@ -7,7 +7,7 @@ require (
 	github.com/prometheus/client_golang v1.12.2
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/viper v1.11.0
-	github.com/tjhop/mango/internal/logging v0.0.0-20220523172616-9ba60ac6d73a
+	github.com/tjhop/mango/internal/logging v0.0.0-20220523183511-e25d568f6fbf
 	golang.org/x/exp v0.0.0-20220518171630-0b5c67f07fdf
 )
 

@@ -237,8 +237,8 @@ github.com/stretchr/testify v1.7.1 h1:5TQK59W5E3v0r2duFAb7P95B6hEeOyEnHRa8MjYSMT
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/subosito/gotenv v1.2.0 h1:Slr1R9HxAlEKefgq5jn9U+DnETlIUa6HfgEzj0g5d7s=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
-github.com/tjhop/mango/internal/logging v0.0.0-20220523172616-9ba60ac6d73a h1:jb2+Edauhmo/6ybxD47RnydYfH0pykFHja/h+oc5Pfk=
-github.com/tjhop/mango/internal/logging v0.0.0-20220523172616-9ba60ac6d73a/go.mod h1:+9o+UDv4oTYDKlPsWIQSrRrqEaEOjpMdfxJ7fk/8/FI=
+github.com/tjhop/mango/internal/logging v0.0.0-20220523183511-e25d568f6fbf h1:BDLgLjZ+jPFt3vxhVSAQHeaYDkXOmcIYUtvuXF0X1qw=
+github.com/tjhop/mango/internal/logging v0.0.0-20220523183511-e25d568f6fbf/go.mod h1:+9o+UDv4oTYDKlPsWIQSrRrqEaEOjpMdfxJ7fk/8/FI=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
