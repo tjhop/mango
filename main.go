@@ -31,6 +31,7 @@ func run(ctx context.Context) error {
 
 	go metrics.ExportPrometheusMetrics()
 
+	log.Info("Initializing mango tree to track configs")
 	mango.InitTree()
 
 	for {
