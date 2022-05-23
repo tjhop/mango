@@ -1,7 +1,6 @@
 package mango
 
 import (
-	"path/filepath"
 	"sync"
 
 	_ "github.com/tjhop/mango/internal/logging"
@@ -10,7 +9,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	log "github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
 var (
