@@ -30,12 +30,14 @@ func NewMangoWatcher() {
 			for {
 				select {
 				case event := <-watcher.Events:
-					log.WithFields(log.Fields{
-						"path": mTree,
-						"event": event,
-					}).Debug("Filesystem event received in mango tree directory, reloading mango tree")
+					if IsMangoExtValid(event.Name) {
+						log.WithFields(log.Fields{
+							"path":  mTree,
+							"event": event,
+						}).Debug("Filesystem event received in mango tree directory, reloading mango tree")
 
-					ReloadTree(mTree)
+						ReloadTree(mTree)
+					}
 
 				case err := <-watcher.Errors:
 					log.WithFields(log.Fields{
