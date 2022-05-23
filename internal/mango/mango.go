@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	once        sync.Once
+	once       sync.Once
 	globalTree Tree
 
 	mangoExts = []string{".mango", ".yaml", ".yml"}
@@ -77,11 +77,11 @@ type Tree struct {
 }
 
 func NewTree() Tree {
-    t := Tree{
-	mangoes: make(map[string]Mango),
-    }
+	t := Tree{
+		mangoes: make(map[string]Mango),
+	}
 
-    return t
+	return t
 }
 
 // AddMango adds a given Mango m to the default tree (named `globalTree` internally)
