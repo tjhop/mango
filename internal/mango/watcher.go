@@ -30,7 +30,7 @@ var (
 	)
 )
 
-func NewMangoWatcher() {
+func NewMangoWatcher(path string) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
@@ -43,21 +43,19 @@ func NewMangoWatcher() {
 		}
 		defer watcher.Close()
 
-		mTree := filepath.Clean(viper.GetString("mango.tree"))
-
 		go func() {
 			for {
 				select {
 				case event := <-watcher.Events:
 					if IsMangoExtValid(event.Name) {
 						log.WithFields(log.Fields{
-							"path":  mTree,
+							"path":  path,
 							"event": event,
 						}).Debug("Filesystem event received in mango tree directory, reloading mango tree")
 
 						metricMangoWatcherEventsTotal.Inc()
 
-						ReloadTree(mTree)
+						ReloadTree(path)
 					}
 
 				case err := <-watcher.Errors:
@@ -70,11 +68,11 @@ func NewMangoWatcher() {
 			}
 		}()
 
-		err = watcher.Add(mTree)
+		err = watcher.Add(path)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,
-				"path":  mTree,
+				"path":  path,
 			}).Error("Failed to add mango tree directory to mango watcher")
 		}
 		wg.Wait()
