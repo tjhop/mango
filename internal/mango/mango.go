@@ -33,6 +33,13 @@ var (
 			Help: "Unix timestamp of the last successful mango config tree reload",
 		},
 	)
+
+	metricTreeReloadTotal = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Name: "mango_tree_reload_total",
+			Help: "Total number of times the mango tree has been reloaded",
+		},
+	)
 )
 
 func IsMangoExtValid(path string) bool {
@@ -136,6 +143,7 @@ func (t *Tree) Reload(path string) {
 		t.mangoes = old
 	} else {
 		metricTreeReloadSeconds.Set(float64(time.Now().Unix()))
+		metricTreeReloadTotal.Inc()
 	}
 
 	metricTreeTotal.Set(float64(len(t.mangoes)))
