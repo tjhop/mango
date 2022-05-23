@@ -3,14 +3,14 @@ module github.com/tjhop/mango
 go 1.18
 
 require (
-	github.com/fsnotify/fsnotify v1.5.3
+	github.com/fsnotify/fsnotify v1.5.4
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.11.0
-	github.com/tjhop/mango/internal/logging v0.0.0-20220511031926-6460a1320acf
-	github.com/tjhop/mango/internal/mango v0.0.0-20220421193550-62096b2d1773
-	github.com/tjhop/mango/internal/metrics v0.0.0-20220509195744-aeca763b9936
+	github.com/tjhop/mango/internal/logging v0.0.0-20220523183621-2054fd472fea
+	github.com/tjhop/mango/internal/mango v0.0.0-20220523183621-2054fd472fea
+	github.com/tjhop/mango/internal/metrics v0.0.0-20220523183621-2054fd472fea
 )
 
 require (
@@ -23,7 +23,7 @@ require (
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.0-beta.8 // indirect
-	github.com/prometheus/client_golang v1.12.1 // indirect
+	github.com/prometheus/client_golang v1.12.2 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.32.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
@@ -32,7 +32,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/tjhop/mango/internal/config v0.0.0-20220507012813-1da530b67909 // indirect
-	golang.org/x/exp v0.0.0-20220414153411-bcd21879b8fd // indirect
+	golang.org/x/exp v0.0.0-20220518171630-0b5c67f07fdf // indirect
 	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
