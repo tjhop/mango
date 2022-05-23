@@ -148,6 +148,11 @@ func InitTree() {
 
 		globalTree := NewTree()
 		globalTree.Reload(mangoTree)
+
+		NewMangoWatcher(mangoTree)
+		log.WithFields(log.Fields{
+			"tree": mangoTree,
+		}).Info("Started watched mango tree directory for changes to mango configuration files")
 	})
 }
 
