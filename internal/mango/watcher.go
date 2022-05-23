@@ -47,8 +47,8 @@ func NewMangoWatcher(path string) {
 				case event := <-watcher.Events:
 					if IsMangoExtValid(event.Name) {
 						log.WithFields(log.Fields{
-							"path":  path,
-							"event": event,
+							"mango":  event.Name,
+							"event": event.Op.String(),
 						}).Debug("Filesystem event received in mango tree directory, reloading mango tree")
 
 						metricMangoWatcherEventsTotal.Inc()

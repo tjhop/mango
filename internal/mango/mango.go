@@ -64,6 +64,7 @@ func NewMango(path string) Mango {
 	if err := v.ReadInConfig(); err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
+			"mango": path,
 		}).Error("Failed to read mango configuration file")
 	}
 
