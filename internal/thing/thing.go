@@ -11,7 +11,7 @@ import (
 var (
 	// prometheus metrics
 	// exported so that it can be set by each package that implements the Thing interface
-	MetricThingsLastRunTimestamp = prometheus.NewGaugeVec(
+	MetricThingsLastRunTimestamp = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "mango_thing_last_run_seconds",
 			Help: "Timestamp of the last Run the labeled thing has performed, in seconds since the epoch",
@@ -19,7 +19,7 @@ var (
 		[]string{"type", "id"},
 	)
 
-	MetricRunCountTotal = prometheus.NewCounterVec(
+	MetricRunCountTotal = promauto.NewCounterVec(
 		prometheus.GaugeOpts{
 			Name: "mango_thing_run_count_total",
 			Help: "A count of the total number of runs that have been performed to manage the labeled thing",
@@ -27,7 +27,7 @@ var (
 		[]string{"type", "id", "result"},
 	)
 
-	MetricCheckCountTotal = prometheus.NewCounterVec(
+	MetricCheckCountTotal = promauto.NewCounterVec(
 		prometheus.GaugeOpts{
 			Name: "mango_thing_check_count_total",
 			Help: "A count of the total number of checks that have been performed to determine if the labeled thing is in the desired state",

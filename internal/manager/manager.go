@@ -13,7 +13,7 @@ import (
 var (
 	// prometheus metrics
 	// exported so that it can be set by each package that implements the Manager interface
-	MetricManagerThingsTotal = prometheus.NewGaugeVec(
+	MetricManagerThingsTotal = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "mango_manager_things_total",
 			Help: "Total number of things being managed by the labeled Manager",
@@ -21,7 +21,7 @@ var (
 		[]string{"type", "id"},
 	)
 
-	MetricManagerRefreshesTotal = prometheus.NewGaugeVec(
+	MetricManagerRefreshesTotal = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "mango_manager_refreshes_total",
 			Help: "Total number of times the labeled Manager has refreshed the Things it's managing",
