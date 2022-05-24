@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/prometheus/client_golang v1.12.1
 	github.com/sirupsen/logrus v1.8.1
+	github.com/tjhop/mango/internal/manager v0.0.0-20220524155812-e985e996f440
 )
 
 require (

@@ -3,9 +3,9 @@ module github.com/tjhop/mango/internal/manager
 go 1.18
 
 require (
-	github.com/prometheus/client_golang v1.12.1
+	github.com/prometheus/client_golang v1.12.2
 	github.com/sirupsen/logrus v1.8.1
-	github.com/tjhop/mango/internal/thing v0.0.0-20220421190114-7621f10d01d5
+	github.com/tjhop/mango/internal/thing v0.0.0-20220524155812-e985e996f440
 )
 
 require (
