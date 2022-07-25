@@ -6,9 +6,12 @@ import (
 	"os/signal"
 	"path/filepath"
 	"syscall"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/mitchellh/go-homedir"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	log "github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -22,9 +25,19 @@ const (
 	programName = "mango"
 )
 
+var (
+	metricServiceStartSeconds = promauto.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "mango_service_start_seconds",
+			Help: "Unix timestamp of when mango started",
+		},
+	)
+)
+
 func run(ctx context.Context) error {
 	log.Info("Mango server started")
 	defer log.Info("Mango server finished")
+	metricServiceStartSeconds.Set(float64(time.Now().Unix()))
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
