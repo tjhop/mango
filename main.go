@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/viper"
 
 	_ "github.com/tjhop/mango/internal/logging"
-	"github.com/tjhop/mango/internal/mango"
+	"github.com/tjhop/mango/internal/inventory"
 	"github.com/tjhop/mango/internal/metrics"
 )
 
@@ -31,8 +31,8 @@ func run(ctx context.Context) error {
 
 	go metrics.ExportPrometheusMetrics()
 
-	log.Info("Initializing mango tree to track configs")
-	mango.InitTree()
+	log.Info("Initializing mango inventory")
+	inventory.InitInventory()
 
 	for {
 		select {
@@ -51,7 +51,7 @@ func run(ctx context.Context) error {
 func main() {
 	// prep and parse flags
 	flag.String("config", "", "Path to configuration file to use")
-	flag.String("mango.tree", "", "Path to mango configuration tree")
+	flag.String("mango.inventory", "", "Path to mango configuration inventory")
 	flag.String("logging.level", "", "Logging level may be one of: trace, debug, info, warning, error, fatal and panic")
 
 	flag.Parse()
