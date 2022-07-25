@@ -8,13 +8,25 @@ Anyway, this repo is me building a toy configuration management engine in go, mo
 
 `Mango` is intended to be run as a daemon on the system that it will be managing.
 `Mango` requires privileges to touch and manage the things you ask it to do (whether via your user when launching the service or a service manager like `Systemd`, that's up to you).
-`Mango` is best used with an `actions.yml` file controlled via git, for configuration as code.
+`Mango` is best used with an inventory controlled via git, for configuration as code.
 
-### Managers
+### Inventory
+`Mango`'s inventory is based on [aviary.sh's](https://github.com/frameable/aviary.sh) inventory.
+Initially, `mango` will be an aviary.sh-compatible daemon, with configurations written as Bash scripts.
+As the project develops, the goal is to eventually allow for defining configurations in a yaml based idempotent DSL.
 
-Configuration management in `mango` is based around the concept of `managers`.
-`Managers` will be idempotent, and take only the actions needed get the system in the desired state.
-There will be different types of `managers`, based on a `manager` interface.
+#### Inventory Setup
+Please see [aviary.sh's documentation on inventory setup](https://github.com/frameable/aviary.sh#inventory-setup) for more information.
+
+```
+mkdir inventory
+cd inventory
+mkdir {hosts,modules,roles,directives}
+touch {hosts,modules,roles,directives}/.gitkeep
+git init
+git add .
+git commit -m "initial commit"
+```
 
 ## Goals
 
