@@ -20,7 +20,7 @@ var (
 	)
 
 	MetricRunCountTotal = promauto.NewCounterVec(
-		prometheus.GaugeOpts{
+		prometheus.CounterOpts{
 			Name: "mango_thing_run_count_total",
 			Help: "A count of the total number of runs that have been performed to manage the labeled thing",
 		},
@@ -28,7 +28,7 @@ var (
 	)
 
 	MetricCheckCountTotal = promauto.NewCounterVec(
-		prometheus.GaugeOpts{
+		prometheus.CounterOpts{
 			Name: "mango_thing_check_count_total",
 			Help: "A count of the total number of checks that have been performed to determine if the labeled thing is in the desired state",
 		},
