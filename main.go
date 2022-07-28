@@ -16,8 +16,8 @@ import (
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	_ "github.com/tjhop/mango/internal/logging"
 	"github.com/tjhop/mango/internal/inventory"
+	_ "github.com/tjhop/mango/internal/logging"
 	"github.com/tjhop/mango/internal/metrics"
 )
 
@@ -26,6 +26,8 @@ const (
 )
 
 var (
+	MangoTempDir string // ephemeral directory where mango will store files that need to be cleaned up before stopping
+
 	metricServiceStartSeconds = promauto.NewGauge(
 		prometheus.GaugeOpts{
 			Name: "mango_service_start_seconds",
@@ -38,6 +40,16 @@ func run(ctx context.Context) error {
 	log.Info("Mango server started")
 	defer log.Info("Mango server finished")
 	metricServiceStartSeconds.Set(float64(time.Now().Unix()))
+
+	// create ephemeral directory for mango to store temporary files
+	dir, err := os.MkdirTemp("", programName)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Fatal("Failed to create temporary directory for mango")
+	}
+	defer os.RemoveAll(dir)
+	viper.Set("mango.temp-dir", dir)
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
