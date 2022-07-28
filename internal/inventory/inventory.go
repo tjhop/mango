@@ -77,6 +77,12 @@ func NewInventory(path string) Inventory {
 	return i
 }
 
+// Reload calls `inventory.Reload()` against the global inventory.
+// Useful for other packages (like managers) to trigger inventory reloads.
+func Reload() {
+	globalInventory.Reload()
+}
+
 // Reload reloads Inventory from it's configured path. Components that are reloaded:
 // - Hosts
 // - Roles
