@@ -2,6 +2,8 @@ package manager
 
 import (
 	"sync"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -9,6 +11,7 @@ const (
 )
 
 var (
+	once               sync.Once
 	globalMangoManager MangoManager
 )
 
