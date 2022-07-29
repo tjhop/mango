@@ -120,6 +120,12 @@ func (i *Inventory) Reload() {
 	}
 }
 
+// IsEnrolled calls the `IsEnrolled()` method against the globalInventory.
+// Should be used by other packages to verify host system enrollment during runtime.
+func IsEnrolled() bool {
+	return globalInventory.IsEnrolled()
+}
+
 // IsEnrolled returns true is this system's hostname is found
 // in the inventory's Host map, and false otherwise.
 func (i *Inventory) IsEnrolled() bool {
