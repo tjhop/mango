@@ -117,3 +117,40 @@ func (i *Inventory) ParseDirectives() error {
 
 	return nil
 }
+
+// GetDirectives returns a copy of the global inventory's slice of `DirectiveScript`'s
+// Internally, it calls the `GetDirectives()` method against the global inventory.
+// Should be used by other packages.
+func GetDirectives() ([]DirectiveScript) {
+	return globalInventory.Directives
+}
+
+// GetDirectives returns a copy of the inventory's slice of `DirectiveScript`'s
+func (i *Inventory) GetDirectives() ([]DirectiveScript) {
+	return i.Directives
+}
+
+// GetDirectivesForSelf returns a slice of `DirectiveScript`'s that are valid
+// for the running system, based on it's hostname.
+// All Directives are run against all enrolled systems, so if the system is 
+// enrolled, this function will return all DirectiveScripts from the inventory.
+func (i *Inventory) GetDirectivesForSelf() ([]DirectiveScript) {
+	if IsEnrolled() {
+		return i.GetDirectives()
+	}
+
+	return nil
+}
+
+// GetDirectivesForSelf returns a slice of `DirectiveScript`'s that are valid
+// for the running system, based on it's hostname.
+// All Directives are run against all enrolled systems, so if the system is 
+// enrolled, this function will return all DirectiveScripts from the inventory.
+func GetDirectivesForSelf() ([]DirectiveScript) {
+	if IsEnrolled() {
+		return GetDirectives()
+	}
+
+	return nil
+}
+
