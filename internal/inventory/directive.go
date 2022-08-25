@@ -117,15 +117,3 @@ func (i *Inventory) ParseDirectives() error {
 
 	return nil
 }
-
-// GetDirectives returns a copy of the global inventory's slice of `DirectiveScript`'s
-// Internally, it calls the `GetDirectives()` method against the global inventory.
-// Should be used by other packages.
-func GetDirectives() ([]DirectiveScript) {
-	return globalInventory.Directives
-}
-
-// GetDirectives returns a copy of the inventory's slice of `DirectiveScript`'s
-func (i *Inventory) GetDirectives() ([]DirectiveScript) {
-	return i.Directives
-}

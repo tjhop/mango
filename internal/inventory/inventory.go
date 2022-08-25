@@ -1,6 +1,7 @@
 package inventory
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -15,6 +16,11 @@ var (
 	once               sync.Once
 	globalInventory    Inventory
 	commonMetricLabels = []string{"inventory", "component", "hostname"}
+
+	// custom errors
+
+	// ErrHostNotEnrolled is returned when a host isn't enrolled
+	ErrHostNotEnrolled = errors.New("Host not enrolled in inventory")
 
 	// prometheus metrics
 	metricInventoryTotal = promauto.NewGaugeVec(
@@ -149,6 +155,180 @@ func IsEnrolled() bool {
 func (i *Inventory) IsEnrolled() bool {
 	me := self.GetHostname()
 	return i.IsHostEnrolled(me)
+}
+
+// GetDirectives returns a copy of the global inventory's slice of `DirectiveScript`'s
+// Internally, it calls the `GetDirectives()` method against the global inventory.
+// Should be used by other packages.
+func GetDirectives() ([]DirectiveScript) {
+	return globalInventory.Directives
+}
+
+// GetDirectives returns a copy of the inventory's slice of `DirectiveScript`'s
+func (i *Inventory) GetDirectives() ([]DirectiveScript) {
+	return i.Directives
+}
+
+// GetModules returns a copy of the global inventory's Modules.
+// Internally, it calls the `GetModules()` method against the global inventory.
+// Should be used by other packages.
+func GetModules() []Module {
+	return globalInventory.Modules
+}
+
+// GetModules returns a copy of the inventory's Modules.
+func (i *Inventory) GetModules() []Module {
+	return i.Modules
+}
+
+// GetModule returns a copy of the Module struct for a module identified
+// by `module`. If the named module is not found in the inventory, an
+// empty Module is returned.
+func (i *Inventory) GetModule(module string) Module {
+	for _, m := range i.Modules {
+		if m.ID == module {
+			return m
+		}
+	}
+
+	return Module{}
+}
+
+// GetModule returns a copy of the Module struct for a module identified
+// by `module` in the global inventory. If the named module is not
+// found in the inventory, an empty Module is returned.
+func GetModule(module string) Module {
+	return globalInventory.GetModule(module)
+}
+
+// GetRoles returns a copy of the global inventory's Roles.
+// Internally, it calls the `GetRoles()` method against the global inventory.
+// Should be used by other packages.
+func GetRoles() []Role {
+	return globalInventory.Roles
+}
+
+// GetRoles returns a copy of the inventory's Roles.
+func (i *Inventory) GetRoles() []Role {
+	return i.Roles
+}
+
+// GetRole returns a copy of the Role struct for a role identified
+// by `role`. If the named role is not found in the inventory, an
+// empty Role is returned.
+func (i *Inventory) GetRole(role string) Role {
+	for _, r := range i.Roles {
+		if r.ID == role {
+			return r
+		}
+	}
+
+	return Role{}
+}
+
+// GetRole returns a copy of the Role struct for a role identified
+// by `role` in the global inventory. If the named role is not
+// found in the inventory, an empty Role is returned.
+func GetRole(role string) Role {
+	return globalInventory.GetRole(role)
+}
+
+// GetHosts returns a copy of the global inventory's Hosts map of Host ID -> Host struct.
+// Internally, it calls the `GetHosts()` method against the global inventory.
+// Should be used by other packages.
+func GetHosts() []Host {
+	return globalInventory.Hosts
+}
+
+// GetHosts returns a copy of the inventory's Hosts map of Host ID -> Host struct.
+func (i *Inventory) GetHosts() []Host {
+	return i.Hosts
+}
+
+// GetHost returns a copy of the Host struct for a system
+// identified by `host` name. If the hostname is not found
+// in the inventory, an empty Host is returned.
+func (i *Inventory) GetHost(host string) Host {
+	for _, h := range i.Hosts {
+		if h.ID == host {
+			return h
+		}
+	}
+
+	return Host{}
+}
+
+// GetHost returns a copy of the Host struct for a system
+// identified by `host` name in the global inventory. If the
+// hostname is not found in the inventory, an empty Host is returned.
+func GetHost(host string) Host {
+	return globalInventory.GetHost(host)
+}
+
+// GetModulesForHost returns a slice of Modules, containing all of the
+// Modules for the specified host system.
+func (i *Inventory) GetModulesForHost(host string) ([]Module, error) {
+	if i.IsHostEnrolled(host) {
+		h := i.GetHost(host)
+		mods := h.GetModules()
+
+		return mods, nil
+	}
+
+	return nil, ErrHostNotEnrolled
+}
+
+// GetModulesForHost returns a slice of Modules, containing all of the
+// Modules for the specified host system from the global inventory.
+func GetModulesForHost(host string) ([]Module, error) {
+	if IsHostEnrolled(host) {
+		h := GetHost(host)
+		mods := h.GetModules()
+
+		return mods, nil
+	}
+
+	return nil, ErrHostNotEnrolled
+}
+
+// GetModulesForSelf returns a slice of Modules, containing all of the
+// Modules for the running system from the global inventory.
+func GetModulesForSelf() ([]Module, error) {
+	me := self.GetHostname()
+	return GetModulesForHost(me)
+}
+
+// GetRolesForHost returns a slice of Roles, containing all of the
+// Roles for the specified host system.
+func (i *Inventory) GetRolesForHost(host string) ([]Role, error) {
+	if i.IsHostEnrolled(host) {
+		h := i.GetHost(host)
+		roles := h.GetRoles()
+
+		return roles, nil
+	}
+
+	return nil, ErrHostNotEnrolled
+}
+
+// GetRolesForHost returns a slice of Roles, containing all of the
+// Roles for the specified host system from the global inventory.
+func GetRolesForHost(host string) ([]Role, error) {
+	if IsHostEnrolled(host) {
+		h := GetHost(host)
+		roles := h.GetRoles()
+
+		return roles, nil
+	}
+
+	return nil, ErrHostNotEnrolled
+}
+
+// GetRolesForSelf returns a slice of Roles, containing all of the
+// Roles for the running system from the global inventory.
+func GetRolesForSelf() ([]Role, error) {
+	me := self.GetHostname()
+	return GetRolesForHost(me)
 }
 
 // InitInventory should be called during service startup/initialization to create the

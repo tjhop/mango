@@ -23,6 +23,9 @@ type Module struct {
 	Test      Script
 }
 
+// String is a stringer to return the module ID
+func (m Module) String() string { return m.ID }
+
 // ParseModules looks for modules in the inventory's `modules/` folder. It looks for
 // folders within this directory, and then parses each directory into a Module struct.
 // Each module folder is expected to contain files for `apply`, `variables`, and `test`,

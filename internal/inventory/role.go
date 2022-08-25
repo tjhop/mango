@@ -10,15 +10,21 @@ import (
 
 // Role contains fields that represent a single role in the inventory.
 // - ID: string idenitfying the role (generally the file path to the role)
-// - Modules: a []Module of module names that satisfy this role
+// - Modules: a []string of module names that satisfy this role
 type Role struct {
 	ID      string
-	Modules   []Module
+	Modules   []string
 }
 
 // GetModules returns a copy of the Role's []Module
 func (r Role) GetModules() ([]Module) {
-	return r.Modules
+	var mods []Module
+
+	for _, m := range r.Modules {
+		mods = append(mods, GetModule(m))
+	}
+
+	return mods
 }
 
 // String is a stringer to return the role ID
