@@ -129,28 +129,3 @@ func GetDirectives() ([]DirectiveScript) {
 func (i *Inventory) GetDirectives() ([]DirectiveScript) {
 	return i.Directives
 }
-
-// GetDirectivesForSelf returns a slice of `DirectiveScript`'s that are valid
-// for the running system, based on it's hostname.
-// All Directives are run against all enrolled systems, so if the system is 
-// enrolled, this function will return all DirectiveScripts from the inventory.
-func (i *Inventory) GetDirectivesForSelf() ([]DirectiveScript) {
-	if IsEnrolled() {
-		return i.GetDirectives()
-	}
-
-	return nil
-}
-
-// GetDirectivesForSelf returns a slice of `DirectiveScript`'s that are valid
-// for the running system, based on it's hostname.
-// All Directives are run against all enrolled systems, so if the system is 
-// enrolled, this function will return all DirectiveScripts from the inventory.
-func GetDirectivesForSelf() ([]DirectiveScript) {
-	if IsEnrolled() {
-		return GetDirectives()
-	}
-
-	return nil
-}
-
