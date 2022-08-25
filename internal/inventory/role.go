@@ -10,11 +10,19 @@ import (
 
 // Role contains fields that represent a single role in the inventory.
 // - ID: string idenitfying the role (generally the file path to the role)
-// - Modules: a slice of module names that satisfy this role
+// - Modules: a []Module of module names that satisfy this role
 type Role struct {
 	ID      string
-	Modules []string
+	Modules   []Module
 }
+
+// GetModules returns a copy of the Role's []Module
+func (r Role) GetModules() ([]Module) {
+	return r.Modules
+}
+
+// String is a stringer to return the role ID
+func (r Role) String() string { return r.ID }
 
 // ParseRoles searches for directories in the provided path. Each directory is
 // treated as a role -- each role is checked for the appropriate `modules` file to
@@ -31,7 +39,7 @@ func (i *Inventory) ParseRoles() error {
 		return err
 	}
 
-	roles := make(map[string]Role)
+	var roles []Role
 
 	for _, roleDir := range roleDirs {
 		if roleDir.IsDir() {
@@ -78,7 +86,7 @@ func (i *Inventory) ParseRoles() error {
 				}
 			}
 
-			roles[role.ID] = role
+			roles = append(roles, role)
 		}
 	}
 

@@ -59,7 +59,7 @@ func (i *Inventory) ParseModules() error {
 		return err
 	}
 
-	modules := make(map[string]Module)
+	var modules []Module
 
 	for _, modDir := range modDirs {
 		if modDir.IsDir() {
@@ -125,7 +125,7 @@ func (i *Inventory) ParseModules() error {
 						}).Debug("Not sure what to do with this file, so skipping it.")
 					}
 
-					modules[mod.ID] = mod
+					modules = append(modules, mod)
 				}
 			}
 		}

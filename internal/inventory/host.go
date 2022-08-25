@@ -10,7 +10,7 @@ import (
 
 // Host contains fields that represent a given host in the inventory.
 // - ID: string idenitfying the host (generally the hostname of the system)
-// - Roles: a slice of roles that ar applied to this host
+// - Roles: a slice of roles that are applied to this host
 // - Modules: a slice of ad-hoc module names applied to this host
 // - Variables: variables for the host, in key, value form
 type Host struct {
@@ -36,7 +36,7 @@ func (i *Inventory) ParseHosts() error {
 		return err
 	}
 
-	hosts := make(map[string]Host)
+	var hosts []Host
 
 	for _, hostDir := range hostDirs {
 		if hostDir.IsDir() {
@@ -59,7 +59,7 @@ func (i *Inventory) ParseHosts() error {
 					switch fileName {
 					case "roles":
 						var roles []string
-						rolePath := filepath.Join(hostPath, "roleules")
+						rolePath := filepath.Join(hostPath, "roles")
 						lines := utils.ReadFileLines(rolePath)
 
 						for line := range lines {
@@ -108,7 +108,7 @@ func (i *Inventory) ParseHosts() error {
 						}).Debug("Not sure what to do with this file, so skipping it.")
 					}
 
-					hosts[host.ID] = host
+					hosts = append(hosts, host)
 				}
 			}
 		}

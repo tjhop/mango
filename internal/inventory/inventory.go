@@ -51,15 +51,15 @@ var (
 )
 
 // Inventory contains fields that comprise the data that makes up our inventory.
-// - Hosts: a map of `Host` structs for each parsed host, keyed on the `Host.ID`
-// - Modules: a map of `Module` structs for each parsed module, keyed on the `Module.ID`
-// - Roles: a map of `Role` structs for each parsed role, keyed on the `Role.ID`
-// - Directives: a map of `Directive` structs for each parsed directive, keyed on the `Directive.ID`
+// - Hosts: a slice of `Host` structs for each parsed host
+// - Modules: a slice of `Module` structs for each parsed module
+// - Roles: a slice of `Role` structs for each parsed role
+// - Directives: a slice of `DirectiveScript` structs, containing for each parsed directive
 type Inventory struct {
 	inventoryPath string
-	Hosts         map[string]Host
-	Modules       map[string]Module
-	Roles         map[string]Role
+	Hosts         []Host
+	Modules       []Module
+	Roles         []Role
 	Directives    []DirectiveScript
 }
 
@@ -68,9 +68,9 @@ type Inventory struct {
 func NewInventory(path string) Inventory {
 	i := Inventory{
 		inventoryPath: path,
-		Hosts:         make(map[string]Host),
-		Modules:       make(map[string]Module),
-		Roles:         make(map[string]Role),
+		Hosts:         []Host{},
+		Modules:       []Module{},
+		Roles:         []Role{},
 		Directives:    []DirectiveScript{},
 	}
 
@@ -120,6 +120,24 @@ func (i *Inventory) Reload() {
 	}
 }
 
+// IsHostEnrolled calls the `IsHostEnrolled()` method against the globalInventory.
+// Should be used by other packages to verify host system enrollment during runtime.
+func IsHostEnrolled(host string) bool {
+	return globalInventory.IsHostEnrolled(host)
+}
+
+// IsHostEnrolled returns true if the named host is found
+// within the inventory's Host list.
+func (i *Inventory) IsHostEnrolled(host string) bool {
+	for _, h := range i.Hosts {
+		if h.ID == host {
+			return true
+		}
+	}
+
+	return false
+}
+
 // IsEnrolled calls the `IsEnrolled()` method against the globalInventory.
 // Should be used by other packages to verify host system enrollment during runtime.
 func IsEnrolled() bool {
@@ -129,8 +147,8 @@ func IsEnrolled() bool {
 // IsEnrolled returns true is this system's hostname is found
 // in the inventory's Host map, and false otherwise.
 func (i *Inventory) IsEnrolled() bool {
-	_, found := i.Hosts[self.GetHostname()]
-	return found
+	me := self.GetHostname()
+	return i.IsHostEnrolled(me)
 }
 
 // InitInventory should be called during service startup/initialization to create the
