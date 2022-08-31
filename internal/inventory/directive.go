@@ -99,9 +99,9 @@ func (i *Inventory) ParseDirectives() error {
 	}
 
 	i.Directives = dirScripts
-	metricInventoryTotal.With(commonLabels).Set(float64(len(i.Directives)))
+	metricInventory.With(commonLabels).Set(float64(len(i.Directives)))
 	// directives are applicable to **all** systems, not just enrolled systems
-	metricInventoryApplicableTotal.With(commonLabels).Set(float64(len(i.Directives)))
+	metricInventoryApplicable.With(commonLabels).Set(float64(len(i.Directives)))
 	metricInventoryReloadSeconds.With(prometheus.Labels{
 		"inventory": commonLabels["inventory"],
 		"component": commonLabels["component"],

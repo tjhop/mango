@@ -23,18 +23,18 @@ var (
 	ErrHostNotEnrolled = errors.New("Host not enrolled in inventory")
 
 	// prometheus metrics
-	metricInventoryTotal = promauto.NewGaugeVec(
+	metricInventory = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "mango_inventory_total",
-			Help: "Total number items in each component of the inventory",
+			Name: "mango_inventory",
+			Help: "Number items in each component of the inventory",
 		},
 		commonMetricLabels,
 	)
 
-	metricInventoryApplicableTotal = promauto.NewGaugeVec(
+	metricInventoryApplicable = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "mango_inventory_applicable_total",
-			Help: "Total number items in each component of the inventory that are applicable to this system",
+			Name: "mango_inventory_applicable",
+			Help: "Number items in each component of the inventory that are applicable to this system",
 		},
 		commonMetricLabels,
 	)

@@ -135,10 +135,18 @@ func (i *Inventory) ParseModules() error {
 	}
 
 	i.Modules = modules
-	metricInventoryTotal.With(commonLabels).Set(float64(len(i.Modules)))
+	metricInventory.With(commonLabels).Set(float64(len(i.Modules)))
+	numMyMods := 0
 	if i.IsEnrolled() {
-		metricInventoryApplicableTotal.With(commonLabels).Set(float64(len(i.Modules)))
+		mods, err := GetModulesForSelf()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Error("Failed to get Modules for self")
+		}
+		numMyMods = len(mods)
 	}
+	metricInventoryApplicable.With(commonLabels).Set(float64(numMyMods))
 	metricInventoryReloadSeconds.With(prometheus.Labels{
 		"inventory": commonLabels["inventory"],
 		"component": commonLabels["component"],

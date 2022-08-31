@@ -2,9 +2,12 @@ package inventory
 
 import (
 	"path/filepath"
+	"time"
 
+	"github.com/tjhop/mango/internal/self"
 	"github.com/tjhop/mango/internal/utils"
 
+	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -63,6 +66,12 @@ func (h Host) String() string { return h.ID }
 // Each host folder is expected to contain files for `apply`, `variables`, and `test`,
 // which get set to the corresponding fields in the Host struct for the host.
 func (i *Inventory) ParseHosts() error {
+	commonLabels := prometheus.Labels{
+		"inventory": i.inventoryPath,
+		"component": "hosts",
+		"hostname":  self.GetHostname(),
+	}
+
 	path := filepath.Join(i.inventoryPath, "hosts")
 	hostDirs, err := utils.GetFilesInDirectory(path)
 	if err != nil {
@@ -70,6 +79,20 @@ func (i *Inventory) ParseHosts() error {
 			"path":  path,
 			"error": err,
 		}).Error("Failed to get files in directory")
+
+		// inventory counts haven't been altered, no need to update here
+		metricInventoryReloadSeconds.With(prometheus.Labels{
+			"inventory": commonLabels["inventory"],
+			"component": commonLabels["component"],
+			"hostname":  commonLabels["hostname"],
+			"result":    "failure",
+		}).Set(float64(time.Now().Unix()))
+		metricInventoryReloadTotal.With(prometheus.Labels{
+			"inventory": commonLabels["inventory"],
+			"component": commonLabels["component"],
+			"hostname":  commonLabels["hostname"],
+			"result":    "failure",
+		}).Inc()
 
 		return err
 	}
@@ -85,6 +108,20 @@ func (i *Inventory) ParseHosts() error {
 					"path":  hostPath,
 					"error": err,
 				}).Error("Failed to parse host files")
+
+				// inventory counts haven't been altered, no need to update here
+				metricInventoryReloadSeconds.With(prometheus.Labels{
+					"inventory": commonLabels["inventory"],
+					"component": commonLabels["component"],
+					"hostname":  commonLabels["hostname"],
+					"result":    "failure",
+				}).Set(float64(time.Now().Unix()))
+				metricInventoryReloadTotal.With(prometheus.Labels{
+					"inventory": commonLabels["inventory"],
+					"component": commonLabels["component"],
+					"hostname":  commonLabels["hostname"],
+					"result":    "failure",
+				}).Inc()
 
 				return err
 			}
@@ -153,5 +190,24 @@ func (i *Inventory) ParseHosts() error {
 	}
 
 	i.Hosts = hosts
+	metricInventory.With(commonLabels).Set(float64(len(i.Hosts)))
+	numMyHosts := 0
+	if i.IsEnrolled() {
+		numMyHosts = 1 // if you're enrolled, you're the host
+	}
+	metricInventoryApplicable.With(commonLabels).Set(float64(numMyHosts))
+	metricInventoryReloadSeconds.With(prometheus.Labels{
+		"inventory": commonLabels["inventory"],
+		"component": commonLabels["component"],
+		"hostname":  commonLabels["hostname"],
+		"result":    "success",
+	}).Set(float64(time.Now().Unix()))
+	metricInventoryReloadTotal.With(prometheus.Labels{
+		"inventory": commonLabels["inventory"],
+		"component": commonLabels["component"],
+		"hostname":  commonLabels["hostname"],
+		"result":    "success",
+	}).Inc()
+
 	return nil
 }

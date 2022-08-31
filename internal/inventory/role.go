@@ -1,10 +1,14 @@
 package inventory
 
 import (
-	"path/filepath"
 
+	"path/filepath"
+	"time"
+
+	"github.com/tjhop/mango/internal/self"
 	"github.com/tjhop/mango/internal/utils"
 
+	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -34,6 +38,12 @@ func (r Role) String() string { return r.ID }
 // treated as a role -- each role is checked for the appropriate `modules` file to
 // parse for the list of modules for the role.
 func (i *Inventory) ParseRoles() error {
+	commonLabels := prometheus.Labels{
+		"inventory": i.inventoryPath,
+		"component": "roles",
+		"hostname":  self.GetHostname(),
+	}
+
 	path := filepath.Join(i.inventoryPath, "roles")
 	roleDirs, err := utils.GetFilesInDirectory(path)
 	if err != nil {
@@ -41,6 +51,20 @@ func (i *Inventory) ParseRoles() error {
 			"path":  path,
 			"error": err,
 		}).Error("Failed to parse roles")
+
+		// inventory counts haven't been altered, no need to update here
+		metricInventoryReloadSeconds.With(prometheus.Labels{
+			"inventory": commonLabels["inventory"],
+			"component": commonLabels["component"],
+			"hostname":  commonLabels["hostname"],
+			"result":    "failure",
+		}).Set(float64(time.Now().Unix()))
+		metricInventoryReloadTotal.With(prometheus.Labels{
+			"inventory": commonLabels["inventory"],
+			"component": commonLabels["component"],
+			"hostname":  commonLabels["hostname"],
+			"result":    "failure",
+		}).Inc()
 
 		return err
 	}
@@ -56,6 +80,20 @@ func (i *Inventory) ParseRoles() error {
 					"path":  rolePath,
 					"error": err,
 				}).Error("Failed to parse module files")
+
+				// inventory counts haven't been altered, no need to update here
+				metricInventoryReloadSeconds.With(prometheus.Labels{
+					"inventory": commonLabels["inventory"],
+					"component": commonLabels["component"],
+					"hostname":  commonLabels["hostname"],
+					"result":    "failure",
+				}).Set(float64(time.Now().Unix()))
+				metricInventoryReloadTotal.With(prometheus.Labels{
+					"inventory": commonLabels["inventory"],
+					"component": commonLabels["component"],
+					"hostname":  commonLabels["hostname"],
+					"result":    "failure",
+				}).Inc()
 
 				return err
 			}
@@ -77,6 +115,21 @@ func (i *Inventory) ParseRoles() error {
 									"path":  modPath,
 									"error": line.Err,
 								}).Error("Failed to read modules in role")
+
+								// inventory counts haven't been altered, no need to update here
+								metricInventoryReloadSeconds.With(prometheus.Labels{
+									"inventory": commonLabels["inventory"],
+									"component": commonLabels["component"],
+									"hostname":  commonLabels["hostname"],
+									"result":    "failure",
+								}).Set(float64(time.Now().Unix()))
+								metricInventoryReloadTotal.With(prometheus.Labels{
+									"inventory": commonLabels["inventory"],
+									"component": commonLabels["component"],
+									"hostname":  commonLabels["hostname"],
+									"result":    "failure",
+								}).Inc()
+
 							} else {
 								mods = append(mods, line.Text)
 							}
@@ -97,5 +150,30 @@ func (i *Inventory) ParseRoles() error {
 	}
 
 	i.Roles = roles
+	metricInventory.With(commonLabels).Set(float64(len(i.Roles)))
+	numMyRoles := 0
+	if i.IsEnrolled() {
+		roles, err := GetRolesForSelf()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Error("Failed to get Roles for self")
+		}
+		numMyRoles = len(roles)
+	}
+	metricInventoryApplicable.With(commonLabels).Set(float64(numMyRoles))
+	metricInventoryReloadSeconds.With(prometheus.Labels{
+		"inventory": commonLabels["inventory"],
+		"component": commonLabels["component"],
+		"hostname":  commonLabels["hostname"],
+		"result":    "success",
+	}).Set(float64(time.Now().Unix()))
+	metricInventoryReloadTotal.With(prometheus.Labels{
+		"inventory": commonLabels["inventory"],
+		"component": commonLabels["component"],
+		"hostname":  commonLabels["hostname"],
+		"result":    "success",
+	}).Inc()
+
 	return nil
 }
