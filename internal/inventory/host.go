@@ -182,10 +182,10 @@ func (i *Inventory) ParseHosts() error {
 							"file": fileName,
 						}).Debug("Not sure what to do with this file, so skipping it.")
 					}
-
-					hosts = append(hosts, host)
 				}
 			}
+
+			hosts = append(hosts, host)
 		}
 	}
 

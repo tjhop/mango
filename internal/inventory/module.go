@@ -127,10 +127,10 @@ func (i *Inventory) ParseModules() error {
 							"file": fileName,
 						}).Debug("Not sure what to do with this file, so skipping it.")
 					}
-
-					modules = append(modules, mod)
 				}
 			}
+
+			modules = append(modules, mod)
 		}
 	}
 
