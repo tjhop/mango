@@ -91,11 +91,21 @@ func main() {
 		}).Error("Failed to retreive home directory when checking for configuration files")
 	}
 
-	viper.SetConfigName(programName)
+	configFile := viper.GetString("config")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath(filepath.Join("/etc", programName))
-	viper.AddConfigPath(filepath.Join(home, programName))
-	viper.AddConfigPath(".")
+	if configFile != "" {
+		// config file set by flag, use that
+		viper.SetConfigFile(configFile)
+	} else {
+		viper.SetConfigName(programName)
+		viper.AddConfigPath(filepath.Join("/etc", programName))
+
+		// if home dir was successfully retrieved, add XDG config in home dir
+		if home != "" {
+			viper.AddConfigPath(filepath.Join(home, ".config", programName))
+		}
+		viper.AddConfigPath(".")
+	}
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.WithFields(log.Fields{
