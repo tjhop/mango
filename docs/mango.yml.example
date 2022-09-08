@@ -1,5 +1,5 @@
-mango:
-  tree: "/opt/mango/tree"
+inventory:
+  path: "/opt/mango/inventory"
 
 template:
   engine: go # default use go's built in text templating
@@ -10,5 +10,5 @@ managers: {}
 logging:
   level: info
 
-prometheus:
+metrics:
   port: 9555

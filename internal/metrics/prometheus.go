@@ -37,9 +37,9 @@ func init() {
 func ExportPrometheusMetrics() {
 	http.Handle("/metrics", promhttp.Handler())
 
-	viper.SetDefault("prometheus.port", defaultPrometheusPort)
-	iface := viper.GetString("prometheus.interface")
-	port := viper.GetInt("prometheus.port")
+	viper.SetDefault("metrics.port", defaultPrometheusPort)
+	iface := viper.GetString("metrics.interface")
+	port := viper.GetInt("metrics.port")
 
 	log.Panic(http.ListenAndServe(fmt.Sprintf("%s:%d", iface, port), nil))
 }

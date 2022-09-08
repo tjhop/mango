@@ -76,7 +76,7 @@ func run(ctx context.Context) error {
 func main() {
 	// prep and parse flags
 	flag.String("config", "", "Path to configuration file to use")
-	flag.String("mango.inventory", "", "Path to mango configuration inventory")
+	flag.String("inventory.path", "", "Path to mango configuration inventory")
 	flag.String("logging.level", "", "Logging level may be one of: trace, debug, info, warning, error, fatal and panic")
 
 	flag.Parse()

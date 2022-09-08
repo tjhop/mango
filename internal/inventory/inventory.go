@@ -336,7 +336,7 @@ func GetRolesForSelf() ([]Role, error) {
 func InitInventory() {
 	// on first load, do an initial search for all mangos in specified path
 	once.Do(func() {
-		inventoryPath := viper.GetString("mango.inventory")
+		inventoryPath := viper.GetString("inventory.path")
 
 		globalInventory := NewInventory(inventoryPath)
 		globalInventory.Reload()
