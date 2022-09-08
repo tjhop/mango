@@ -107,6 +107,10 @@ func main() {
 		viper.AddConfigPath(".")
 	}
 
+	log.WithFields(log.Fields{
+		"config": viper.ConfigFileUsed(),
+	}).Info("Mango config file in use")
+
 	if err := viper.ReadInConfig(); err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
@@ -115,7 +119,7 @@ func main() {
 
 	viper.OnConfigChange(func(e fsnotify.Event) {
 		log.WithFields(log.Fields{
-			"file": e.Name,
+			"config": e.Name,
 		}).Info("Mango config reloaded")
 	})
 	viper.WatchConfig()
