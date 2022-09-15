@@ -51,22 +51,35 @@ func run(ctx context.Context) error {
 	defer os.RemoveAll(dir)
 	viper.Set("mango.temp-dir", dir)
 
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-
 	go metrics.ExportPrometheusMetrics()
 
 	log.Info("Initializing mango inventory")
 	inventory.InitInventory()
 
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+
 	for {
 		select {
 		case sig := <-sigs:
-			log.WithFields(log.Fields{
-				"signal": sig,
-			}).Info("Caught signal, waiting for work to finish and terminating")
+			switch sig {
+			case syscall.SIGINT, syscall.SIGTERM:
+				log.WithFields(log.Fields{
+					"signal": sig,
+				}).Info("Caught signal, waiting for work to finish and terminating")
 
-			return nil
+				return nil
+			case syscall.SIGHUP:
+				log.WithFields(log.Fields{
+					"signal": sig,
+				}).Info("Caught signal, reloading configuration and inventory")
+
+				inventory.Reload()
+			default:
+				log.WithFields(log.Fields{
+					"signal": sig,
+				}).Info("Caught signal without handler, ignoring")
+			}
 		case <-ctx.Done():
 			return nil
 		}
