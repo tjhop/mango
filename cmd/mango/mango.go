@@ -16,6 +16,7 @@ import (
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
+	"github.com/tjhop/mango/internal/config"
 	"github.com/tjhop/mango/internal/inventory"
 	_ "github.com/tjhop/mango/internal/logging"
 	"github.com/tjhop/mango/internal/metrics"
@@ -37,8 +38,13 @@ var (
 )
 
 func run(ctx context.Context) error {
-	log.Info("Mango server started")
-	defer log.Info("Mango server finished")
+	logger := log.WithFields(log.Fields{
+		"version": config.Version,
+		"build_date": config.BuildDate,
+		"commit": config.Commit,
+	})
+	logger.Info("Mango server started")
+	defer logger.Info("Mango server finished")
 	metricServiceStartSeconds.Set(float64(time.Now().Unix()))
 
 	// create ephemeral directory for mango to store temporary files
