@@ -58,6 +58,40 @@ type Inventory struct {
 	Directives    []DirectiveScript
 }
 
+// Store is the set of methods that Inventory must
+// implement to serve as a backing store for an inventory
+// implementation. This is to try and keep a consistent API
+// in the event that other inventory types are introduced,
+// as well as to keep the required methods centralized if new
+// features are introduced.
+type Store interface {
+	// Inventory management functions
+	Reload()
+
+	// Enrollment Checks
+	IsHostEnrolled(host string) bool
+	IsEnrolled() bool
+
+	// General Inventory Getters
+	GetDirectives() []DirectiveScript
+	GetHosts() []Host
+	GetModules() []Module
+	GetRoles() []Role
+
+	// Inventory checks by component IDs
+	GetDirectivesForHost(host string) []DirectiveScript
+	GetHost(host string) Host
+	GetModule(module string) Module
+	GetModulesForHost(host string) []Module
+	GetRole(role string) Role
+	GetRolesForHost(host string) []Role
+
+	// Self checks
+	GetDirectivesForSelf() []DirectiveScript
+	GetModulesForSelf() []Module
+	GetRolesForSelf() []Role
+}
+
 // NewInventory parses the files/directories in the provided path
 // to populate the inventory.
 func NewInventory(path string) Inventory {
