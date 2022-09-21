@@ -52,10 +52,10 @@ var (
 // - Directives: a slice of `DirectiveScript` structs, containing for each parsed directive
 type Inventory struct {
 	inventoryPath string
-	Hosts         []Host
-	Modules       []Module
-	Roles         []Role
-	Directives    []DirectiveScript
+	hosts         []Host
+	modules       []Module
+	roles         []Role
+	directives    []DirectiveScript
 }
 
 // Store is the set of methods that Inventory must
@@ -97,10 +97,10 @@ type Store interface {
 func NewInventory(path string) Inventory {
 	i := Inventory{
 		inventoryPath: path,
-		Hosts:         []Host{},
-		Modules:       []Module{},
-		Roles:         []Role{},
-		Directives:    []DirectiveScript{},
+		hosts:         []Host{},
+		modules:       []Module{},
+		roles:         []Role{},
+		directives:    []DirectiveScript{},
 	}
 
 	return i
@@ -146,8 +146,8 @@ func (i *Inventory) Reload() {
 // IsHostEnrolled returns true if the named host is found
 // within the inventory's Host list.
 func (i *Inventory) IsHostEnrolled(host string) bool {
-	for _, h := range i.Hosts {
-		if h.ID == host {
+	for _, h := range i.hosts {
+		if h.id == host {
 			return true
 		}
 	}
@@ -164,7 +164,7 @@ func (i *Inventory) IsEnrolled() bool {
 
 // GetDirectives returns a copy of the inventory's slice of DirectiveScript
 func (i *Inventory) GetDirectives() []DirectiveScript {
-	return i.Directives
+	return i.directives
 }
 
 // GetDirectivesForHost returns a copy of the inventory's slice of DirectiveScript.
@@ -185,8 +185,8 @@ func (i *Inventory) GetDirectivesForSelf() []DirectiveScript {
 // by `module`. If the named module is not found in the inventory, an
 // empty Module is returned.
 func (i *Inventory) GetModule(module string) Module {
-	for _, m := range i.Modules {
-		if m.ID == module {
+	for _, m := range i.modules {
+		if m.id == module {
 			return m
 		}
 	}
@@ -196,7 +196,7 @@ func (i *Inventory) GetModule(module string) Module {
 
 // GetModules returns a copy of the inventory's Modules.
 func (i *Inventory) GetModules() []Module {
-	return i.Modules
+	return i.modules
 }
 
 // GetModulesForHost returns a slice of Modules, containing all of the
@@ -205,7 +205,9 @@ func (i *Inventory) GetModulesForHost(host string) []Module {
 	if i.IsHostEnrolled(host) {
 		mods := []Module{}
 		h := i.GetHost(host)
-		for _, m := range h.Modules {
+
+		// get raw host modules
+		for _, m := range h.modules {
 			mods = append(mods, i.GetModule(m))
 		}
 
@@ -226,8 +228,8 @@ func (i *Inventory) GetModulesForSelf() []Module {
 // by `role`. If the named role is not found in the inventory, an
 // empty Role is returned.
 func (i *Inventory) GetRole(role string) Role {
-	for _, r := range i.Roles {
-		if r.ID == role {
+	for _, r := range i.roles {
+		if r.id == role {
 			return r
 		}
 	}
@@ -237,7 +239,7 @@ func (i *Inventory) GetRole(role string) Role {
 
 // GetRoles returns a copy of the inventory's Roles.
 func (i *Inventory) GetRoles() []Role {
-	return i.Roles
+	return i.roles
 }
 
 // GetRolesForHost returns a slice of Roles, containing all of the
@@ -246,7 +248,7 @@ func (i *Inventory) GetRolesForHost(host string) []Role {
 	if i.IsHostEnrolled(host) {
 		roles := []Role{}
 		h := i.GetHost(host)
-		for _, r := range h.Roles {
+		for _, r := range h.roles {
 			roles = append(roles, i.GetRole(r))
 		}
 
@@ -265,15 +267,15 @@ func (i *Inventory) GetRolesForSelf() []Role {
 
 // GetHosts returns a copy of the inventory's Hosts.
 func (i *Inventory) GetHosts() []Host {
-	return i.Hosts
+	return i.hosts
 }
 
 // GetHost returns a copy of the Host struct for a system
 // identified by `host` name. If the hostname is not found
 // in the inventory, an empty Host is returned.
 func (i *Inventory) GetHost(host string) Host {
-	for _, h := range i.Hosts {
-		if h.ID == host {
+	for _, h := range i.hosts {
+		if h.id == host {
 			return h
 		}
 	}

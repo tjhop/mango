@@ -19,8 +19,8 @@ import (
 // - Script: embedded `Script` object
 // - ModTime: the modification time of the script
 type DirectiveScript struct {
-	Script
-	ModTime time.Time
+	script  Script
+	modTime time.Time
 }
 
 // ParseDirectives looks for scripts in the inventory's `directives/` folder, and
@@ -89,19 +89,19 @@ func (i *Inventory) ParseDirectives() error {
 			}
 
 			dirScripts = append(dirScripts, DirectiveScript{
-				Script: Script{
+				script: Script{
 					ID:   file.Name(),
 					Path: scriptPath,
 				},
-				ModTime: info.ModTime(),
+				modTime: info.ModTime(),
 			})
 		}
 	}
 
-	i.Directives = dirScripts
-	metricInventory.With(commonLabels).Set(float64(len(i.Directives)))
+	i.directives = dirScripts
+	metricInventory.With(commonLabels).Set(float64(len(i.directives)))
 	// directives are applicable to **all** systems, not just enrolled systems
-	metricInventoryApplicable.With(commonLabels).Set(float64(len(i.Directives)))
+	metricInventoryApplicable.With(commonLabels).Set(float64(len(i.directives)))
 	metricInventoryReloadSeconds.With(prometheus.Labels{
 		"inventory": commonLabels["inventory"],
 		"component": commonLabels["component"],

@@ -17,20 +17,20 @@ import (
 // - Modules: a slice of ad-hoc module names applied to this host
 // - Variables: variables for the host, in key, value form
 type Host struct {
-	ID        string
-	Modules   []string
-	Roles     []string
-	Variables VariableMap
+	id        string
+	modules   []string
+	roles     []string
+	variables VariableMap
 }
 
 // GetVariables returns a VariableMap of variables
 // assigned to this host
 func (h Host) GetVariables() VariableMap {
-	return h.Variables
+	return h.variables
 }
 
 // String is a stringer to return the host ID
-func (h Host) String() string { return h.ID }
+func (h Host) String() string { return h.id }
 
 // ParseHosts looks for hosts in the inventory's `hosts/` folder. It looks for
 // folders within this directory, and then parses each directory into a Host struct.
@@ -97,7 +97,7 @@ func (i *Inventory) ParseHosts() error {
 				return err
 			}
 
-			host := Host{ID: hostPath}
+			host := Host{id: hostPath}
 
 			for _, hostFile := range hostFiles {
 				if !hostFile.IsDir() {
@@ -119,7 +119,7 @@ func (i *Inventory) ParseHosts() error {
 							}
 						}
 
-						host.Roles = roles
+						host.roles = roles
 					case "modules":
 						var mods []string
 						modPath := filepath.Join(hostPath, "modules")
@@ -136,7 +136,7 @@ func (i *Inventory) ParseHosts() error {
 							}
 						}
 
-						host.Modules = mods
+						host.modules = mods
 					case "variables":
 						varsPath := filepath.Join(hostPath, "variables")
 						vars, err := ParseVariables(varsPath)
@@ -147,7 +147,7 @@ func (i *Inventory) ParseHosts() error {
 							}).Error("Failed to parse variables for module")
 						}
 
-						host.Variables = vars
+						host.variables = vars
 					default:
 						log.WithFields(log.Fields{
 							"file": fileName,
@@ -160,8 +160,8 @@ func (i *Inventory) ParseHosts() error {
 		}
 	}
 
-	i.Hosts = hosts
-	metricInventory.With(commonLabels).Set(float64(len(i.Hosts)))
+	i.hosts = hosts
+	metricInventory.With(commonLabels).Set(float64(len(i.hosts)))
 	numMyHosts := 0
 	if i.IsEnrolled() {
 		numMyHosts = 1 // if you're enrolled, you're the host

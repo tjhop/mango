@@ -17,14 +17,14 @@ import (
 // - Variables: variables for the module, in key, value form
 // - Test: path to test script to check module's application status
 type Module struct {
-	ID        string
-	Apply     Script
-	Variables VariableMap
-	Test      Script
+	id        string
+	apply     Script
+	variables VariableMap
+	test      Script
 }
 
 // String is a stringer to return the module ID
-func (m Module) String() string { return m.ID }
+func (m Module) String() string { return m.id }
 
 // ParseModules looks for modules in the inventory's `modules/` folder. It looks for
 // folders within this directory, and then parses each directory into a Module struct.
@@ -91,7 +91,7 @@ func (i *Inventory) ParseModules() error {
 				return err
 			}
 
-			mod := Module{ID: modPath}
+			mod := Module{id: modPath}
 
 			for _, modFile := range modFiles {
 				if !modFile.IsDir() {
@@ -99,14 +99,14 @@ func (i *Inventory) ParseModules() error {
 					switch fileName {
 					case "apply":
 						if utils.IsFileExecutableToAll(modFile) {
-							mod.Apply = Script{
+							mod.apply = Script{
 								ID:   fileName,
 								Path: filepath.Join(modPath, fileName),
 							}
 						}
 					case "test":
 						if utils.IsFileExecutableToAll(modFile) {
-							mod.Test = Script{
+							mod.test = Script{
 								ID:   fileName,
 								Path: filepath.Join(modPath, fileName),
 							}
@@ -121,7 +121,7 @@ func (i *Inventory) ParseModules() error {
 							}).Error("Failed to parse variables for module")
 						}
 
-						mod.Variables = vars
+						mod.variables = vars
 					default:
 						log.WithFields(log.Fields{
 							"file": fileName,
@@ -134,8 +134,8 @@ func (i *Inventory) ParseModules() error {
 		}
 	}
 
-	i.Modules = modules
-	metricInventory.With(commonLabels).Set(float64(len(i.Modules)))
+	i.modules = modules
+	metricInventory.With(commonLabels).Set(float64(len(i.modules)))
 	numMyMods := 0
 	if i.IsEnrolled() {
 		mods := i.GetModulesForSelf()

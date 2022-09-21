@@ -16,12 +16,12 @@ import (
 // - ID: string idenitfying the role (generally the file path to the role)
 // - Modules: a []string of module names that satisfy this role
 type Role struct {
-	ID      string
-	Modules   []string
+	id      string
+	modules   []string
 }
 
 // String is a stringer to return the role ID
-func (r Role) String() string { return r.ID }
+func (r Role) String() string { return r.id }
 
 // ParseRoles searches for directories in the provided path. Each directory is
 // treated as a role -- each role is checked for the appropriate `modules` file to
@@ -87,7 +87,7 @@ func (i *Inventory) ParseRoles() error {
 				return err
 			}
 
-			role := Role{ID: rolePath}
+			role := Role{id: rolePath}
 
 			for _, roleFile := range roleFiles {
 				if !roleFile.IsDir() {
@@ -124,7 +124,7 @@ func (i *Inventory) ParseRoles() error {
 							}
 						}
 
-						role.Modules = mods
+						role.modules = mods
 
 					default:
 						log.WithFields(log.Fields{
@@ -138,8 +138,8 @@ func (i *Inventory) ParseRoles() error {
 		}
 	}
 
-	i.Roles = roles
-	metricInventory.With(commonLabels).Set(float64(len(i.Roles)))
+	i.roles = roles
+	metricInventory.With(commonLabels).Set(float64(len(i.roles)))
 	numMyRoles := 0
 	if i.IsEnrolled() {
 		roles := i.GetRolesForSelf()
