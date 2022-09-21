@@ -23,35 +23,6 @@ type Host struct {
 	Variables VariableMap
 }
 
-// GetModules returns a slice of Modules, containing
-// all of the modules that are applicable for this host
-func (h Host) GetModules() []Module {
-	var ml []Module
-
-	for _, moduleID := range h.Modules {
-		ml = append(ml, GetModule(moduleID))
-	}
-
-	for _, roleID := range h.Roles {
-		role := GetRole(roleID)
-		ml = append(ml, role.GetModules()...)
-	}
-
-	return ml
-}
-
-// GetRoles returns a slice of Roles, containing
-// all of the roles that are applicable for this host
-func (h Host) GetRoles() []Role {
-	var roles []Role
-
-	for _, r := range h.Roles {
-		roles = append(roles, GetRole(r))
-	}
-
-	return roles
-}
-
 // GetVariables returns a VariableMap of variables
 // assigned to this host
 func (h Host) GetVariables() VariableMap {

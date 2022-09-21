@@ -58,8 +58,12 @@ func run(ctx context.Context) error {
 
 	go metrics.ExportPrometheusMetrics()
 
-	log.Info("Initializing mango inventory")
-	inventory.InitInventory()
+	inventoryPath := viper.GetString("inventory.path")
+	log.WithFields(log.Fields{
+	    "path": inventoryPath,
+	}).Info("Initializing mango inventory")
+	inv := inventory.NewInventory(inventoryPath)
+	inv.Reload()
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
@@ -79,7 +83,7 @@ func run(ctx context.Context) error {
 					"signal": sig,
 				}).Info("Caught signal, reloading configuration and inventory")
 
-				inventory.Reload()
+				inv.Reload()
 			default:
 				log.WithFields(log.Fields{
 					"signal": sig,

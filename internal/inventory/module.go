@@ -138,7 +138,7 @@ func (i *Inventory) ParseModules() error {
 	metricInventory.With(commonLabels).Set(float64(len(i.Modules)))
 	numMyMods := 0
 	if i.IsEnrolled() {
-		mods, err := GetModulesForSelf()
+		mods := i.GetModulesForSelf()
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,

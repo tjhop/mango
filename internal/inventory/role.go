@@ -20,17 +20,6 @@ type Role struct {
 	Modules   []string
 }
 
-// GetModules returns a copy of the Role's []Module
-func (r Role) GetModules() ([]Module) {
-	var mods []Module
-
-	for _, m := range r.Modules {
-		mods = append(mods, GetModule(m))
-	}
-
-	return mods
-}
-
 // String is a stringer to return the role ID
 func (r Role) String() string { return r.ID }
 
@@ -153,7 +142,7 @@ func (i *Inventory) ParseRoles() error {
 	metricInventory.With(commonLabels).Set(float64(len(i.Roles)))
 	numMyRoles := 0
 	if i.IsEnrolled() {
-		roles, err := GetRolesForSelf()
+		roles := i.GetRolesForSelf()
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,
