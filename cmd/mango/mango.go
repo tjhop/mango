@@ -27,8 +27,6 @@ const (
 )
 
 var (
-	MangoTempDir string // ephemeral directory where mango will store files that need to be cleaned up before stopping
-
 	metricServiceStartSeconds = promauto.NewGauge(
 		prometheus.GaugeOpts{
 			Name: "mango_service_start_seconds",
@@ -48,14 +46,15 @@ func run(ctx context.Context) error {
 	metricServiceStartSeconds.Set(float64(time.Now().Unix()))
 
 	// create ephemeral directory for mango to store temporary files
-	dir, err := os.MkdirTemp("", programName)
+	tmpDir := viper.GetString("mango.temp-dir")
+	dir, err := os.MkdirTemp(tmpDir, programName)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err": err,
+			"path": tmpDir,
 		}).Fatal("Failed to create temporary directory for mango")
 	}
 	defer os.RemoveAll(dir)
-	viper.Set("mango.temp-dir", dir)
 
 	go metrics.ExportPrometheusMetrics()
 
