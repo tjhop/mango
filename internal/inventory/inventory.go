@@ -82,6 +82,7 @@ type Store interface {
 	GetDirectivesForHost(host string) []DirectiveScript
 	GetHost(host string) Host
 	GetModule(module string) Module
+	GetModulesForRole(role string) []Module
 	GetModulesForHost(host string) []Module
 	GetRole(role string) Role
 	GetRolesForHost(host string) []Role
@@ -197,6 +198,19 @@ func (i Inventory) GetModule(module string) Module {
 // GetModules returns a copy of the inventory's Modules.
 func (i Inventory) GetModules() []Module {
 	return i.modules
+}
+
+// GetModulesForRole returns a slice of Modules, containing
+// all of the Modules for the specified role.
+func (i Inventory) GetModulesForRole(role string) []Module {
+	mods := []Module{}
+	r := i.GetRole(role)
+
+	for _, m := range r.modules {
+		mods = append(mods, i.GetModule(m))
+	}
+
+	return mods
 }
 
 // GetModulesForHost returns a slice of Modules, containing all of the
