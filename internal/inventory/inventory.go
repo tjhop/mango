@@ -225,6 +225,11 @@ func (i Inventory) GetModulesForHost(host string) []Module {
 			mods = append(mods, i.GetModule(m))
 		}
 
+		// get modules from all roles host is assigned
+		for _, r := range h.roles {
+			mods = append(mods, i.GetModulesForRole(r)...)
+		}
+
 		return mods
 	}
 
