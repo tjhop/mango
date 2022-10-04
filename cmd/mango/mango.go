@@ -35,6 +35,14 @@ var (
 			Help: "Unix timestamp of when mango started",
 		},
 	)
+
+	metricMangoRuntimeInfo = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "mango_runtime_info",
+			Help: "A metric with a constant '1' value with labels for information about the mango runtime, such as system hostname.",
+		},
+		[]string{"hostname"},
+	)
 )
 
 func run(ctx context.Context) error {
@@ -46,6 +54,8 @@ func run(ctx context.Context) error {
 	logger.Info("Mango server started")
 	defer logger.Info("Mango server finished")
 	metricServiceStartSeconds.Set(float64(time.Now().Unix()))
+	me := self.GetHostname()
+	metricMangoRuntimeInfo.With(prometheus.Labels{"hostname": me}).Set(1)
 
 	// create ephemeral directory for mango to store temporary files
 	tmpDir := viper.GetString("mango.temp-dir")
@@ -71,7 +81,6 @@ func run(ctx context.Context) error {
 	inv.Reload()
 
 	// start manager
-	me := self.GetHostname()
 	log.WithFields(log.Fields{
 	    "manager_id": me,
 	}).Info("Initializing mango manager")
