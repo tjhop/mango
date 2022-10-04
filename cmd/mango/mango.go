@@ -19,7 +19,9 @@ import (
 	"github.com/tjhop/mango/internal/config"
 	"github.com/tjhop/mango/internal/inventory"
 	_ "github.com/tjhop/mango/internal/logging"
+	"github.com/tjhop/mango/internal/manager"
 	"github.com/tjhop/mango/internal/metrics"
+	"github.com/tjhop/mango/internal/self"
 )
 
 const (
@@ -52,12 +54,15 @@ func run(ctx context.Context) error {
 		log.WithFields(log.Fields{
 			"err": err,
 			"path": tmpDir,
+			"dir": dir,
 		}).Fatal("Failed to create temporary directory for mango")
 	}
 	defer os.RemoveAll(dir)
 
+	// serve metrics
 	go metrics.ExportPrometheusMetrics()
 
+	// load inventory
 	inventoryPath := viper.GetString("inventory.path")
 	log.WithFields(log.Fields{
 	    "path": inventoryPath,
@@ -65,9 +70,19 @@ func run(ctx context.Context) error {
 	inv := inventory.NewInventory(inventoryPath)
 	inv.Reload()
 
+	// start manager
+	me := self.GetHostname()
+	log.WithFields(log.Fields{
+	    "manager_id": me,
+	}).Info("Initializing mango manager")
+	mgr := manager.NewManager(me)
+	mgr.Reload(inv)
+
+	// signal handling for cleanup/reloads
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
+	// block and work until something happens
 	for {
 		select {
 		case sig := <-sigs:
@@ -84,6 +99,7 @@ func run(ctx context.Context) error {
 				}).Info("Caught signal, reloading configuration and inventory")
 
 				inv.Reload()
+				mgr.Reload(inv)
 			default:
 				log.WithFields(log.Fields{
 					"signal": sig,
