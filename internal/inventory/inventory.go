@@ -220,14 +220,14 @@ func (i Inventory) GetModulesForHost(host string) []Module {
 		mods := []Module{}
 		h := i.GetHost(host)
 
-		// get raw host modules
-		for _, m := range h.modules {
-			mods = append(mods, i.GetModule(m))
-		}
-
 		// get modules from all roles host is assigned
 		for _, r := range h.roles {
 			mods = append(mods, i.GetModulesForRole(r)...)
+		}
+
+		// get raw host modules
+		for _, m := range h.modules {
+			mods = append(mods, i.GetModule(m))
 		}
 
 		return mods
