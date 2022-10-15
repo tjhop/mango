@@ -1,45 +1,11 @@
 package manager
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"context"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/tjhop/mango/internal/inventory"
-)
-
-var (
-	// prometheus metrics
-	metricManagerRunTimestamp = promauto.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "mango_manager_run_seconds",
-			Help: "Timestamp of the last run of the given module, in seconds since the epoch",
-		},
-		[]string{"module", "run"},
-	)
-
-	metricManagerRunSuccessTimestamp = promauto.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "mango_manager_run_success_seconds",
-			Help: "Timestamp of the last successful run of the given module, in seconds since the epoch",
-		},
-		[]string{"module", "run"},
-	)
-
-	metricManagerRunTotal = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "mango_manager_run_total",
-			Help: "A count of the total number of runs that have been performed to manage the module",
-		},
-		[]string{"module", "run"},
-	)
-
-	metricManagerRunFailedTotal = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "mango_manager_run_failed_total",
-			Help: "A count of the total number of runs that have been performed to manage the module",
-		},
-		[]string{"module", "run"},
-	)
 )
 
 // Manager contains fields related to track and execute runnable modules and statistics.
@@ -61,4 +27,41 @@ func NewManager(id string) Manager {
 func (m *Manager) Reload(inv inventory.Store) {
 	m.modules = inv.GetModulesForSelf()
 	m.directives = inv.GetDirectivesForSelf()
+}
+
+// RunDirectives runs all of the directive scripts being managed by the Manager
+func (m *Manager) RunDirectives(ctx context.Context) {
+	for _, d := range m.directives {
+		log.WithFields(log.Fields{
+			"path": d,
+		}).Info("Running directive")
+
+		if err := d.Run(ctx); err != nil {
+			log.WithFields(log.Fields{
+				"path": d,
+			}).Error("Directive failed")
+		}
+	}
+}
+
+// RunModules runs all of the modules being managed by the Manager
+func (m *Manager) RunModules(ctx context.Context) {
+	for _, d := range m.modules {
+		log.WithFields(log.Fields{
+			"path": d,
+		}).Info("Running module")
+
+		if err := d.Run(ctx); err != nil {
+			log.WithFields(log.Fields{
+				"path": d,
+			}).Error("Module failed")
+		}
+	}
+}
+
+// RunAll runs all of the Directives being managed by the Manager, followed by
+// all of the Modules being managed by the Manager.
+func (m *Manager) RunAll(ctx context.Context) {
+	m.RunDirectives(ctx)
+	m.RunModules(ctx)
 }

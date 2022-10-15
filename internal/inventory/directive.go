@@ -1,6 +1,7 @@
 package inventory
 
 import (
+	"context"
 	"path/filepath"
 	"time"
 
@@ -16,11 +17,34 @@ import (
 // DirectiveScript contains fields that represent a script in the inventory's directives directory.
 // These scripts are executed first when changes are detected in the inventory, if and only if the
 // script has a modification time within the last 24h.
+// - ID: string idenitfying the directive script (generally the file path to the script)
 // - Script: embedded `Script` object
 // - ModTime: the modification time of the script
 type DirectiveScript struct {
+	id      string
 	script  Script
 	modTime time.Time
+}
+
+// String is a stringer to return the module ID
+func (d DirectiveScript) String() string { return d.id }
+
+// Run is a wrapper to run the DirectiveScript's script and return any
+// potential errors. DirectiveScripts are only run if they have been updated
+// within the last 24h (ie, their mod time is within the last 24h).
+func (d DirectiveScript) Run(ctx context.Context) error {
+	// TODO: fix this. currently, mtime is only checked when modules are
+	// parsed. it should be moved to be checked during runtime.
+	recentThreshold, _ := time.ParseDuration("24h")
+	if float64(time.Now().Unix()-d.modTime.Unix()) < recentThreshold.Seconds() {
+		log.WithFields(log.Fields{
+			"directive": d,
+		}).Info("Directive recently modified, running it now")
+
+		return d.script.Run(ctx)
+	}
+
+	return nil
 }
 
 // ParseDirectives looks for scripts in the inventory's `directives/` folder, and

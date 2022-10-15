@@ -1,6 +1,7 @@
 package inventory
 
 import (
+	"context"
 	"path/filepath"
 	"time"
 
@@ -25,6 +26,40 @@ type Module struct {
 
 // String is a stringer to return the module ID
 func (m Module) String() string { return m.id }
+
+// Test is a wrapper to run the Module's `test` script and return any potential
+// errors
+func (m Module) Test(ctx context.Context) error {
+	return m.test.Run(ctx)
+}
+
+// Apply is a wrapper to run the Module's `apply` script and return any
+// potential errors
+func (m Module) Apply(ctx context.Context) error {
+	return m.apply.Run(ctx)
+}
+
+// Run is a wrapper to run the Module's `test` script, and if needed, run the
+// Module's `apply` script to get the system to the desired state
+func (m Module) Run(ctx context.Context) error {
+	if err := m.Test(ctx); err != nil {
+		log.WithFields(log.Fields{
+			"module": m,
+			"error":  err,
+		}).Warn("Module failed idempotency test, running apply script to get system in desired state")
+
+		if err := m.Apply(ctx); err != nil {
+			log.WithFields(log.Fields{
+				"module": m,
+				"error":  err,
+			}).Error("Module apply script failed, unable to get system to desired state")
+
+			return err
+		}
+	}
+
+	return nil
+}
 
 // ParseModules looks for modules in the inventory's `modules/` folder. It looks for
 // folders within this directory, and then parses each directory into a Module struct.
