@@ -47,26 +47,28 @@ var (
 
 func run(ctx context.Context) error {
 	logger := log.WithFields(log.Fields{
-		"version": config.Version,
+		"version":    config.Version,
 		"build_date": config.BuildDate,
-		"commit": config.Commit,
+		"commit":     config.Commit,
 	})
 	logger.Info("Mango server started")
 	defer logger.Info("Mango server finished")
-	metricServiceStartSeconds.Set(float64(time.Now().Unix()))
+
 	me := self.GetHostname()
 	metricMangoRuntimeInfo.With(prometheus.Labels{"hostname": me}).Set(1)
+	metricServiceStartSeconds.Set(float64(time.Now().Unix()))
 
 	// create ephemeral directory for mango to store temporary files
 	tmpDir := viper.GetString("mango.temp-dir")
 	dir, err := os.MkdirTemp(tmpDir, programName)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"err": err,
+			"err":  err,
 			"path": tmpDir,
-			"dir": dir,
+			"dir":  dir,
 		}).Fatal("Failed to create temporary directory for mango")
 	}
+	viper.Set("mango.temp-dir", dir)
 	defer os.RemoveAll(dir)
 
 	// serve metrics
@@ -75,14 +77,17 @@ func run(ctx context.Context) error {
 	// load inventory
 	inventoryPath := viper.GetString("inventory.path")
 	log.WithFields(log.Fields{
-	    "path": inventoryPath,
+		"path": inventoryPath,
 	}).Info("Initializing mango inventory")
 	inv := inventory.NewInventory(inventoryPath)
 	inv.Reload()
+	log.WithFields(log.Fields{
+		"enrolled": inv.IsEnrolled(),
+	}).Info("Host enrollment check")
 
 	// start manager
 	log.WithFields(log.Fields{
-	    "manager_id": me,
+		"manager_id": me,
 	}).Info("Initializing mango manager")
 	mgr := manager.NewManager(me)
 	mgr.Reload(inv)
