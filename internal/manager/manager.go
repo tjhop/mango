@@ -35,15 +35,15 @@ func (m *Manager) Reload(inv inventory.Store) {
 
 	modules := inv.GetModulesForSelf()
 	m.logger.WithFields(log.Fields{
-		"old":       m.modules,
-		"new":       modules,
+		"old": m.modules,
+		"new": modules,
 	}).Debug("Reloading modules from inventory")
 	m.modules = modules
 
 	directives := inv.GetDirectivesForSelf()
 	m.logger.WithFields(log.Fields{
-		"old":       m.directives,
-		"new":       directives,
+		"old": m.directives,
+		"new": directives,
 	}).Debug("Reloading directives from inventory")
 	m.directives = directives
 }

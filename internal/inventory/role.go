@@ -1,7 +1,6 @@
 package inventory
 
 import (
-
 	"path/filepath"
 	"time"
 
@@ -17,7 +16,7 @@ import (
 // - Modules: a []string of module names that satisfy this role
 type Role struct {
 	id      string
-	modules   []string
+	modules []string
 }
 
 // String is a stringer to return the role ID
