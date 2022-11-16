@@ -96,6 +96,9 @@ func run(ctx context.Context) error {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
+	// run the modules the manager has collected from the inventory
+	mgr.RunAll(ctx)
+
 	// block and work until something happens
 	for {
 		select {
