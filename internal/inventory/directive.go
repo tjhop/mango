@@ -86,7 +86,7 @@ func (i *Inventory) ParseDirectives() error {
 	var dirScripts []DirectiveScript
 
 	for _, file := range files {
-		if !file.IsDir() && utils.IsFileExecutableToAll(file) {
+		if !file.IsDir() {
 			scriptPath := filepath.Join(path, file.Name())
 			info, err := file.Info()
 			if err != nil {

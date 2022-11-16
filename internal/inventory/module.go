@@ -133,18 +133,14 @@ func (i *Inventory) ParseModules() error {
 					fileName := modFile.Name()
 					switch fileName {
 					case "apply":
-						if utils.IsFileExecutableToAll(modFile) {
-							mod.apply = Script{
-								ID:   fileName,
-								Path: filepath.Join(modPath, fileName),
-							}
+						mod.apply = Script{
+							ID:   fileName,
+							Path: filepath.Join(modPath, fileName),
 						}
 					case "test":
-						if utils.IsFileExecutableToAll(modFile) {
-							mod.test = Script{
-								ID:   fileName,
-								Path: filepath.Join(modPath, fileName),
-							}
+						mod.test = Script{
+							ID:   fileName,
+							Path: filepath.Join(modPath, fileName),
 						}
 					case "variables":
 						varsPath := filepath.Join(modPath, "variables")
