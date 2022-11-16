@@ -58,6 +58,9 @@ type Inventory struct {
 	directives    []DirectiveScript
 }
 
+// String is a stringer to return the inventory path
+func (i *Inventory) String() string { return i.inventoryPath }
+
 // Store is the set of methods that Inventory must
 // implement to serve as a backing store for an inventory
 // implementation. This is to try and keep a consistent API
