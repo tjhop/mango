@@ -97,7 +97,7 @@ func (i *Inventory) ParseHosts() error {
 				return err
 			}
 
-			host := Host{id: hostPath}
+			host := Host{id: hostDir.Name()}
 
 			for _, hostFile := range hostFiles {
 				if !hostFile.IsDir() {
