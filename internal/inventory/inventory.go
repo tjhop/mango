@@ -1,6 +1,8 @@
 package inventory
 
 import (
+	"path/filepath"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	log "github.com/sirupsen/logrus"
@@ -72,7 +74,6 @@ type Store interface {
 	Reload()
 
 	// Enrollment Checks
-	IsHostEnrolled(host string) bool
 	IsEnrolled() bool
 
 	// General Inventory Getters
@@ -82,12 +83,14 @@ type Store interface {
 	GetRoles() []Role
 
 	// Inventory checks by component IDs
+	GetHost(host string) (Host, bool)
+	GetModule(module string) (Module, bool)
+	GetRole(role string) (Role, bool)
+
+	// Checks by host
 	GetDirectivesForHost(host string) []DirectiveScript
-	GetHost(host string) Host
-	GetModule(module string) Module
 	GetModulesForRole(role string) []Module
 	GetModulesForHost(host string) []Module
-	GetRole(role string) Role
 	GetRolesForHost(host string) []Role
 
 	// Self checks
@@ -98,7 +101,7 @@ type Store interface {
 
 // NewInventory parses the files/directories in the provided path
 // to populate the inventory.
-func NewInventory(path string) Inventory {
+func NewInventory(path string) *Inventory {
 	i := Inventory{
 		inventoryPath: path,
 		hosts:         []Host{},
@@ -107,7 +110,7 @@ func NewInventory(path string) Inventory {
 		directives:    []DirectiveScript{},
 	}
 
-	return i
+	return &i
 }
 
 // Reload reloads Inventory from it's configured path. Components that are reloaded:
@@ -115,7 +118,7 @@ func NewInventory(path string) Inventory {
 // - Roles
 // - Modules
 // - Directives
-func (i Inventory) Reload() {
+func (i *Inventory) Reload() {
 	// populate the inventory
 
 	// parse hosts
@@ -147,70 +150,61 @@ func (i Inventory) Reload() {
 	}
 }
 
-// IsHostEnrolled returns true if the named host is found
-// within the inventory's Host list.
-func (i Inventory) IsHostEnrolled(host string) bool {
-	for _, h := range i.hosts {
-		if h.id == host {
-			return true
-		}
-	}
-
-	return false
-}
-
 // IsEnrolled returns true is this system's hostname is found
 // in the inventory's Host map, and false otherwise.
-func (i Inventory) IsEnrolled() bool {
+func (i *Inventory) IsEnrolled() bool {
 	me := self.GetHostname()
-	return i.IsHostEnrolled(me)
+	_, found := i.GetHost(me)
+	return found
 }
 
 // GetDirectives returns a copy of the inventory's slice of DirectiveScript
-func (i Inventory) GetDirectives() []DirectiveScript {
+func (i *Inventory) GetDirectives() []DirectiveScript {
 	return i.directives
 }
 
 // GetDirectivesForHost returns a copy of the inventory's slice of DirectiveScript.
 // Since directives are applied to all hosts, this internally just calls
 // `inventory.GetDirectives()`
-func (i Inventory) GetDirectivesForHost(host string) []DirectiveScript {
+func (i *Inventory) GetDirectivesForHost(host string) []DirectiveScript {
 	return i.GetDirectives()
 }
 
 // GetDirectivesForSelf returns a copy of the inventory's slice of DirectiveScript.
 // Since directives are applied to all hosts, this internally just calls
 // `inventory.GetDirectives()`
-func (i Inventory) GetDirectivesForSelf() []DirectiveScript {
+func (i *Inventory) GetDirectivesForSelf() []DirectiveScript {
 	return i.GetDirectives()
 }
 
-// GetModule returns a copy of the Module struct for a module identified
-// by `module`. If the named module is not found in the inventory, an
-// empty Module is returned.
-func (i Inventory) GetModule(module string) Module {
+// GetModule returns a copy of the Module struct for a module identified by
+// `module`, and a boolean indicating whether or not the named module was found
+// in the inventory.
+func (i *Inventory) GetModule(module string) (Module, bool) {
 	for _, m := range i.modules {
-		if m.id == module {
-			return m
+		if filepath.Base(m.id) == module {
+			return m, true
 		}
 	}
 
-	return Module{}
+	return Module{}, false
 }
 
 // GetModules returns a copy of the inventory's Modules.
-func (i Inventory) GetModules() []Module {
+func (i *Inventory) GetModules() []Module {
 	return i.modules
 }
 
 // GetModulesForRole returns a slice of Modules, containing
 // all of the Modules for the specified role.
-func (i Inventory) GetModulesForRole(role string) []Module {
+func (i *Inventory) GetModulesForRole(role string) []Module {
 	mods := []Module{}
-	r := i.GetRole(role)
-
-	for _, m := range r.modules {
-		mods = append(mods, i.GetModule(m))
+	if r, found := i.GetRole(role); found {
+		for _, m := range r.modules {
+			if roleMods, found := i.GetModule(m); found {
+				mods = append(mods, roleMods)
+			}
+		}
 	}
 
 	return mods
@@ -218,10 +212,9 @@ func (i Inventory) GetModulesForRole(role string) []Module {
 
 // GetModulesForHost returns a slice of Modules, containing all of the
 // Modules for the specified host system (including modules in all assigned roles, as well as ad-hoc modules).
-func (i Inventory) GetModulesForHost(host string) []Module {
-	if i.IsHostEnrolled(host) {
+func (i *Inventory) GetModulesForHost(host string) []Module {
+	if h, found := i.GetHost(host); found {
 		mods := []Module{}
-		h := i.GetHost(host)
 
 		// get modules from all roles host is assigned
 		for _, r := range h.roles {
@@ -230,9 +223,18 @@ func (i Inventory) GetModulesForHost(host string) []Module {
 
 		// get raw host modules
 		for _, m := range h.modules {
-			mods = append(mods, i.GetModule(m))
+			if mod, found := i.GetModule(m); found {
+				mods = append(mods, mod)
+			}
 		}
 
+		// TODO: fix this.
+		// it's possible that a module may be defined in more than one
+		// role, or ad-hoc assigned to a host that also has it in a
+		// role.As such, it's possible some modules may have duplicate
+		// entries. Modules _should_ be idempotent so this _should not_
+		// be an issue. However, this should be fixed to filter the
+		// returned modules for duplicates.
 		return mods
 	}
 
@@ -241,7 +243,7 @@ func (i Inventory) GetModulesForHost(host string) []Module {
 
 // GetModulesForSelf returns a slice of Modules, containing all of the
 // Modules for the running system from the inventory.
-func (i Inventory) GetModulesForSelf() []Module {
+func (i *Inventory) GetModulesForSelf() []Module {
 	me := self.GetHostname()
 	return i.GetModulesForHost(me)
 }
@@ -249,29 +251,30 @@ func (i Inventory) GetModulesForSelf() []Module {
 // GetRole returns a copy of the Role struct for a role identified
 // by `role`. If the named role is not found in the inventory, an
 // empty Role is returned.
-func (i Inventory) GetRole(role string) Role {
+func (i *Inventory) GetRole(role string) (Role, bool) {
 	for _, r := range i.roles {
-		if r.id == role {
-			return r
+		if filepath.Base(r.id) == role {
+			return r, true
 		}
 	}
 
-	return Role{}
+	return Role{}, false
 }
 
 // GetRoles returns a copy of the inventory's Roles.
-func (i Inventory) GetRoles() []Role {
+func (i *Inventory) GetRoles() []Role {
 	return i.roles
 }
 
 // GetRolesForHost returns a slice of Roles, containing all of the
 // Roles for the specified host system.
-func (i Inventory) GetRolesForHost(host string) []Role {
-	if i.IsHostEnrolled(host) {
+func (i *Inventory) GetRolesForHost(host string) []Role {
+	if h, found := i.GetHost(host); found {
 		roles := []Role{}
-		h := i.GetHost(host)
 		for _, r := range h.roles {
-			roles = append(roles, i.GetRole(r))
+			if role, found := i.GetRole(r); found {
+				roles = append(roles, role)
+			}
 		}
 
 		return roles
@@ -282,25 +285,25 @@ func (i Inventory) GetRolesForHost(host string) []Role {
 
 // GetRolesForSelf returns a slice of Roles, containing all of the
 // Roles for the running system from the inventory.
-func (i Inventory) GetRolesForSelf() []Role {
+func (i *Inventory) GetRolesForSelf() []Role {
 	me := self.GetHostname()
 	return i.GetRolesForHost(me)
 }
 
 // GetHosts returns a copy of the inventory's Hosts.
-func (i Inventory) GetHosts() []Host {
+func (i *Inventory) GetHosts() []Host {
 	return i.hosts
 }
 
-// GetHost returns a copy of the Host struct for a system
-// identified by `host` name. If the hostname is not found
-// in the inventory, an empty Host is returned.
-func (i Inventory) GetHost(host string) Host {
+// GetHost returns a copy of the Host struct for a system identified by `host`
+// name, and a boolean indicating whether or not the named host was found in
+// the inventory.
+func (i *Inventory) GetHost(host string) (Host, bool) {
 	for _, h := range i.hosts {
-		if h.id == host {
-			return h
+		if filepath.Base(h.id) == host {
+			return h, true
 		}
 	}
 
-	return Host{}
+	return Host{}, false
 }
