@@ -58,6 +58,7 @@ type Inventory struct {
 	modules       []Module
 	roles         []Role
 	directives    []DirectiveScript
+	variables     VariableMap
 }
 
 // String is a stringer to return the inventory path
@@ -108,6 +109,7 @@ func NewInventory(path string) *Inventory {
 		modules:       []Module{},
 		roles:         []Role{},
 		directives:    []DirectiveScript{},
+		variables:     make(VariableMap),
 	}
 
 	return &i
@@ -148,6 +150,18 @@ func (i *Inventory) Reload() {
 			"error": err,
 		}).Error("Failed to reload directives")
 	}
+
+	// parse global variables
+	globalVars := filepath.Join(i.inventoryPath, "variables")
+	vars, err := ParseVariables(globalVars)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"file":  globalVars,
+			"error": err,
+		}).Error("Failed to parse global variables")
+	}
+
+	i.variables = vars
 }
 
 // IsEnrolled returns true is this system's hostname is found
