@@ -60,9 +60,13 @@ func run(ctx context.Context) error {
 
 	// create ephemeral directory for mango to store temporary files
 	tmpDir := viper.GetString("mango.temp-dir")
+	logger.WithFields(log.Fields{
+		"path": tmpDir,
+	}).Info("Creating temporary directory for mango runtime files")
+
 	dir, err := os.MkdirTemp(tmpDir, programName)
 	if err != nil {
-		log.WithFields(log.Fields{
+		logger.WithFields(log.Fields{
 			"err":  err,
 			"path": tmpDir,
 			"dir":  dir,
@@ -80,6 +84,7 @@ func run(ctx context.Context) error {
 		"path": inventoryPath,
 	}).Info("Initializing mango inventory")
 	inv := inventory.NewInventory(inventoryPath)
+	// reload inventory
 	inv.Reload()
 	log.WithFields(log.Fields{
 		"enrolled": inv.IsEnrolled(),
@@ -90,11 +95,13 @@ func run(ctx context.Context) error {
 		"manager_id": me,
 	}).Info("Initializing mango manager")
 	mgr := manager.NewManager(me)
+	// reload manager
 	mgr.Reload(inv)
 
 	// signal handling for cleanup/reloads
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	logger.Info("Mango server ready")
 
 	// run the modules the manager has collected from the inventory
 	mgr.RunAll(ctx)
