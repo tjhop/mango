@@ -42,22 +42,28 @@ func (m Module) Apply(ctx context.Context) error {
 // Run is a wrapper to run the Module's `test` script, and if needed, run the
 // Module's `apply` script to get the system to the desired state
 func (m Module) Run(ctx context.Context) error {
+	logger := log.WithFields(log.Fields{
+		"module": m,
+	})
+
 	if err := m.Test(ctx); err != nil {
-		log.WithFields(log.Fields{
-			"module": m,
-			"error":  err,
+		logger.WithFields(log.Fields{
+			"error": err,
 		}).Warn("Module failed idempotency test, running apply script to get system in desired state")
 
 		if err := m.Apply(ctx); err != nil {
-			log.WithFields(log.Fields{
-				"module": m,
-				"error":  err,
+			logger.WithFields(log.Fields{
+				"error": err,
 			}).Error("Module apply script failed, unable to get system to desired state")
 
 			return err
 		}
+
+		logger.Info("Module apply script succeeded")
+		return nil
 	}
 
+	logger.Info("Module passed idempotency test")
 	return nil
 }
 
