@@ -10,10 +10,11 @@ import (
 
 // Manager contains fields related to track and execute runnable modules and statistics.
 type Manager struct {
-	id         string
-	logger     *log.Entry
-	modules    []inventory.Module
-	directives []inventory.DirectiveScript
+	id            string
+	logger        *log.Entry
+	modules       []inventory.Module
+	directives    []inventory.DirectiveScript
+	hostVariables inventory.VariableMap
 }
 
 func (m *Manager) String() string { return m.id }
@@ -46,6 +47,16 @@ func (m *Manager) Reload(inv inventory.Store) {
 		"new": directives,
 	}).Debug("Reloading directives from inventory")
 	m.directives = directives
+
+	vars := inv.GetVariablesForSelf()
+	varKeys := make([]string, len(vars))
+	for k := range vars {
+		varKeys = append(varKeys, k)
+	}
+	m.logger.WithFields(log.Fields{
+		"variables": varKeys,
+	}).Debug("Reloading host variables")
+	m.hostVariables = vars
 }
 
 // RunDirectives runs all of the directive scripts being managed by the Manager
