@@ -106,7 +106,7 @@ func (s *Script) Run(ctx context.Context) error {
 		log.WithFields(log.Fields{
 			"path":     s.Path,
 			"duration": s.Stats.LastRunDuration,
-		}).Info("Script run finished")
+		}).Debug("Script run finished")
 	}()
 
 	// TODO: is there ever a reason/benefit to using `exec.Start()` / `exec.Wait()`?
