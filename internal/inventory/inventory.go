@@ -93,11 +93,13 @@ type Store interface {
 	GetModulesForRole(role string) []Module
 	GetModulesForHost(host string) []Module
 	GetRolesForHost(host string) []Role
+	GetVariablesForHost(host string) VariableMap
 
 	// Self checks
 	GetDirectivesForSelf() []DirectiveScript
 	GetModulesForSelf() []Module
 	GetRolesForSelf() []Role
+	GetVariablesForSelf() VariableMap
 }
 
 // NewInventory parses the files/directories in the provided path
@@ -320,4 +322,26 @@ func (i *Inventory) GetHost(host string) (Host, bool) {
 	}
 
 	return Host{}, false
+}
+
+// GetVariablesForHost returns a copy of the variable map for the system
+// `host`, or nil if the host was not found.
+func (i *Inventory) GetVariablesForHost(host string) VariableMap {
+	// TODO: eventually, merging variables need to be supported. override
+	// over should be:
+	// - global vars
+	// - module vars
+	// - host vars
+	if h, found := i.GetHost(host); found {
+		return h.variables
+	}
+
+	return nil
+}
+
+// GetVariablesForSelf returns a copy of the variable map for the running
+// system.
+func (i *Inventory) GetVariablesForSelf() VariableMap {
+	me := self.GetHostname()
+	return i.GetVariablesForHost(me)
 }
