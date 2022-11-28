@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/tjhop/mango/internal/config"
+	"github.com/tjhop/mango/internal/self"
 )
 
 const (
@@ -28,12 +29,15 @@ func init() {
 				"version":    config.Version,
 				"commit":     config.Commit,
 				"build_date": config.BuildDate,
+				"goversion": self.GetRuntimeVersion(),
 			},
 		},
 		func() float64 { return 1 },
 	)
 }
 
+// ExportPrometheusMetrics sets up our HTTP server for prometheus metrics at
+// the configured `interfac:port`. Designed to be run as a goroutine from main.
 func ExportPrometheusMetrics() {
 	http.Handle("/metrics", promhttp.Handler())
 

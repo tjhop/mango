@@ -50,6 +50,7 @@ func run(ctx context.Context) error {
 		"version":    config.Version,
 		"build_date": config.BuildDate,
 		"commit":     config.Commit,
+		"go_version": self.GetRuntimeVersion(),
 	})
 	logger.Info("Mango server started")
 	defer logger.Info("Mango server finished")

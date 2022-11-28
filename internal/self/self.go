@@ -3,6 +3,7 @@ package self
 import (
 	"os"
 	"os/user"
+	"runtime"
 	"strconv"
 
 	log "github.com/sirupsen/logrus"
@@ -60,4 +61,10 @@ func GetCurrentUserInfo() (username string, uid int, group string, gid int) {
 	}
 
 	return u.Username, uid, g.Name, gid
+}
+
+// GetRuntimeVersion is a convenience wrapper for `runtime.Version()` to get
+// the version from the go runtime
+func GetRuntimeVersion() string {
+	return runtime.Version()
 }
