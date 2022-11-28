@@ -33,15 +33,27 @@ func (d DirectiveScript) String() string { return d.id }
 // potential errors. DirectiveScripts are only run if they have been updated
 // within the last 24h (ie, their mod time is within the last 24h).
 func (d DirectiveScript) Run(ctx context.Context) error {
+	logger := log.WithFields(log.Fields{
+		"directive": d,
+	})
+
 	// TODO: fix this. currently, mtime is only checked when modules are
 	// parsed. it should be moved to be checked during runtime.
 	recentThreshold, _ := time.ParseDuration("24h")
 	if float64(time.Now().Unix()-d.modTime.Unix()) < recentThreshold.Seconds() {
-		log.WithFields(log.Fields{
-			"directive": d,
-		}).Info("Directive recently modified, running it now")
+		logger.Info("Directive recently modified, running now")
 
-		return d.script.Run(ctx)
+		if err := d.script.Run(ctx); err != nil {
+			logger.WithFields(log.Fields{
+				"error": err,
+			}).Error("Directive script failed, unable to get system to desired state")
+
+			return err
+		}
+
+		logger.Info("Directive script succeeded")
+
+		return nil
 	}
 
 	return nil
