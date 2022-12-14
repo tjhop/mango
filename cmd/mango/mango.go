@@ -125,6 +125,7 @@ func run(ctx context.Context) error {
 
 				inv.Reload()
 				mgr.Reload(inv)
+				mgr.RunAll(ctx)
 			default:
 				log.WithFields(log.Fields{
 					"signal": sig,
