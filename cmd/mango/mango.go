@@ -132,6 +132,11 @@ func run(ctx context.Context) error {
 				}).Info("Caught signal without handler, ignoring")
 			}
 		case <-ctx.Done():
+			if err := ctx.Err(); err != nil {
+				log.WithFields(log.Fields{
+					"error": err,
+				}).Error("Context canceled due to error")
+			}
 			return nil
 		}
 	}
