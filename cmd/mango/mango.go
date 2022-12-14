@@ -112,7 +112,7 @@ func run(ctx context.Context) error {
 		select {
 		case sig := <-sigs:
 			switch sig {
-			case syscall.SIGINT, syscall.SIGTERM:
+			case os.Interrupt, syscall.SIGTERM:
 				log.WithFields(log.Fields{
 					"signal": sig,
 				}).Info("Caught signal, waiting for work to finish and terminating")
