@@ -10,6 +10,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/mitchellh/go-homedir"
+	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	log "github.com/sirupsen/logrus"
@@ -45,7 +46,7 @@ var (
 	)
 )
 
-func run(ctx context.Context) error {
+func mango() {
 	logger := log.WithFields(log.Fields{
 		"version":    config.Version,
 		"build_date": config.BuildDate,
@@ -53,7 +54,9 @@ func run(ctx context.Context) error {
 		"go_version": self.GetRuntimeVersion(),
 	})
 	logger.Info("Mango server started")
-	defer logger.Info("Mango server finished")
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	me := self.GetHostname()
 	metricMangoRuntimeInfo.With(prometheus.Labels{"hostname": me}).Set(1)
@@ -74,7 +77,6 @@ func run(ctx context.Context) error {
 		}).Fatal("Failed to create temporary directory for mango")
 	}
 	viper.Set("mango.temp-dir", dir)
-	defer os.RemoveAll(dir)
 
 	// serve metrics
 	go metrics.ExportPrometheusMetrics()
@@ -99,47 +101,102 @@ func run(ctx context.Context) error {
 	// reload manager
 	mgr.Reload(inv)
 
-	// signal handling for cleanup/reloads
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	logger.Info("Mango server ready")
+	reloadCh := make(chan struct{})
+	var g run.Group
+	{
+		// termination and cleanup
+		term := make(chan os.Signal, 1)
+		signal.Notify(term, os.Interrupt, syscall.SIGTERM)
+		g.Add(
+			func() error {
+				select {
+				case sig := <-term:
+					log.WithFields(log.Fields{
+						"signal": sig,
+					}).Warn("Caught signal, waiting for work to finish and terminating")
 
-	// run the modules the manager has collected from the inventory
-	mgr.RunAll(ctx)
+					cancel()
+				case <-ctx.Done():
+					if err := ctx.Err(); err != nil {
+						log.WithFields(log.Fields{
+							"error": err,
+						}).Error("Context canceled due to error")
+					}
 
-	// block and work until something happens
-	for {
-		select {
-		case sig := <-sigs:
-			switch sig {
-			case os.Interrupt, syscall.SIGTERM:
-				log.WithFields(log.Fields{
-					"signal": sig,
-				}).Info("Caught signal, waiting for work to finish and terminating")
+					close(reloadCh)
+					cleanup()
+				}
 
 				return nil
-			case syscall.SIGHUP:
-				log.WithFields(log.Fields{
-					"signal": sig,
-				}).Info("Caught signal, reloading configuration and inventory")
-
-				inv.Reload()
-				mgr.Reload(inv)
-				mgr.RunAll(ctx)
-			default:
-				log.WithFields(log.Fields{
-					"signal": sig,
-				}).Info("Caught signal without handler, ignoring")
-			}
-		case <-ctx.Done():
-			if err := ctx.Err(); err != nil {
-				log.WithFields(log.Fields{
-					"error": err,
-				}).Error("Context canceled due to error")
-			}
-			return nil
-		}
+			},
+			func(err error) {
+				cancel()
+			},
+		)
 	}
+	{
+		// reload handling
+		hup := make(chan os.Signal, 1)
+		signal.Notify(hup, syscall.SIGHUP)
+		cancel := make(chan struct{})
+		g.Add(
+			func() error {
+				for {
+					select {
+					case sig := <-hup:
+						log.WithFields(log.Fields{
+							"signal": sig,
+						}).Info("Caught signal, reloading configuration and inventory")
+
+						inv.Reload()
+						mgr.Reload(inv)
+						reloadCh <- struct{}{}
+					case <-cancel:
+						return nil
+					}
+				}
+			},
+			func(err error) {
+				// Wait for any in-progress reloads to complete to avoid
+				// reloading things after they have been shutdown.
+				cancel <- struct{}{}
+			},
+		)
+	}
+	{
+		// manager runner
+		cancel := make(chan struct{})
+		g.Add(func() error {
+			log.Info("Starting initial run of all modules")
+			mgr.RunAll(ctx)
+
+			for {
+				select {
+				case <-reloadCh:
+					log.Info("Running all modules")
+					mgr.RunAll(ctx)
+				case <-cancel:
+					return nil
+				}
+			}
+		}, func(error) {
+			close(cancel)
+		})
+	}
+
+	logger.Info("Mango server ready")
+	if err := g.Run(); err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("Mango server received error")
+	}
+	logger.Info("Mango server finished")
+}
+
+// cleanup contains anything that needs to be run prior to mango gracefully
+// shutting down
+func cleanup() {
+	os.RemoveAll(viper.GetString("mango.temp-dir"))
 }
 
 func main() {
@@ -204,12 +261,5 @@ func main() {
 	}
 
 	// run mango daemon
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	if err := run(ctx); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Fatal("Mango server recieved error")
-	}
+	mango()
 }
