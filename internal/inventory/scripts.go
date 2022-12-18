@@ -10,6 +10,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/spf13/viper"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -84,11 +85,15 @@ type Script struct {
 // Run is responsible for actually building and dispacting the script to be
 // run. After the script is finished running, it updates Stats for the script.
 func (s *Script) Run(ctx context.Context) error {
-	// TODO: set working directory to mango temp dir prior to execution
 	// TODO: update metrics here or in manager?
 	// TODO: set env variables/template script
 	// TODO: allow for logging to files?
 	cmd := exec.CommandContext(ctx, s.Path)
+
+	// set runtime directory
+	tmpDir := viper.GetString("mango.temp-dir")
+	cmd.Dir = tmpDir
+
 	start := time.Now()
 	parent := filepath.Base(s.Path)
 
