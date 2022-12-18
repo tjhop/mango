@@ -115,6 +115,9 @@ func mango() {
 						"signal": sig,
 					}).Warn("Caught signal, waiting for work to finish and terminating")
 
+					// cancel context, triggering a
+					// cancelation of everything using it
+					// (including manager and scripts)
 					cancel()
 				case <-ctx.Done():
 					if err := ctx.Err(); err != nil {
@@ -123,7 +126,10 @@ func mango() {
 						}).Error("Context canceled due to error")
 					}
 
+					// close the reload -> manager run signal channel
 					close(reloadCh)
+
+					// catch-all cleanup work
 					cleanup()
 				}
 
@@ -148,8 +154,14 @@ func mango() {
 							"signal": sig,
 						}).Info("Caught signal, reloading configuration and inventory")
 
+						// reload inventory and manager
 						inv.Reload()
 						mgr.Reload(inv)
+
+						// signal the manager runner
+						// goroutine that a reload
+						// request has been received so
+						// that it can act on it
 						reloadCh <- struct{}{}
 					case <-cancel:
 						return nil
@@ -166,22 +178,32 @@ func mango() {
 	{
 		// manager runner
 		cancel := make(chan struct{})
-		g.Add(func() error {
-			log.Info("Starting initial run of all modules")
-			mgr.RunAll(ctx)
+		g.Add(
+			func() error {
+				log.Info("Starting initial run of all modules")
+				mgr.RunAll(ctx)
 
-			for {
-				select {
-				case <-reloadCh:
-					log.Info("Running all modules")
-					mgr.RunAll(ctx)
-				case <-cancel:
-					return nil
+				// block and wait for reload/close signals from channels
+				for {
+					select {
+					case <-reloadCh:
+						// when a signal is received on the
+						// reload channel, trigger a new run
+						// for all modules.
+
+						// TODO(@tjhop): add logic to prevent
+						// triggering a module run when one is
+						// already active
+						log.Info("Running all modules")
+						mgr.RunAll(ctx)
+					case <-cancel:
+						return nil
+					}
 				}
-			}
-		}, func(error) {
-			close(cancel)
-		})
+			}, func(error) {
+				close(cancel)
+			},
+		)
 	}
 
 	logger.Info("Mango server ready")
