@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -279,6 +281,19 @@ func main() {
 		log.SetLevel(log.InfoLevel)
 	} else {
 		log.SetLevel(level)
+
+		if level >= log.DebugLevel {
+			// enable func/file logging
+			log.SetReportCaller(true)
+			log.SetFormatter(&log.TextFormatter{
+				CallerPrettyfier: func(f *runtime.Frame) (string, string) {
+					fileName := filepath.Base(f.File)
+					funcName := filepath.Base(f.Function)
+					return fmt.Sprintf("%s()", funcName), fmt.Sprintf("%s:%d", fileName, f.Line)
+				},
+			})
+		}
+
 		log.Infof("Log level set to: %s", level)
 	}
 
