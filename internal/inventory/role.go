@@ -41,12 +41,6 @@ func (i *Inventory) ParseRoles() error {
 		}).Error("Failed to parse roles")
 
 		// inventory counts haven't been altered, no need to update here
-		metricInventoryReloadSeconds.With(prometheus.Labels{
-			"inventory": commonLabels["inventory"],
-			"component": commonLabels["component"],
-			"hostname":  commonLabels["hostname"],
-			"result":    "failure",
-		}).Set(float64(time.Now().Unix()))
 		metricInventoryReloadTotal.With(prometheus.Labels{
 			"inventory": commonLabels["inventory"],
 			"component": commonLabels["component"],
@@ -70,12 +64,6 @@ func (i *Inventory) ParseRoles() error {
 				}).Error("Failed to parse module files")
 
 				// inventory counts haven't been altered, no need to update here
-				metricInventoryReloadSeconds.With(prometheus.Labels{
-					"inventory": commonLabels["inventory"],
-					"component": commonLabels["component"],
-					"hostname":  commonLabels["hostname"],
-					"result":    "failure",
-				}).Set(float64(time.Now().Unix()))
 				metricInventoryReloadTotal.With(prometheus.Labels{
 					"inventory": commonLabels["inventory"],
 					"component": commonLabels["component"],
@@ -105,12 +93,6 @@ func (i *Inventory) ParseRoles() error {
 								}).Error("Failed to read modules in role")
 
 								// inventory counts haven't been altered, no need to update here
-								metricInventoryReloadSeconds.With(prometheus.Labels{
-									"inventory": commonLabels["inventory"],
-									"component": commonLabels["component"],
-									"hostname":  commonLabels["hostname"],
-									"result":    "failure",
-								}).Set(float64(time.Now().Unix()))
 								metricInventoryReloadTotal.With(prometheus.Labels{
 									"inventory": commonLabels["inventory"],
 									"component": commonLabels["component"],
@@ -154,7 +136,6 @@ func (i *Inventory) ParseRoles() error {
 		"inventory": commonLabels["inventory"],
 		"component": commonLabels["component"],
 		"hostname":  commonLabels["hostname"],
-		"result":    "success",
 	}).Set(float64(time.Now().Unix()))
 	metricInventoryReloadTotal.With(prometheus.Labels{
 		"inventory": commonLabels["inventory"],

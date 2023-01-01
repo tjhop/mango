@@ -35,7 +35,7 @@ var (
 			Name: "mango_inventory_reload_seconds",
 			Help: "Unix timestamp of the last successful mango inventory reload",
 		},
-		append(commonMetricLabels, "result"),
+		commonMetricLabels,
 	)
 
 	metricInventoryReloadTotal = promauto.NewCounterVec(
