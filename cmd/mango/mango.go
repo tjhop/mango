@@ -64,6 +64,15 @@ func mango() {
 	metricMangoRuntimeInfo.With(prometheus.Labels{"hostname": me}).Set(1)
 	metricServiceStartSeconds.Set(float64(time.Now().Unix()))
 
+	// create directory for persistent logs
+	logDir := os.MkdirAll(filepath.Join("/var/log", programName), 0755)
+	if err != nil && !os.IsExist(err) {
+		logger.WithFields(log.Fields{
+			"err":  err,
+			"path":  logDir,
+		}).Fatal("Failed to create temporary directory for mango")
+	}
+
 	// create ephemeral directory for mango to store temporary files
 	tmpDir := viper.GetString("mango.temp-dir")
 	logger.WithFields(log.Fields{
@@ -75,7 +84,6 @@ func mango() {
 		logger.WithFields(log.Fields{
 			"err":  err,
 			"path": tmpDir,
-			"dir":  dir,
 		}).Fatal("Failed to create temporary directory for mango")
 	}
 	viper.Set("mango.temp-dir", dir)
