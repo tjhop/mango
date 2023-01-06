@@ -82,6 +82,9 @@ type Script struct {
 	Stats RunStat
 }
 
+// String is a stringer to return tse script ID
+func (s Script) String() string { return s.ID }
+
 // Run is responsible for actually building and dispacting the script to be
 // run. After the script is finished running, it updates Stats for the script.
 func (s *Script) Run(ctx context.Context) error {
