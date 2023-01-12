@@ -53,7 +53,7 @@ var (
 	metricManagerScriptRunFailedTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "mango_manager_script_run_failed_total",
-			Help: "A count of the total number of runs that have been performed to manage the module",
+			Help: "A count of the total number of failed runs that have been performed to manage the module",
 		},
 		[]string{"module", "run"},
 	)
