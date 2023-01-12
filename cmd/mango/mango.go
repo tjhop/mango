@@ -65,12 +65,14 @@ func mango() {
 	metricServiceStartSeconds.Set(float64(time.Now().Unix()))
 
 	// create directory for persistent logs
-	logDir := os.MkdirAll(filepath.Join("/var/log", programName), 0755)
+	logDir := "/var/log"
+	viper.Set("mango.log-dir", logDir)
+	err := os.MkdirAll(filepath.Join(logDir, programName), 0755)
 	if err != nil && !os.IsExist(err) {
 		logger.WithFields(log.Fields{
 			"err":  err,
 			"path":  logDir,
-		}).Fatal("Failed to create temporary directory for mango")
+		}).Fatal("Failed to create persistent directory for logs")
 	}
 
 	// create ephemeral directory for mango to store temporary files
