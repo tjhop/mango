@@ -3,6 +3,7 @@ package inventory
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -100,7 +101,36 @@ func (s *Script) Run(ctx context.Context) error {
 	start := time.Now()
 	parent := filepath.Base(s.Path)
 
+	// log stdout from script
+	// `mango_$scriptID_timestamp_stdout.log`
+	// TODO: setup folder hierarchy in log dir to organize?
+	// TODO: I feel like these keys should be getting pulled from the context at this phase of things...
+	logNameBase := filepath.Join(viper.GetString("mango.log-dir"), "mango_" + s.ID + "_" + fmt.Sprintf("%d", start.Unix()))
+	stdoutLog, err := os.OpenFile(logNameBase+"_stdout.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"path": stdoutLog,
+		}).Error("Failed to open script log for stdout")
+	}
+	cmd.Stdout = stdoutLog
+
+	// log stderr from script
+	// `mango_$scriptID_timestamp_stderr.log
+	stderrLog, err := os.OpenFile(logNameBase+"_stderr.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"path": stderrLog,
+		}).Error("Failed to open script log for stderr")
+	}
+	cmd.Stderr = stderrLog
+
 	defer func() {
+		// close logs
+		defer stdoutLog.Close()
+		defer stderrLog.Close()
+
 		// update stats
 		s.Stats.LastRunDuration = time.Now().Sub(start)
 		s.Stats.RunCount++
@@ -119,7 +149,7 @@ func (s *Script) Run(ctx context.Context) error {
 
 	// TODO: is there ever a reason/benefit to using `exec.Start()` / `exec.Wait()`?
 	// actually run the command
-	err := cmd.Run()
+	err = cmd.Run()
 
 	// inspired by https://stackoverflow.com/questions/10385551/get-exit-code-go/62647366#62647366
 	var (
