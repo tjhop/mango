@@ -85,11 +85,10 @@ func (i *Inventory) ParseDirectives() error {
 			"hostname":  commonLabels["hostname"],
 			"result":    "failure",
 		}).Set(float64(time.Now().Unix()))
-		metricInventoryReloadTotal.With(prometheus.Labels{
+		metricInventoryReloadFailedTotal.With(prometheus.Labels{
 			"inventory": commonLabels["inventory"],
 			"component": commonLabels["component"],
 			"hostname":  commonLabels["hostname"],
-			"result":    "failure",
 		}).Inc()
 
 		return err
@@ -114,11 +113,10 @@ func (i *Inventory) ParseDirectives() error {
 					"hostname":  commonLabels["hostname"],
 					"result":    "failure",
 				}).Set(float64(time.Now().Unix()))
-				metricInventoryReloadTotal.With(prometheus.Labels{
+				metricInventoryReloadFailedTotal.With(prometheus.Labels{
 					"inventory": commonLabels["inventory"],
 					"component": commonLabels["component"],
 					"hostname":  commonLabels["hostname"],
-					"result":    "failure",
 				}).Inc()
 
 				return err
@@ -148,7 +146,6 @@ func (i *Inventory) ParseDirectives() error {
 		"inventory": commonLabels["inventory"],
 		"component": commonLabels["component"],
 		"hostname":  commonLabels["hostname"],
-		"result":    "success",
 	}).Inc()
 
 	return nil

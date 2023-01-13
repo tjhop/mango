@@ -87,11 +87,10 @@ func (i *Inventory) ParseModules() error {
 		}).Error("Failed to get files in directory")
 
 		// inventory counts haven't been altered, no need to update here
-		metricInventoryReloadTotal.With(prometheus.Labels{
+		metricInventoryReloadFailedTotal.With(prometheus.Labels{
 			"inventory": commonLabels["inventory"],
 			"component": commonLabels["component"],
 			"hostname":  commonLabels["hostname"],
-			"result":    "failure",
 		}).Inc()
 
 		return err
@@ -110,11 +109,10 @@ func (i *Inventory) ParseModules() error {
 				}).Error("Failed to parse module files")
 
 				// inventory counts haven't been altered, no need to update here
-				metricInventoryReloadTotal.With(prometheus.Labels{
+				metricInventoryReloadFailedTotal.With(prometheus.Labels{
 					"inventory": commonLabels["inventory"],
 					"component": commonLabels["component"],
 					"hostname":  commonLabels["hostname"],
-					"result":    "failure",
 				}).Inc()
 
 				return err
@@ -181,7 +179,6 @@ func (i *Inventory) ParseModules() error {
 		"inventory": commonLabels["inventory"],
 		"component": commonLabels["component"],
 		"hostname":  commonLabels["hostname"],
-		"result":    "success",
 	}).Inc()
 
 	return nil

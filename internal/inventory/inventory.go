@@ -43,7 +43,15 @@ var (
 			Name: "mango_inventory_reload_total",
 			Help: "Total number of times the mango inventory has been reloaded",
 		},
-		append(commonMetricLabels, "result"),
+		commonMetricLabels,
+	)
+
+	metricInventoryReloadFailedTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "mango_inventory_reload_failed_total",
+			Help: "Total number of times the mango inventory has failed to reload",
+		},
+		commonMetricLabels,
 	)
 )
 

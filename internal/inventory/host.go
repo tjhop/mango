@@ -52,11 +52,10 @@ func (i *Inventory) ParseHosts() error {
 		}).Error("Failed to get files in directory")
 
 		// inventory counts haven't been altered, no need to update here
-		metricInventoryReloadTotal.With(prometheus.Labels{
+		metricInventoryReloadFailedTotal.With(prometheus.Labels{
 			"inventory": commonLabels["inventory"],
 			"component": commonLabels["component"],
 			"hostname":  commonLabels["hostname"],
-			"result":    "failure",
 		}).Inc()
 
 		return err
@@ -75,11 +74,10 @@ func (i *Inventory) ParseHosts() error {
 				}).Error("Failed to parse host files")
 
 				// inventory counts haven't been altered, no need to update here
-				metricInventoryReloadTotal.With(prometheus.Labels{
+				metricInventoryReloadFailedTotal.With(prometheus.Labels{
 					"inventory": commonLabels["inventory"],
 					"component": commonLabels["component"],
 					"hostname":  commonLabels["hostname"],
-					"result":    "failure",
 				}).Inc()
 
 				return err
@@ -164,7 +162,6 @@ func (i *Inventory) ParseHosts() error {
 		"inventory": commonLabels["inventory"],
 		"component": commonLabels["component"],
 		"hostname":  commonLabels["hostname"],
-		"result":    "success",
 	}).Inc()
 
 	return nil
