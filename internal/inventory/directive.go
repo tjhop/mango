@@ -79,12 +79,6 @@ func (i *Inventory) ParseDirectives() error {
 		}).Error("Failed to parse directives")
 
 		// inventory counts haven't been altered, no need to update here
-		metricInventoryReloadSeconds.With(prometheus.Labels{
-			"inventory": commonLabels["inventory"],
-			"component": commonLabels["component"],
-			"hostname":  commonLabels["hostname"],
-			"result":    "failure",
-		}).Set(float64(time.Now().Unix()))
 		metricInventoryReloadFailedTotal.With(prometheus.Labels{
 			"inventory": commonLabels["inventory"],
 			"component": commonLabels["component"],
@@ -107,12 +101,6 @@ func (i *Inventory) ParseDirectives() error {
 				}).Error("Failed to get file info")
 
 				// inventory counts haven't been altered, no need to update here
-				metricInventoryReloadSeconds.With(prometheus.Labels{
-					"inventory": commonLabels["inventory"],
-					"component": commonLabels["component"],
-					"hostname":  commonLabels["hostname"],
-					"result":    "failure",
-				}).Set(float64(time.Now().Unix()))
 				metricInventoryReloadFailedTotal.With(prometheus.Labels{
 					"inventory": commonLabels["inventory"],
 					"component": commonLabels["component"],
@@ -140,7 +128,6 @@ func (i *Inventory) ParseDirectives() error {
 		"inventory": commonLabels["inventory"],
 		"component": commonLabels["component"],
 		"hostname":  commonLabels["hostname"],
-		"result":    "success",
 	}).Set(float64(time.Now().Unix()))
 	metricInventoryReloadTotal.With(prometheus.Labels{
 		"inventory": commonLabels["inventory"],
