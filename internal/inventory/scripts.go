@@ -89,9 +89,7 @@ func (s Script) String() string { return s.ID }
 // Run is responsible for actually building and dispacting the script to be
 // run. After the script is finished running, it updates Stats for the script.
 func (s *Script) Run(ctx context.Context) error {
-	// TODO: update metrics here or in manager?
 	// TODO: set env variables/template script
-	// TODO: allow for logging to files?
 	cmd := exec.CommandContext(ctx, s.Path)
 
 	// set runtime directory
@@ -147,8 +145,6 @@ func (s *Script) Run(ctx context.Context) error {
 		}).Debug("Script run finished")
 	}()
 
-	// TODO: is there ever a reason/benefit to using `exec.Start()` / `exec.Wait()`?
-	// actually run the command
 	err = cmd.Run()
 
 	// inspired by https://stackoverflow.com/questions/10385551/get-exit-code-go/62647366#62647366
