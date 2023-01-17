@@ -130,7 +130,7 @@ func (s *Script) Run(ctx context.Context) error {
 		defer stderrLog.Close()
 
 		// update stats
-		s.Stats.LastRunDuration = time.Now().Sub(start)
+		s.Stats.LastRunDuration = time.Since(start)
 		s.Stats.RunCount++
 		s.Stats.LastRunTimestamp = start
 
