@@ -18,6 +18,14 @@ Project/design goals:
 Download a release appropriate for your system from the [Releases](https://github.com/tjhop/mango/releases) page.
 While packages are built for several systems, there are currently no plans to attempt to submit packages to upstream package repositories.
 
+## Usage
+
+### Binary Usage
+
+```bash
+mango --inventory.path /path/to/inventory
+```
+
 ## Configuration Management
 
 `Mango` is intended to be run as a daemon on the system that it will be managing.
