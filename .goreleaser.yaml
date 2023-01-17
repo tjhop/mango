@@ -33,8 +33,6 @@ nfpms:
     contents:
       - src: ./README.md
         dst: /usr/share/doc/tjhop/mango/README.md
-      - src: ./packaging/etc/mango.yml
-        dst: /usr/share/doc/tjhop/mango/example/mango.yml
       - src: ./packaging/systemd/mango.service
         dst: /lib/systemd/system/mango.service
         type: config
