@@ -240,7 +240,11 @@ func main() {
 	flag.String("logging.level", "", "Logging level may be one of: trace, debug, info, warning, error, fatal and panic")
 
 	flag.Parse()
-	viper.BindPFlags(flag.CommandLine)
+	if err := viper.BindPFlags(flag.CommandLine); err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Fatal("Failed to parse command line flags")
+	}
 
 	// prep and read config file
 	home, err := homedir.Dir()
