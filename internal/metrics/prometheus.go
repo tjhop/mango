@@ -29,7 +29,7 @@ func init() {
 				"version":    config.Version,
 				"commit":     config.Commit,
 				"build_date": config.BuildDate,
-				"goversion": self.GetRuntimeVersion(),
+				"goversion":  self.GetRuntimeVersion(),
 			},
 		},
 		func() float64 { return 1 },

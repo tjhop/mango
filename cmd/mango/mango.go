@@ -70,7 +70,7 @@ func mango() {
 	if err != nil && !os.IsExist(err) {
 		logger.WithFields(log.Fields{
 			"err":  err,
-			"path":  logDir,
+			"path": logDir,
 		}).Fatal("Failed to create persistent directory for logs")
 	}
 	viper.Set("mango.log-dir", logDir)
