@@ -26,6 +26,17 @@ While packages are built for several systems, there are currently no plans to at
 mango --inventory.path /path/to/inventory
 ```
 
+### Docker Usage
+
+Since `mango` is intended to be run on the system it is managing and thus requires access to the host system, if you must run `mango` with Docker you may want to use the `--privileged` flag.
+
+```
+docker run \
+-v /path/to/inventory:/opt/mango/inventory \
+--privileged
+ghcr.io/tjhop/mango
+```
+
 ## Configuration Management
 
 `Mango` is intended to be run as a daemon on the system that it will be managing.
