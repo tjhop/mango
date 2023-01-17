@@ -100,15 +100,15 @@ func (s *Script) Run(ctx context.Context) error {
 	parent := filepath.Base(s.Path)
 
 	// log stdout from script
-	// `mango_$scriptID_timestamp_stdout.log`
-	// TODO: setup folder hierarchy in log dir to organize?
+	// `$logDir/mango_$parent_$scriptID_timestamp_stdout.log`
+	// eg, `/var/log/mango/mango_test-module_apply_123456_stdout.log`
 	// TODO: I feel like these keys should be getting pulled from the context at this phase of things...
-	logNameBase := filepath.Join(viper.GetString("mango.log-dir"), "mango_" + s.ID + "_" + fmt.Sprintf("%d", start.Unix()))
+	logNameBase := filepath.Join(viper.GetString("mango.log-dir"), "mango_"+parent+"_"+s.ID+"_"+fmt.Sprintf("%d", start.Unix()))
 	stdoutLog, err := os.OpenFile(logNameBase+"_stdout.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
-			"path": stdoutLog,
+			"path":  stdoutLog,
 		}).Error("Failed to open script log for stdout")
 	}
 	cmd.Stdout = stdoutLog
@@ -119,7 +119,7 @@ func (s *Script) Run(ctx context.Context) error {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
-			"path": stderrLog,
+			"path":  stderrLog,
 		}).Error("Failed to open script log for stderr")
 	}
 	cmd.Stderr = stderrLog
