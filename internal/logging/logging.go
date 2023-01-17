@@ -1,7 +1,7 @@
 package logging
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 
 	log "github.com/sirupsen/logrus"
@@ -10,7 +10,7 @@ import (
 
 func init() {
 	// init logging
-	log.SetOutput(ioutil.Discard) // Send all logs to nowhere by default
+	log.SetOutput(io.Discard) // Send all logs to nowhere by default
 
 	log.AddHook(&writer.Hook{ // Send logs with level higher than warning to stderr
 		Writer: os.Stderr,
