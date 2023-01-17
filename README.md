@@ -1,5 +1,10 @@
 # Mango
 
+[![license](https://img.shields.io/github/license/tjhop/mango)](https://github.com/tjhop/mango/blob/master/LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/github.com/tjhop/mango)](https://goreportcard.com/report/github.com/tjhop/mango)
+[![golangci-lint](https://github.com/tjhop/mango/actions/workflows/golangci-lint.yaml/badge.svg)](https://github.com/tjhop/mango/actions/workflows/golangci-lint.yaml)
+[![Latest Release](https://img.shields.io/github/v/release/tjhop/mango)](https://github.com/tjhop/mango/releases/latest)
+
 Configuration **man**agement, in **go**... get it? Well, I tried.
 
 Anyway, this repo is me building a toy configuration management engine in go, mostly for learning purposes.
