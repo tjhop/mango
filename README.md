@@ -13,6 +13,11 @@ Project/design goals:
     - Structured logging
     - Grafana dashboard (Planned)
 
+## Setup
+
+Download a release appropriate for your system from the [Releases](https://github.com/tjhop/mango/releases) page.
+While packages are built for several systems, there are currently no plans to attempt to submit packages to upstream package repositories.
+
 ## Configuration Management
 
 `Mango` is intended to be run as a daemon on the system that it will be managing.
@@ -35,3 +40,26 @@ git init
 git add .
 git commit -m "initial commit"
 ```
+
+## Development
+
+### Build From Source
+
+This project uses [goreleaser](https://goreleaser.com/) to manage builds.
+To manually make a build for local development/testing, you can clone this project and run:
+
+```bash
+goreleaser build --rm-dist --single-target --snapshot
+```
+
+### Testing
+
+A [skeleton inventory ](./test/mockup/inventory/) is included for use with testing:
+
+```bash
+goreleaser build --rm-dist --single-target --snapshot
+./dist/mango_linux_amd64_v1/mango --inventory.path ./test/mockup/inventory/ --logging.level debug
+```
+
+### Contributions
+Commits *must* follow [Conventional Commit format](https://www.conventionalcommits.org/en/v1.0.0/). This repository uses [GoReleaser](https://goreleaser.com/) and semver git tags that are determined by the type of commit.
