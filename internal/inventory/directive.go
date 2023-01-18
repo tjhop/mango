@@ -19,11 +19,9 @@ import (
 // script has a modification time within the last 24h.
 // - ID: string idenitfying the directive script (generally the file path to the script)
 // - Script: embedded `Script` object
-// - ModTime: the modification time of the script
 type DirectiveScript struct {
 	id      string
 	script  Script
-	modTime time.Time
 }
 
 // String is a stringer to return the module ID
@@ -37,10 +35,10 @@ func (d DirectiveScript) Run(ctx context.Context) error {
 		"directive": d,
 	})
 
-	// TODO: fix this. currently, mtime is only checked when modules are
-	// parsed. it should be moved to be checked during runtime.
-	recentThreshold, _ := time.ParseDuration("24h")
-	if float64(time.Now().Unix()-d.modTime.Unix()) < recentThreshold.Seconds() {
+	threshold, _ := time.ParseDuration("24h")
+	modTime := utils.GetFileModifiedTime(d.script.Path).Unix()
+	recent := time.Now().Unix() - modTime
+	if float64(recent) < threshold.Seconds() {
 		logger.Info("Directive recently modified, running now")
 
 		if err := d.script.Run(ctx); err != nil {
@@ -93,29 +91,12 @@ func (i *Inventory) ParseDirectives() error {
 	for _, file := range files {
 		if !file.IsDir() {
 			scriptPath := filepath.Join(path, file.Name())
-			info, err := file.Info()
-			if err != nil {
-				log.WithFields(log.Fields{
-					"path":  scriptPath,
-					"error": err,
-				}).Error("Failed to get file info")
-
-				// inventory counts haven't been altered, no need to update here
-				metricInventoryReloadFailedTotal.With(prometheus.Labels{
-					"inventory": commonLabels["inventory"],
-					"component": commonLabels["component"],
-					"hostname":  commonLabels["hostname"],
-				}).Inc()
-
-				return err
-			}
 
 			dirScripts = append(dirScripts, DirectiveScript{
 				script: Script{
 					ID:   file.Name(),
 					Path: scriptPath,
 				},
-				modTime: info.ModTime(),
 			})
 		}
 	}

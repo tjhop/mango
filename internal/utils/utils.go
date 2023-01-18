@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -34,6 +35,19 @@ func GetFilesInDirectory(path string) ([]fs.DirEntry, error) {
 	}
 
 	return files, nil
+}
+
+// GetFileModifiedTime accepts a path to a file/directory. It returns the
+// file's last modified time, or an empty time literal in the event of failure
+// (read: if this function fails, it returns the epoch timestamp -- use
+// `time.IsZero()` to check if return is the zero time instant for failures).
+func GetFileModifiedTime(path string) time.Time {
+    file, err := os.Stat(path)
+    if err != nil {
+	return time.Time{}
+    }
+
+    return file.ModTime()
 }
 
 // IsFileExecutableToAll accepts an `fs.DirEntry` struct and
