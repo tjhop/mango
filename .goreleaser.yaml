@@ -10,6 +10,23 @@ builds:
       - -X github.com/tjhop/mango/internal/config.Commit={{ .Commit }}
     binary: mango
     main: './cmd/mango'
+dockers:
+  # build latest and specific tag version images
+  - image_templates:
+      - "ghcr.io/tjhop/{{.ProjectName}}:{{ .Tag }}"
+      - "ghcr.io/tjhop/{{.ProjectName}}:latest"
+    goos: linux
+    goarch: amd64
+    use: docker
+    build_flag_templates:
+    - "--pull"
+    - "--label=org.opencontainers.image.created={{.Date}}"
+    - "--label=org.opencontainers.image.title={{.ProjectName}}"
+    - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+    - "--label=org.opencontainers.image.version={{.Version}}"
+    - "--label=org.opencontainers.image.source=https://github.com/tjhop/mango"
+    - "--label=org.opencontainers.image.description='Configuration management tool written in Go'"
+    - "--label=org.opencontainers.image.licenses=MIT"
 archives:
   - replacements:
       darwin: Darwin
