@@ -231,15 +231,15 @@ func (i *Inventory) GetModulesForRole(role string) []Module {
 		}
 	}
 
-	return mods
+	return filterDuplicateModules(mods)
 }
 
 // GetModulesForHost returns a slice of Modules, containing all of the
 // Modules for the specified host system (including modules in all assigned roles, as well as ad-hoc modules).
 func (i *Inventory) GetModulesForHost(host string) []Module {
-	if h, found := i.GetHost(host); found {
-		mods := []Module{}
+	mods := []Module{}
 
+	if h, found := i.GetHost(host); found {
 		// get modules from all roles host is assigned
 		for _, r := range h.roles {
 			mods = append(mods, i.GetModulesForRole(r)...)
@@ -251,18 +251,9 @@ func (i *Inventory) GetModulesForHost(host string) []Module {
 				mods = append(mods, mod)
 			}
 		}
-
-		// TODO: fix this.
-		// it's possible that a module may be defined in more than one
-		// role, or ad-hoc assigned to a host that also has it in a
-		// role.As such, it's possible some modules may have duplicate
-		// entries. Modules _should_ be idempotent so this _should not_
-		// be an issue. However, this should be fixed to filter the
-		// returned modules for duplicates.
-		return mods
 	}
 
-	return nil
+	return filterDuplicateModules(mods)
 }
 
 // GetModulesForSelf returns a slice of Modules, containing all of the
@@ -352,4 +343,21 @@ func (i *Inventory) GetVariablesForHost(host string) VariableMap {
 func (i *Inventory) GetVariablesForSelf() VariableMap {
 	me := self.GetHostname()
 	return i.GetVariablesForHost(me)
+}
+
+func filterDuplicateModules(input []Module) []Module {
+	modMap := make(map[string]Module)
+
+	for _, m := range input {
+		if _, found := modMap[m.String()]; !found {
+			modMap[m.String()] = m
+		}
+	}
+
+	output := make([]Module, len(modMap))
+	for _, mod := range modMap {
+		output = append(output, mod)
+	}
+
+	return output
 }
