@@ -100,7 +100,7 @@ func mango() {
 	}).Info("Initializing mango inventory")
 	inv := inventory.NewInventory(inventoryPath)
 	// reload inventory
-	inv.Reload()
+	inv.Reload(ctx)
 	log.WithFields(log.Fields{
 		"enrolled": inv.IsEnrolled(),
 	}).Info("Host enrollment check")
@@ -111,7 +111,7 @@ func mango() {
 	}).Info("Initializing mango manager")
 	mgr := manager.NewManager(me)
 	// reload manager
-	mgr.Reload(inv)
+	mgr.Reload(ctx, inv)
 
 	reloadCh := make(chan struct{})
 	var g run.Group

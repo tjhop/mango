@@ -1,6 +1,7 @@
 package inventory
 
 import (
+	"context"
 	"strings"
 
 	"github.com/tjhop/mango/internal/utils"
@@ -15,7 +16,7 @@ type VariableMap map[string]string
 // ParseVariables reads the file at the given `path` and parses each line into
 // a map of variables. The key of the map is the variable name, and the value is
 // the value of the variable. If values are quoted, the quotes are removed.
-func ParseVariables(path string) (VariableMap, error) {
+func ParseVariables(ctx context.Context, path string) (VariableMap, error) {
 	vars := make(VariableMap)
 	lines := utils.ReadFileLines(path)
 

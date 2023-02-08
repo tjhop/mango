@@ -1,6 +1,7 @@
 package inventory
 
 import (
+	"context"
 	"path/filepath"
 	"time"
 
@@ -36,7 +37,7 @@ func (h Host) String() string { return h.id }
 // folders within this directory, and then parses each directory into a Host struct.
 // Each host folder is expected to contain files for `apply`, `variables`, and `test`,
 // which get set to the corresponding fields in the Host struct for the host.
-func (i *Inventory) ParseHosts() error {
+func (i *Inventory) ParseHosts(ctx context.Context) error {
 	commonLabels := prometheus.Labels{
 		"inventory": i.inventoryPath,
 		"component": "hosts",

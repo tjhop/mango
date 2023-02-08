@@ -61,7 +61,7 @@ func (d DirectiveScript) Run(ctx context.Context) error {
 // adds them to the inventory if they are executable. It also records the last modified time
 // (mtime) of the file, so that the we can determine if it's been modified within the last 24h
 // when we attempt to actually apply the directive scripts.
-func (i *Inventory) ParseDirectives() error {
+func (i *Inventory) ParseDirectives(ctx context.Context) error {
 	commonLabels := prometheus.Labels{
 		"inventory": i.inventoryPath,
 		"component": "directives",

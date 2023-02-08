@@ -31,7 +31,7 @@ func NewManager(id string) *Manager {
 
 // Reload accepts a struct that fulfills the inventory.Store interface and
 // reloads the hosts modules/directives from the inventory
-func (m *Manager) Reload(inv inventory.Store) {
+func (m *Manager) Reload(ctx context.Context, inv inventory.Store) {
 	m.logger.Info("Reloading items from inventory")
 
 	modules := inv.GetModulesForSelf()

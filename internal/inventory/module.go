@@ -71,7 +71,7 @@ func (m Module) Run(ctx context.Context) error {
 // folders within this directory, and then parses each directory into a Module struct.
 // Each module folder is expected to contain files for `apply`, `variables`, and `test`,
 // which get set to the corresponding fields in the Module struct for the module.
-func (i *Inventory) ParseModules() error {
+func (i *Inventory) ParseModules(ctx context.Context) error {
 	commonLabels := prometheus.Labels{
 		"inventory": i.inventoryPath,
 		"component": "modules",

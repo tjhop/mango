@@ -1,6 +1,7 @@
 package inventory
 
 import (
+	"context"
 	"path/filepath"
 	"time"
 
@@ -25,7 +26,7 @@ func (r Role) String() string { return r.id }
 // ParseRoles searches for directories in the provided path. Each directory is
 // treated as a role -- each role is checked for the appropriate `modules` file to
 // parse for the list of modules for the role.
-func (i *Inventory) ParseRoles() error {
+func (i *Inventory) ParseRoles(ctx context.Context) error {
 	commonLabels := prometheus.Labels{
 		"inventory": i.inventoryPath,
 		"component": "roles",

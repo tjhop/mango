@@ -1,6 +1,7 @@
 package inventory
 
 import (
+	"context"
 	"path/filepath"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -80,7 +81,7 @@ func (i *Inventory) String() string { return i.inventoryPath }
 // features are introduced.
 type Store interface {
 	// Inventory management functions
-	Reload()
+	Reload(ctx context.Context)
 
 	// Enrollment Checks
 	IsEnrolled() bool
@@ -130,32 +131,32 @@ func NewInventory(path string) *Inventory {
 // - Roles
 // - Modules
 // - Directives
-func (i *Inventory) Reload() {
+func (i *Inventory) Reload(ctx context.Context) {
 	// populate the inventory
 
 	// parse hosts
-	if err := i.ParseHosts(); err != nil {
+	if err := i.ParseHosts(ctx); err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
 		}).Error("Failed to reload hosts")
 	}
 
 	// parse roles
-	if err := i.ParseRoles(); err != nil {
+	if err := i.ParseRoles(ctx); err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
 		}).Error("Failed to reload roles")
 	}
 
 	// parse modules
-	if err := i.ParseModules(); err != nil {
+	if err := i.ParseModules(ctx); err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
 		}).Error("Failed to reload modules")
 	}
 
 	// parse directives
-	if err := i.ParseDirectives(); err != nil {
+	if err := i.ParseDirectives(ctx); err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
 		}).Error("Failed to reload directives")
@@ -163,7 +164,7 @@ func (i *Inventory) Reload() {
 
 	// parse global variables
 	globalVars := filepath.Join(i.inventoryPath, "variables")
-	vars, err := ParseVariables(globalVars)
+	vars, err := ParseVariables(ctx, globalVars)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"file":  globalVars,
