@@ -73,7 +73,7 @@ This project uses [goreleaser](https://goreleaser.com/) to manage builds.
 To manually make a build for local development/testing, you can clone this project and run:
 
 ```bash
-goreleaser build --rm-dist --single-target --snapshot
+goreleaser build --clean --single-target --snapshot
 ```
 
 ### Testing
@@ -81,7 +81,7 @@ goreleaser build --rm-dist --single-target --snapshot
 A [skeleton inventory ](./test/mockup/inventory/) is included for use with testing:
 
 ```bash
-goreleaser build --rm-dist --single-target --snapshot
+goreleaser build --clean --single-target --snapshot
 ./dist/mango_linux_amd64_v1/mango --inventory.path ./test/mockup/inventory/ --logging.level debug
 ```
 

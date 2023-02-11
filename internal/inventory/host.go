@@ -3,6 +3,7 @@ package inventory
 import (
 	"context"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/tjhop/mango/internal/self"
@@ -13,20 +14,20 @@ import (
 )
 
 // Host contains fields that represent a given host in the inventory.
-// - ID: string idenitfying the host (generally the hostname of the system)
-// - Roles: a slice of roles that are applied to this host
-// - Modules: a slice of ad-hoc module names applied to this host
-// - Variables: variables for the host, in key, value form
+// - id: string idenitfying the host (generally the hostname of the system)
+// - roles: a slice of roles that are applied to this host
+// - modules: a slice of ad-hoc module names applied to this host
+// - variables: path to the variables file for this host, if present
 type Host struct {
 	id        string
 	modules   []string
 	roles     []string
-	variables VariableMap
+	variables string
 }
 
 // GetVariables returns a VariableMap of variables
 // assigned to this host
-func (h Host) GetVariables() VariableMap {
+func (h Host) GetVariables() string {
 	return h.variables
 }
 
@@ -87,7 +88,7 @@ func (i *Inventory) ParseHosts(ctx context.Context) error {
 			host := Host{id: hostDir.Name()}
 
 			for _, hostFile := range hostFiles {
-				if !hostFile.IsDir() {
+				if !hostFile.IsDir() && !strings.HasPrefix(hostFile.Name(), ".") {
 					fileName := hostFile.Name()
 					switch fileName {
 					case "roles":
@@ -125,16 +126,7 @@ func (i *Inventory) ParseHosts(ctx context.Context) error {
 
 						host.modules = mods
 					case "variables":
-						varsPath := filepath.Join(hostPath, "variables")
-						vars, err := ParseVariables(varsPath)
-						if err != nil {
-							log.WithFields(log.Fields{
-								"file":  varsPath,
-								"error": err,
-							}).Error("Failed to parse variables for module")
-						}
-
-						host.variables = vars
+						host.variables = filepath.Join(hostPath, "variables")
 					default:
 						log.WithFields(log.Fields{
 							"file": fileName,

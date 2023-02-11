@@ -10,8 +10,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/fsnotify/fsnotify"
-	"github.com/mitchellh/go-homedir"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -48,7 +46,7 @@ var (
 	)
 )
 
-func mango() {
+func mango(inventoryPath string) {
 	logger := log.WithFields(log.Fields{
 		"version":    config.Version,
 		"build_date": config.BuildDate,
@@ -94,7 +92,6 @@ func mango() {
 	go metrics.ExportPrometheusMetrics()
 
 	// load inventory
-	inventoryPath := viper.GetString("inventory.path")
 	log.WithFields(log.Fields{
 		"path": inventoryPath,
 	}).Info("Initializing mango inventory")
@@ -140,9 +137,6 @@ func mango() {
 
 					// close the reload -> manager run signal channel
 					close(reloadCh)
-
-					// catch-all cleanup work
-					cleanup()
 				}
 
 				return nil
@@ -167,8 +161,8 @@ func mango() {
 						}).Info("Caught signal, reloading configuration and inventory")
 
 						// reload inventory and manager
-						inv.Reload()
-						mgr.Reload(inv)
+						inv.Reload(ctx)
+						mgr.Reload(ctx, inv)
 
 						// signal the manager runner
 						// goroutine that a reload
@@ -219,25 +213,35 @@ func mango() {
 	}
 
 	logger.Info("Mango server ready")
+	defer func() {
+		cleanup()
+		logger.Info("Mango server finished")
+	}()
 	if err := g.Run(); err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
 		}).Error("Mango server received error")
 	}
-	logger.Info("Mango server finished")
 }
 
 // cleanup contains anything that needs to be run prior to mango gracefully
 // shutting down
 func cleanup() {
-	os.RemoveAll(viper.GetString("mango.temp-dir"))
+	log.Debug("Cleaning up prior to exit")
+
+	tmpDir := viper.GetString("mango.temp-dir")
+	if err := os.RemoveAll(tmpDir); err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"path":  tmpDir,
+		}).Error("Failed to remove temporary directory")
+	}
 }
 
 func main() {
 	// prep and parse flags
-	flag.String("config", "", "Path to configuration file to use")
-	flag.String("inventory.path", "", "Path to mango configuration inventory")
-	flag.String("logging.level", "", "Logging level may be one of: trace, debug, info, warning, error, fatal and panic")
+	flag.StringP("inventory.path", "i", "", "Path to mango configuration inventory")
+	flag.StringP("logging.level", "l", "", "Logging level may be one of: trace, debug, info, warning, error, fatal and panic")
 
 	flag.Parse()
 	if err := viper.BindPFlags(flag.CommandLine); err != nil {
@@ -245,48 +249,6 @@ func main() {
 			"error": err,
 		}).Fatal("Failed to parse command line flags")
 	}
-
-	// prep and read config file
-	home, err := homedir.Dir()
-	if err != nil {
-		// log and continue on, home directory retreival doesn't have to be a hard failure
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to retreive home directory when checking for configuration files")
-	}
-
-	configFile := viper.GetString("config")
-	viper.SetConfigType("yaml")
-	if configFile != "" {
-		// config file set by flag, use that
-		viper.SetConfigFile(configFile)
-	} else {
-		viper.SetConfigName(programName)
-		viper.AddConfigPath(filepath.Join("/etc", programName))
-
-		// if home dir was successfully retrieved, add XDG config in home dir
-		if home != "" {
-			viper.AddConfigPath(filepath.Join(home, ".config", programName))
-		}
-		viper.AddConfigPath(".")
-	}
-
-	log.WithFields(log.Fields{
-		"config": viper.ConfigFileUsed(),
-	}).Info("Mango config file in use")
-
-	if err := viper.ReadInConfig(); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Fatal("Failed to read configuration file")
-	}
-
-	viper.OnConfigChange(func(e fsnotify.Event) {
-		log.WithFields(log.Fields{
-			"config": e.Name,
-		}).Info("Mango config reloaded")
-	})
-	viper.WatchConfig()
 
 	// set log level based on config
 	level, err := log.ParseLevel(viper.GetString("logging.level"))
@@ -311,6 +273,12 @@ func main() {
 		log.Infof("Log level set to: %s", level)
 	}
 
+	// ensure inventory is set
+	inventoryPath := viper.GetString("inventory.path")
+	if inventoryPath == "" {
+		log.Fatal("Inventory not defined, please set `inventory.path` flag or config variable to the path to the inventory")
+	}
+
 	// run mango daemon
-	mango()
+	mango(inventoryPath)
 }

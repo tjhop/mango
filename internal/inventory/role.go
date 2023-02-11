@@ -3,6 +3,7 @@ package inventory
 import (
 	"context"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/tjhop/mango/internal/self"
@@ -76,7 +77,7 @@ func (i *Inventory) ParseRoles(ctx context.Context) error {
 			role := Role{id: rolePath}
 
 			for _, roleFile := range roleFiles {
-				if !roleFile.IsDir() {
+				if !roleFile.IsDir() && !strings.HasPrefix(roleFile.Name(), ".") {
 					fileName := roleFile.Name()
 					switch fileName {
 					case "modules":

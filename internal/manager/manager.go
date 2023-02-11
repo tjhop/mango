@@ -2,22 +2,137 @@ package manager
 
 import (
 	"context"
+	"fmt"
+	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	log "github.com/sirupsen/logrus"
+	"mvdan.cc/sh/v3/interp"
 
 	"github.com/tjhop/mango/internal/inventory"
+	"github.com/tjhop/mango/internal/shell"
 )
+
+var (
+	// prometheus metrics
+
+	// module run stat metrics
+	metricManagerModuleRunTimestamp = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "mango_manager_module_run_seconds",
+			Help: "Timestamp of the last run of the given module, in seconds since the epoch",
+		},
+		[]string{"module", "script"},
+	)
+
+	metricManagerModuleRunSuccessTimestamp = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "mango_manager_module_run_success_seconds",
+			Help: "Timestamp of the last successful run of the given module, in seconds since the epoch",
+		},
+		[]string{"module", "script"},
+	)
+
+	metricManagerModuleRunDuration = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "mango_manager_module_run_duration_seconds",
+			Help: "Approximately how long it took for the module to run, in seconds",
+		},
+		[]string{"module", "script"},
+	)
+
+	metricManagerModuleRunTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "mango_manager_module_run_total",
+			Help: "A count of the total number of runs that have been performed to manage the module",
+		},
+		[]string{"module", "script"},
+	)
+
+	metricManagerModuleRunFailedTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "mango_manager_module_run_failed_total",
+			Help: "A count of the total number of failed runs that have been performed to manage the module",
+		},
+		[]string{"module", "script"},
+	)
+
+	// directive run stat metrics
+	metricManagerDirectiveRunTimestamp = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "mango_manager_directive_run_seconds",
+			Help: "Timestamp of the last run of the given directive, in seconds since the epoch",
+		},
+		[]string{"directive"},
+	)
+
+	metricManagerDirectiveRunSuccessTimestamp = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "mango_manager_directive_run_success_seconds",
+			Help: "Timestamp of the last successful run of the given directive, in seconds since the epoch",
+		},
+		[]string{"directive"},
+	)
+
+	metricManagerDirectiveRunDuration = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "mango_manager_directive_run_duration_seconds",
+			Help: "Approximately how long it took for the directive to run, in seconds",
+		},
+		[]string{"directive"},
+	)
+
+	metricManagerDirectiveRunTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "mango_manager_directive_run_total",
+			Help: "A count of the total number of runs that have been performed to manage the directive",
+		},
+		[]string{"directive"},
+	)
+
+	metricManagerDirectiveRunFailedTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "mango_manager_directive_run_failed_total",
+			Help: "A count of the total number of failed runs that have been performed to manage the directive",
+		},
+		[]string{"directive"},
+	)
+)
+
+// Module is a wrapper struct that encapsulates an inventory.Module, and
+// exports a `Variables`, which is a `shell.VariableMap` of the expanded
+// variables for the given module
+type Module struct {
+	m         inventory.Module
+	Variables shell.VariableMap
+}
+
+func (mod Module) String() string { return mod.m.ID }
+
+// threshold, _ := time.ParseDuration("24h")
+// modTime := utils.GetFileModifiedTime(d.script.Path).Unix()
+// recent := time.Now().Unix() - modTime
+// if float64(recent) < threshold.Seconds() {
+
+// Directive is a wrapper struct that encapsulates an inventory.Directive
+type Directive struct {
+	d inventory.Directive
+}
+
+func (dir Directive) String() string { return dir.d.ID }
 
 // Manager contains fields related to track and execute runnable modules and statistics.
 type Manager struct {
 	id            string
 	logger        *log.Entry
-	modules       []inventory.Module
-	directives    []inventory.DirectiveScript
-	hostVariables inventory.VariableMap
+	modules       []Module
+	directives    []Directive
+	hostVariables shell.VariableMap
+	shellRunner   *interp.Runner // TODO: is this even used? I think I made it all lib references to `shell`
 }
 
-func (m *Manager) String() string { return m.id }
+func (mgr *Manager) String() string { return mgr.id }
 
 // NewManager returns a new Manager struct instantiated with the given ID
 func NewManager(id string) *Manager {
@@ -29,70 +144,213 @@ func NewManager(id string) *Manager {
 	}
 }
 
-// Reload accepts a struct that fulfills the inventory.Store interface and
-// reloads the hosts modules/directives from the inventory
-func (m *Manager) Reload(ctx context.Context, inv inventory.Store) {
-	m.logger.Info("Reloading items from inventory")
+// ReloadDirectives reloads the manager's directives from the specified inventory.
+func (mgr *Manager) ReloadDirectives(ctx context.Context, inv inventory.Store) {
+	// get all directives (directives are applied to all systems if modtime threshold is passed)
+	rawDirScripts := inv.GetDirectivesForSelf()
+	dirScripts := make([]Directive, len(rawDirScripts))
+	for i, ds := range rawDirScripts {
+		dirScripts[i] = Directive{d: ds}
+	}
 
-	modules := inv.GetModulesForSelf()
-	m.logger.WithFields(log.Fields{
-		"old": m.modules,
+	mgr.logger.WithFields(log.Fields{
+		"old": mgr.directives,
+		"new": dirScripts,
+	}).Debug("Reloading directives from inventory")
+
+	mgr.directives = dirScripts
+}
+
+// ReloadModules reloads the manager's modules from the specified inventory.
+func (mgr *Manager) ReloadModules(ctx context.Context, inv inventory.Store) {
+	// get all modules from inventory applicable to this system
+	rawMods := inv.GetModulesForSelf()
+	modules := make([]Module, len(rawMods))
+	for i, mod := range rawMods {
+		newMod := Module{m: mod}
+		newModVars := make(shell.VariableMap)
+
+		// if the module has a variables file set, source it and store
+		// the expanded variables
+		if mod.Variables != "" {
+			vars, err := shell.SourceFile(ctx, mod.Variables)
+			if err != nil {
+				mgr.logger.WithFields(log.Fields{
+					"path":  mod.Variables,
+					"error": err,
+				}).Error("Failed to expand module variables")
+			} else {
+				varKeys := make([]string, len(vars))
+				for k := range vars {
+					varKeys = append(varKeys, k)
+				}
+				mgr.logger.WithFields(log.Fields{
+					"variables": varKeys,
+				}).Debug("Expanding module variables")
+				newModVars = vars
+			}
+		} else {
+			mgr.logger.Debug("No module variables")
+		}
+
+		newMod.Variables = newModVars
+		modules[i] = newMod
+	}
+
+	mgr.logger.WithFields(log.Fields{
+		"old": mgr.modules,
 		"new": modules,
 	}).Debug("Reloading modules from inventory")
-	m.modules = modules
 
-	directives := inv.GetDirectivesForSelf()
-	m.logger.WithFields(log.Fields{
-		"old": m.directives,
-		"new": directives,
-	}).Debug("Reloading directives from inventory")
-	m.directives = directives
+	mgr.modules = modules
+}
 
-	vars := inv.GetVariablesForSelf()
-	varKeys := make([]string, len(vars))
-	for k := range vars {
-		varKeys = append(varKeys, k)
+// Reload accepts a struct that fulfills the inventory.Store interface and
+// reloads the hosts modules/directives from the inventory
+func (mgr *Manager) Reload(ctx context.Context, inv inventory.Store) {
+	mgr.logger.Info("Reloading items from inventory")
+
+	// reload modules
+	mgr.ReloadModules(ctx, inv)
+
+	// reload directives
+	mgr.ReloadDirectives(ctx, inv)
+
+	// ensure vars are only on manager reload, to avoid needlessly sourcing
+	// variables potentially multiple times during a run (which is
+	// triggered directly after a reload of data from inventory)
+	hostVarsPath := inv.GetVariablesForSelf()
+	if hostVarsPath != "" {
+		vars, err := shell.SourceFile(ctx, hostVarsPath)
+		if err != nil {
+			mgr.logger.WithFields(log.Fields{
+				"path": hostVarsPath,
+			}).Error("Failed to reload host variables")
+		} else {
+			varKeys := make([]string, len(vars))
+			for k := range vars {
+				varKeys = append(varKeys, k)
+			}
+			mgr.logger.WithFields(log.Fields{
+				"variables": varKeys,
+			}).Debug("Reloading host variables")
+			mgr.hostVariables = vars
+		}
+	} else {
+		mgr.logger.Debug("No host variables")
 	}
-	m.logger.WithFields(log.Fields{
-		"variables": varKeys,
-	}).Debug("Reloading host variables")
-	m.hostVariables = vars
+}
+
+// RunDirective is responsible for actually executing a module, using the `shell`
+// package.
+func (mgr *Manager) RunDirective(ctx context.Context, ds Directive) error {
+	applyStart := time.Now()
+	labels := prometheus.Labels{
+		"directive": ds.d.ID,
+	}
+	metricManagerDirectiveRunTimestamp.With(labels).Set(float64(applyStart.Unix()))
+
+	// TODO: are host vars allowed in directives?
+	err := shell.Run(ctx, ds.d.ID, nil, nil)
+
+	// update metrics regardless of error, so do them before handling error
+	applyEnd := time.Since(applyStart)
+	metricManagerDirectiveRunSuccessTimestamp.With(labels).Set(float64(applyStart.Unix()))
+	metricManagerDirectiveRunDuration.With(labels).Set(float64(applyEnd))
+	metricManagerDirectiveRunTotal.With(labels).Inc()
+
+	if err != nil {
+		metricManagerDirectiveRunFailedTotal.With(labels).Inc()
+		return fmt.Errorf("Failed to apply directive: %v", err)
+	}
+
+	return nil
 }
 
 // RunDirectives runs all of the directive scripts being managed by the Manager
-func (m *Manager) RunDirectives(ctx context.Context) {
-	if len(m.directives) <= 0 {
-		m.logger.Info("No Directives to run")
+func (mgr *Manager) RunDirectives(ctx context.Context) {
+	if len(mgr.directives) <= 0 {
+		mgr.logger.Info("No Directives to run")
 		return
 	}
 
-	for _, d := range m.directives {
-		m.logger.WithFields(log.Fields{
+	for _, d := range mgr.directives {
+		mgr.logger.WithFields(log.Fields{
 			"path": d,
 		}).Info("Running directive")
-
-		if err := d.Run(ctx); err != nil {
-			m.logger.WithFields(log.Fields{
-				"path": d,
-			}).Error("Directive failed")
-		}
 	}
 }
 
+// RunModule is responsible for actually executing a module, using the `shell`
+// package.
+func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
+	if mod.m.Apply == "" {
+		// TODO: convert to const errs?
+		return fmt.Errorf("Module has no apply script")
+	}
+
+	labels := prometheus.Labels{
+		"module": mod.m.ID,
+	}
+
+	if mod.m.Test == "" {
+		mgr.logger.WithFields(log.Fields{
+			"path": mod.m.ID,
+		}).Warn("Module has no test script, proceeding to apply")
+	} else {
+		testStart := time.Now()
+		labels["run"] = "test"
+		metricManagerModuleRunTimestamp.With(labels).Set(float64(testStart.Unix()))
+
+		if err := shell.Run(ctx, mod.m.Test, mgr.hostVariables, mod.Variables); err != nil {
+			// if test script for a module fails, log a warning for user and continue with apply
+			metricManagerModuleRunFailedTotal.With(labels).Inc()
+			mgr.logger.WithFields(log.Fields{
+				"path": mod.m.Test,
+			}).Warn("Failed module test, running apply to get system to desired state")
+		} else {
+			metricManagerModuleRunTotal.With(labels).Inc()
+			metricManagerModuleRunSuccessTimestamp.With(labels).Set(float64(testStart.Unix()))
+		}
+
+		testEnd := time.Since(testStart)
+		metricManagerModuleRunDuration.With(labels).Set(float64(testEnd))
+	}
+
+	applyStart := time.Now()
+	labels["run"] = "apply"
+	metricManagerModuleRunTimestamp.With(labels).Set(float64(applyStart.Unix()))
+
+	err := shell.Run(ctx, mod.m.Apply, mgr.hostVariables, mod.Variables)
+
+	// update metrics regardless of error, so do them before handling error
+	applyEnd := time.Since(applyStart)
+	metricManagerModuleRunSuccessTimestamp.With(labels).Set(float64(applyStart.Unix()))
+	metricManagerModuleRunDuration.With(labels).Set(float64(applyEnd))
+	metricManagerModuleRunTotal.With(labels).Inc()
+
+	if err != nil {
+		metricManagerModuleRunFailedTotal.With(labels).Inc()
+		return fmt.Errorf("Failed to apply module: %v", err)
+	}
+
+	return nil
+}
+
 // RunModules runs all of the modules being managed by the Manager
-func (m *Manager) RunModules(ctx context.Context) {
-	if len(m.modules) <= 0 {
-		m.logger.Info("No Modules to run")
+func (mgr *Manager) RunModules(ctx context.Context) {
+	if len(mgr.modules) <= 0 {
+		mgr.logger.Info("No Modules to run")
 		return
 	}
 
-	for _, mod := range m.modules {
-		m.logger.WithFields(log.Fields{
+	for _, mod := range mgr.modules {
+		mgr.logger.WithFields(log.Fields{
 			"path": mod,
 		}).Info("Running Module")
 
-		if err := mod.Run(ctx); err != nil {
-			m.logger.WithFields(log.Fields{
+		if err := mgr.RunModule(ctx, mod); err != nil {
+			mgr.logger.WithFields(log.Fields{
 				"path": mod,
 			}).Error("Module failed")
 		}
@@ -101,7 +359,7 @@ func (m *Manager) RunModules(ctx context.Context) {
 
 // RunAll runs all of the Directives being managed by the Manager, followed by
 // all of the Modules being managed by the Manager.
-func (m *Manager) RunAll(ctx context.Context) {
-	m.RunDirectives(ctx)
-	m.RunModules(ctx)
+func (mgr *Manager) RunAll(ctx context.Context) {
+	mgr.RunDirectives(ctx)
+	mgr.RunModules(ctx)
 }

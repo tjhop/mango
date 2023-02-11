@@ -42,12 +42,12 @@ func GetFilesInDirectory(path string) ([]fs.DirEntry, error) {
 // (read: if this function fails, it returns the epoch timestamp -- use
 // `time.IsZero()` to check if return is the zero time instant for failures).
 func GetFileModifiedTime(path string) time.Time {
-    file, err := os.Stat(path)
-    if err != nil {
-	return time.Time{}
-    }
+	file, err := os.Stat(path)
+	if err != nil {
+		return time.Time{}
+	}
 
-    return file.ModTime()
+	return file.ModTime()
 }
 
 // IsFileExecutableToAll accepts an `fs.DirEntry` struct and

@@ -60,13 +60,13 @@ var (
 // - Hosts: a slice of `Host` structs for each parsed host
 // - Modules: a slice of `Module` structs for each parsed module
 // - Roles: a slice of `Role` structs for each parsed role
-// - Directives: a slice of `DirectiveScript` structs, containing for each parsed directive
+// - Directives: a slice of `Directive` structs, containing for each parsed directive
 type Inventory struct {
 	inventoryPath string
 	hosts         []Host
 	modules       []Module
 	roles         []Role
-	directives    []DirectiveScript
+	directives    []Directive
 }
 
 // String is a stringer to return the inventory path
@@ -86,7 +86,7 @@ type Store interface {
 	IsEnrolled() bool
 
 	// General Inventory Getters
-	GetDirectives() []DirectiveScript
+	GetDirectives() []Directive
 	GetHosts() []Host
 	GetModules() []Module
 	GetRoles() []Role
@@ -97,17 +97,17 @@ type Store interface {
 	GetRole(role string) (Role, bool)
 
 	// Checks by host
-	GetDirectivesForHost(host string) []DirectiveScript
+	GetDirectivesForHost(host string) []Directive
 	GetModulesForRole(role string) []Module
 	GetModulesForHost(host string) []Module
 	GetRolesForHost(host string) []Role
-	GetVariablesForHost(host string) VariableMap
+	GetVariablesForHost(host string) string
 
 	// Self checks
-	GetDirectivesForSelf() []DirectiveScript
+	GetDirectivesForSelf() []Directive
 	GetModulesForSelf() []Module
 	GetRolesForSelf() []Role
-	GetVariablesForSelf() VariableMap
+	GetVariablesForSelf() string
 }
 
 // NewInventory parses the files/directories in the provided path
@@ -118,7 +118,7 @@ func NewInventory(path string) *Inventory {
 		hosts:         []Host{},
 		modules:       []Module{},
 		roles:         []Role{},
-		directives:    []DirectiveScript{},
+		directives:    []Directive{},
 	}
 
 	return &i
@@ -169,22 +169,22 @@ func (i *Inventory) IsEnrolled() bool {
 	return found
 }
 
-// GetDirectives returns a copy of the inventory's slice of DirectiveScript
-func (i *Inventory) GetDirectives() []DirectiveScript {
+// GetDirectives returns a copy of the inventory's slice of Directive
+func (i *Inventory) GetDirectives() []Directive {
 	return i.directives
 }
 
-// GetDirectivesForHost returns a copy of the inventory's slice of DirectiveScript.
+// GetDirectivesForHost returns a copy of the inventory's slice of Directive.
 // Since directives are applied to all hosts, this internally just calls
 // `inventory.GetDirectives()`
-func (i *Inventory) GetDirectivesForHost(host string) []DirectiveScript {
+func (i *Inventory) GetDirectivesForHost(host string) []Directive {
 	return i.GetDirectives()
 }
 
-// GetDirectivesForSelf returns a copy of the inventory's slice of DirectiveScript.
+// GetDirectivesForSelf returns a copy of the inventory's slice of Directive.
 // Since directives are applied to all hosts, this internally just calls
 // `inventory.GetDirectives()`
-func (i *Inventory) GetDirectivesForSelf() []DirectiveScript {
+func (i *Inventory) GetDirectivesForSelf() []Directive {
 	return i.GetDirectives()
 }
 
@@ -193,7 +193,7 @@ func (i *Inventory) GetDirectivesForSelf() []DirectiveScript {
 // in the inventory.
 func (i *Inventory) GetModule(module string) (Module, bool) {
 	for _, m := range i.modules {
-		if filepath.Base(m.id) == module {
+		if filepath.Base(m.ID) == module {
 			return m, true
 		}
 	}
@@ -310,21 +310,21 @@ func (i *Inventory) GetHost(host string) (Host, bool) {
 	return Host{}, false
 }
 
-// GetVariablesForHost returns a copy of the variable map for the system
-// `host`, or nil if the host was not found.
-func (i *Inventory) GetVariablesForHost(host string) VariableMap {
+// GetVariablesForHost returns the path of the host's variables file, or the
+// empty string if no host/variables file found
+func (i *Inventory) GetVariablesForHost(host string) string {
 	// TODO: eventually, merging variables need to be supported. override
 	// over should module variables supercede host variables.
 	if h, found := i.GetHost(host); found {
 		return h.variables
 	}
 
-	return nil
+	return ""
 }
 
 // GetVariablesForSelf returns a copy of the variable map for the running
 // system.
-func (i *Inventory) GetVariablesForSelf() VariableMap {
+func (i *Inventory) GetVariablesForSelf() string {
 	me := self.GetHostname()
 	return i.GetVariablesForHost(me)
 }

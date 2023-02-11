@@ -27,12 +27,6 @@ dockers:
     - "--label=org.opencontainers.image.source=https://github.com/tjhop/mango"
     - "--label=org.opencontainers.image.description='Configuration management tool written in Go'"
     - "--label=org.opencontainers.image.licenses=MIT"
-archives:
-  - replacements:
-      darwin: Darwin
-      linux: Linux
-      386: i386
-      amd64: x86_64
 checksum:
   name_template: 'checksums.txt'
 snapshot:
