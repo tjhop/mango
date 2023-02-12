@@ -67,7 +67,6 @@ type Inventory struct {
 	modules       []Module
 	roles         []Role
 	directives    []DirectiveScript
-	variables     VariableMap
 }
 
 // String is a stringer to return the inventory path
@@ -120,7 +119,6 @@ func NewInventory(path string) *Inventory {
 		modules:       []Module{},
 		roles:         []Role{},
 		directives:    []DirectiveScript{},
-		variables:     make(VariableMap),
 	}
 
 	return &i
@@ -161,18 +159,6 @@ func (i *Inventory) Reload(ctx context.Context) {
 			"error": err,
 		}).Error("Failed to reload directives")
 	}
-
-	// parse global variables
-	globalVars := filepath.Join(i.inventoryPath, "variables")
-	vars, err := ParseVariables(ctx, globalVars)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"file":  globalVars,
-			"error": err,
-		}).Error("Failed to parse global variables")
-	}
-
-	i.variables = vars
 }
 
 // IsEnrolled returns true is this system's hostname is found
@@ -328,10 +314,7 @@ func (i *Inventory) GetHost(host string) (Host, bool) {
 // `host`, or nil if the host was not found.
 func (i *Inventory) GetVariablesForHost(host string) VariableMap {
 	// TODO: eventually, merging variables need to be supported. override
-	// over should be:
-	// - global vars
-	// - module vars
-	// - host vars
+	// over should module variables supercede host variables.
 	if h, found := i.GetHost(host); found {
 		return h.variables
 	}
