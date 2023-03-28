@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tjhop/mango/internal/self"
 	"github.com/tjhop/mango/internal/utils"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -31,7 +30,7 @@ func (i *Inventory) ParseRoles(ctx context.Context) error {
 	commonLabels := prometheus.Labels{
 		"inventory": i.inventoryPath,
 		"component": "roles",
-		"hostname":  self.GetHostname(),
+		"hostname":  i.hostname,
 	}
 
 	path := filepath.Join(i.inventoryPath, "roles")

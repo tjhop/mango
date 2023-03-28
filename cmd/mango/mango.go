@@ -47,7 +47,7 @@ var (
 	)
 )
 
-func mango(inventoryPath string) {
+func mango(inventoryPath, hostname string) {
 	logger := log.WithFields(log.Fields{
 		"version":    config.Version,
 		"build_date": config.BuildDate,
@@ -59,8 +59,7 @@ func mango(inventoryPath string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	me := self.GetHostname()
-	metricMangoRuntimeInfo.With(prometheus.Labels{"hostname": me}).Set(1)
+	metricMangoRuntimeInfo.With(prometheus.Labels{"hostname": hostname}).Set(1)
 	metricServiceStartSeconds.Set(float64(time.Now().Unix()))
 
 	// create directory for persistent logs
@@ -96,7 +95,7 @@ func mango(inventoryPath string) {
 	log.WithFields(log.Fields{
 		"path": inventoryPath,
 	}).Info("Initializing mango inventory")
-	inv := inventory.NewInventory(inventoryPath)
+	inv := inventory.NewInventory(inventoryPath, hostname)
 	// reload inventory
 	inv.Reload(ctx)
 	log.WithFields(log.Fields{
@@ -105,9 +104,9 @@ func mango(inventoryPath string) {
 
 	// start manager
 	log.WithFields(log.Fields{
-		"manager_id": me,
+		"manager": hostname,
 	}).Info("Initializing mango manager")
-	mgr := manager.NewManager(me)
+	mgr := manager.NewManager(hostname)
 	// reload manager
 	mgr.Reload(ctx, inv)
 
@@ -244,6 +243,7 @@ func main() {
 	flag.StringP("inventory.path", "i", "", "Path to mango configuration inventory")
 	flag.StringP("logging.level", "l", "", "Logging level may be one of: [trace, debug, info, warning, error, fatal and panic]")
 	flag.String("logging.output", "logfmt", "Logging format may be one of: [logfmt, json]")
+	flag.String("hostname", "", "Custom hostname to use (default's to system hostname if unset)")
 
 	flag.Parse()
 	if err := viper.BindPFlags(flag.CommandLine); err != nil {
@@ -293,5 +293,9 @@ func main() {
 	}
 
 	// run mango daemon
-	mango(inventoryPath)
+	me := viper.GetString("hostname")
+	if me == "" {
+		me = self.GetHostname()
+	}
+	mango(inventoryPath, me)
 }

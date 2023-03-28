@@ -7,8 +7,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/tjhop/mango/internal/self"
 )
 
 var (
@@ -63,6 +61,7 @@ var (
 // - Directives: a slice of `Directive` structs, containing for each parsed directive
 type Inventory struct {
 	inventoryPath string
+	hostname      string
 	hosts         []Host
 	modules       []Module
 	roles         []Role
@@ -112,9 +111,10 @@ type Store interface {
 
 // NewInventory parses the files/directories in the provided path
 // to populate the inventory.
-func NewInventory(path string) *Inventory {
+func NewInventory(path, name string) *Inventory {
 	i := Inventory{
 		inventoryPath: path,
+		hostname:      name,
 		hosts:         []Host{},
 		modules:       []Module{},
 		roles:         []Role{},
@@ -164,8 +164,7 @@ func (i *Inventory) Reload(ctx context.Context) {
 // IsEnrolled returns true is this system's hostname is found
 // in the inventory's Host map, and false otherwise.
 func (i *Inventory) IsEnrolled() bool {
-	me := self.GetHostname()
-	_, found := i.GetHost(me)
+	_, found := i.GetHost(i.hostname)
 	return found
 }
 
@@ -246,8 +245,7 @@ func (i *Inventory) GetModulesForHost(host string) []Module {
 // GetModulesForSelf returns a slice of Modules, containing all of the
 // Modules for the running system from the inventory.
 func (i *Inventory) GetModulesForSelf() []Module {
-	me := self.GetHostname()
-	return i.GetModulesForHost(me)
+	return i.GetModulesForHost(i.hostname)
 }
 
 // GetRole returns a copy of the Role struct for a role identified
@@ -288,8 +286,7 @@ func (i *Inventory) GetRolesForHost(host string) []Role {
 // GetRolesForSelf returns a slice of Roles, containing all of the
 // Roles for the running system from the inventory.
 func (i *Inventory) GetRolesForSelf() []Role {
-	me := self.GetHostname()
-	return i.GetRolesForHost(me)
+	return i.GetRolesForHost(i.hostname)
 }
 
 // GetHosts returns a copy of the inventory's Hosts.
@@ -325,8 +322,7 @@ func (i *Inventory) GetVariablesForHost(host string) string {
 // GetVariablesForSelf returns a copy of the variable map for the running
 // system.
 func (i *Inventory) GetVariablesForSelf() string {
-	me := self.GetHostname()
-	return i.GetVariablesForHost(me)
+	return i.GetVariablesForHost(i.hostname)
 }
 
 func filterDuplicateModules(input []Module) []Module {
