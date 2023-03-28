@@ -121,7 +121,7 @@ func mango(inventoryPath, hostname string) {
 				select {
 				case sig := <-term:
 					log.WithFields(log.Fields{
-						"signal": sig,
+						"signal": sig.String(),
 					}).Warn("Caught signal, waiting for work to finish and terminating")
 
 					// cancel context, triggering a
@@ -157,7 +157,7 @@ func mango(inventoryPath, hostname string) {
 					select {
 					case sig := <-hup:
 						log.WithFields(log.Fields{
-							"signal": sig,
+							"signal": sig.String(),
 						}).Info("Caught signal, reloading configuration and inventory")
 
 						// reload inventory and manager
