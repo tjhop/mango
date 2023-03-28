@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 
@@ -241,13 +242,21 @@ func cleanup() {
 func main() {
 	// prep and parse flags
 	flag.StringP("inventory.path", "i", "", "Path to mango configuration inventory")
-	flag.StringP("logging.level", "l", "", "Logging level may be one of: trace, debug, info, warning, error, fatal and panic")
+	flag.StringP("logging.level", "l", "", "Logging level may be one of: [trace, debug, info, warning, error, fatal and panic]")
+	flag.String("logging.output", "logfmt", "Logging format may be one of: [logfmt, json]")
 
 	flag.Parse()
 	if err := viper.BindPFlags(flag.CommandLine); err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
 		}).Fatal("Failed to parse command line flags")
+	}
+
+	logOutputFormat := strings.ToLower(viper.GetString("logging.output"))
+	if logOutputFormat == "json" {
+		log.SetFormatter(&log.JSONFormatter{})
+	} else {
+		log.SetFormatter(&log.TextFormatter{})
 	}
 
 	// set log level based on config
@@ -261,13 +270,17 @@ func main() {
 		if level >= log.DebugLevel {
 			// enable func/file logging
 			log.SetReportCaller(true)
-			log.SetFormatter(&log.TextFormatter{
-				CallerPrettyfier: func(f *runtime.Frame) (string, string) {
-					fileName := filepath.Base(f.File)
-					funcName := filepath.Base(f.Function)
-					return fmt.Sprintf("%s()", funcName), fmt.Sprintf("%s:%d", fileName, f.Line)
-				},
-			})
+			logPrettyfierFunc := func(f *runtime.Frame) (string, string) {
+				fileName := filepath.Base(f.File)
+				funcName := filepath.Base(f.Function)
+				return fmt.Sprintf("%s()", funcName), fmt.Sprintf("%s:%d", fileName, f.Line)
+			}
+
+			if logOutputFormat == "json" {
+				log.SetFormatter(&log.JSONFormatter{CallerPrettyfier: logPrettyfierFunc})
+			} else {
+				log.SetFormatter(&log.TextFormatter{CallerPrettyfier: logPrettyfierFunc})
+			}
 		}
 
 		log.Infof("Log level set to: %s", level)
