@@ -153,11 +153,6 @@ func (mgr *Manager) ReloadDirectives(ctx context.Context, inv inventory.Store) {
 		dirScripts[i] = Directive{d: ds}
 	}
 
-	mgr.logger.WithFields(log.Fields{
-		"old": mgr.directives,
-		"new": dirScripts,
-	}).Debug("Reloading directives from inventory")
-
 	mgr.directives = dirScripts
 }
 
@@ -196,11 +191,6 @@ func (mgr *Manager) ReloadModules(ctx context.Context, inv inventory.Store) {
 		newMod.Variables = newModVars
 		modules[i] = newMod
 	}
-
-	mgr.logger.WithFields(log.Fields{
-		"old": mgr.modules,
-		"new": modules,
-	}).Debug("Reloading modules from inventory")
 
 	mgr.modules = modules
 }
