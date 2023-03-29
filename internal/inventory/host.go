@@ -53,11 +53,7 @@ func (i *Inventory) ParseHosts(ctx context.Context) error {
 		}).Error("Failed to get files in directory")
 
 		// inventory counts haven't been altered, no need to update here
-		metricInventoryReloadFailedTotal.With(prometheus.Labels{
-			"inventory": commonLabels["inventory"],
-			"component": commonLabels["component"],
-			"hostname":  commonLabels["hostname"],
-		}).Inc()
+		metricInventoryReloadFailedTotal.With(commonLabels).Inc()
 
 		return err
 	}
@@ -75,11 +71,7 @@ func (i *Inventory) ParseHosts(ctx context.Context) error {
 				}).Error("Failed to parse host files")
 
 				// inventory counts haven't been altered, no need to update here
-				metricInventoryReloadFailedTotal.With(prometheus.Labels{
-					"inventory": commonLabels["inventory"],
-					"component": commonLabels["component"],
-					"hostname":  commonLabels["hostname"],
-				}).Inc()
+				metricInventoryReloadFailedTotal.With(commonLabels).Inc()
 
 				return err
 			}
@@ -145,16 +137,8 @@ func (i *Inventory) ParseHosts(ctx context.Context) error {
 		numMyHosts = 1 // if you're enrolled, you're the host
 	}
 	metricInventoryApplicable.With(commonLabels).Set(float64(numMyHosts))
-	metricInventoryReloadSeconds.With(prometheus.Labels{
-		"inventory": commonLabels["inventory"],
-		"component": commonLabels["component"],
-		"hostname":  commonLabels["hostname"],
-	}).Set(float64(time.Now().Unix()))
-	metricInventoryReloadTotal.With(prometheus.Labels{
-		"inventory": commonLabels["inventory"],
-		"component": commonLabels["component"],
-		"hostname":  commonLabels["hostname"],
-	}).Inc()
+	metricInventoryReloadSeconds.With(commonLabels).Set(float64(time.Now().Unix()))
+	metricInventoryReloadTotal.With(commonLabels).Inc()
 
 	return nil
 }

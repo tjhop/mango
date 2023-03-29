@@ -42,11 +42,7 @@ func (i *Inventory) ParseRoles(ctx context.Context) error {
 		}).Error("Failed to parse roles")
 
 		// inventory counts haven't been altered, no need to update here
-		metricInventoryReloadFailedTotal.With(prometheus.Labels{
-			"inventory": commonLabels["inventory"],
-			"component": commonLabels["component"],
-			"hostname":  commonLabels["hostname"],
-		}).Inc()
+		metricInventoryReloadFailedTotal.With(commonLabels).Inc()
 
 		return err
 	}
@@ -64,11 +60,7 @@ func (i *Inventory) ParseRoles(ctx context.Context) error {
 				}).Error("Failed to parse module files")
 
 				// inventory counts haven't been altered, no need to update here
-				metricInventoryReloadFailedTotal.With(prometheus.Labels{
-					"inventory": commonLabels["inventory"],
-					"component": commonLabels["component"],
-					"hostname":  commonLabels["hostname"],
-				}).Inc()
+				metricInventoryReloadFailedTotal.With(commonLabels).Inc()
 
 				return err
 			}
@@ -92,11 +84,7 @@ func (i *Inventory) ParseRoles(ctx context.Context) error {
 								}).Error("Failed to read modules in role")
 
 								// inventory counts haven't been altered, no need to update here
-								metricInventoryReloadFailedTotal.With(prometheus.Labels{
-									"inventory": commonLabels["inventory"],
-									"component": commonLabels["component"],
-									"hostname":  commonLabels["hostname"],
-								}).Inc()
+								metricInventoryReloadFailedTotal.With(commonLabels).Inc()
 
 							} else {
 								mods = append(mods, line.Text)
@@ -130,16 +118,8 @@ func (i *Inventory) ParseRoles(ctx context.Context) error {
 		numMyRoles = len(roles)
 	}
 	metricInventoryApplicable.With(commonLabels).Set(float64(numMyRoles))
-	metricInventoryReloadSeconds.With(prometheus.Labels{
-		"inventory": commonLabels["inventory"],
-		"component": commonLabels["component"],
-		"hostname":  commonLabels["hostname"],
-	}).Set(float64(time.Now().Unix()))
-	metricInventoryReloadTotal.With(prometheus.Labels{
-		"inventory": commonLabels["inventory"],
-		"component": commonLabels["component"],
-		"hostname":  commonLabels["hostname"],
-	}).Inc()
+	metricInventoryReloadSeconds.With(commonLabels).Set(float64(time.Now().Unix()))
+	metricInventoryReloadTotal.With(commonLabels).Inc()
 
 	return nil
 }
