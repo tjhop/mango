@@ -289,7 +289,7 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 		}).Warn("Module has no test script, proceeding to apply")
 	} else {
 		testStart := time.Now()
-		labels["run"] = "test"
+		labels["script"] = "test"
 		metricManagerModuleRunTimestamp.With(labels).Set(float64(testStart.Unix()))
 
 		if err := shell.Run(ctx, mod.m.Test, mgr.hostVariables, mod.Variables); err != nil {
@@ -308,7 +308,7 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 	}
 
 	applyStart := time.Now()
-	labels["run"] = "apply"
+	labels["script"] = "apply"
 	metricManagerModuleRunTimestamp.With(labels).Set(float64(applyStart.Unix()))
 
 	err := shell.Run(ctx, mod.m.Apply, mgr.hostVariables, mod.Variables)
