@@ -100,6 +100,10 @@ func flattenEnvVarMap(varMap VariableMap) []string {
 // (setting environment variables, working directory, IO/output, etc) and
 // running the command
 func Run(ctx context.Context, path string, hostVars, modVars VariableMap) error {
+	if path == "" {
+		return fmt.Errorf("No script path provided")
+	}
+
 	// apply variables for the module on top of the host modules to override
 	vars := make(VariableMap, len(hostVars)+len(modVars))
 	for k, v := range hostVars {
