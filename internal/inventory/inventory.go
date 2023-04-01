@@ -211,8 +211,8 @@ func (i *Inventory) GetModulesForRole(role string) []Module {
 	mods := []Module{}
 	if r, found := i.GetRole(role); found {
 		for _, m := range r.modules {
-			if roleMods, found := i.GetModule(m); found {
-				mods = append(mods, roleMods)
+			if roleMod, found := i.GetModule(m); found {
+				mods = append(mods, roleMod)
 			}
 		}
 	}
