@@ -336,6 +336,7 @@ func (mgr *Manager) RunModules(ctx context.Context) {
 		if err := mgr.RunModule(ctx, mod); err != nil {
 			mgr.logger.WithFields(log.Fields{
 				"module": mod.String(),
+				"error": err,
 			}).Error("Module failed")
 		}
 	}
