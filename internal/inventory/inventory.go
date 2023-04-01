@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	commonMetricLabels = []string{"inventory", "component", "hostname"}
+	commonMetricLabels = []string{"inventory", "component"}
 
 	// prometheus metrics
 	metricInventory = promauto.NewGaugeVec(

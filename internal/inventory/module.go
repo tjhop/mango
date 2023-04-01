@@ -35,7 +35,6 @@ func (i *Inventory) ParseModules(ctx context.Context) error {
 	commonLabels := prometheus.Labels{
 		"inventory": i.inventoryPath,
 		"component": "modules",
-		"hostname":  i.hostname,
 	}
 
 	path := filepath.Join(i.inventoryPath, "modules")

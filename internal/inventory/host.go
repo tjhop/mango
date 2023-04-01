@@ -41,7 +41,6 @@ func (i *Inventory) ParseHosts(ctx context.Context) error {
 	commonLabels := prometheus.Labels{
 		"inventory": i.inventoryPath,
 		"component": "hosts",
-		"hostname":  i.hostname,
 	}
 
 	path := filepath.Join(i.inventoryPath, "hosts")
