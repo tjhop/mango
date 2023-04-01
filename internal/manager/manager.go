@@ -108,19 +108,14 @@ type Module struct {
 	Variables shell.VariableMap
 }
 
-func (mod Module) String() string { return mod.m.ID }
-
-// threshold, _ := time.ParseDuration("24h")
-// modTime := utils.GetFileModifiedTime(d.script.Path).Unix()
-// recent := time.Now().Unix() - modTime
-// if float64(recent) < threshold.Seconds() {
+func (mod Module) String() string { return mod.m.String() }
 
 // Directive is a wrapper struct that encapsulates an inventory.Directive
 type Directive struct {
 	d inventory.Directive
 }
 
-func (dir Directive) String() string { return dir.d.ID }
+func (dir Directive) String() string { return dir.d.String() }
 
 // Manager contains fields related to track and execute runnable modules and statistics.
 type Manager struct {
@@ -171,11 +166,10 @@ func (mgr *Manager) ReloadModules(ctx context.Context, inv inventory.Store) {
 			vars, err := shell.SourceFile(ctx, mod.Variables)
 			if err != nil {
 				mgr.logger.WithFields(log.Fields{
-					"path":  mod.Variables,
 					"error": err,
 				}).Error("Failed to expand module variables")
 			} else {
-				varKeys := make([]string, len(vars))
+				var varKeys []string
 				for k := range vars {
 					varKeys = append(varKeys, k)
 				}
@@ -236,12 +230,12 @@ func (mgr *Manager) Reload(ctx context.Context, inv inventory.Store) {
 func (mgr *Manager) RunDirective(ctx context.Context, ds Directive) error {
 	applyStart := time.Now()
 	labels := prometheus.Labels{
-		"directive": ds.d.ID,
+		"directive": ds.String(),
 	}
 	metricManagerDirectiveRunTimestamp.With(labels).Set(float64(applyStart.Unix()))
 
 	// TODO: are host vars allowed in directives?
-	err := shell.Run(ctx, ds.d.ID, nil, nil)
+	err := shell.Run(ctx, ds.String(), nil, nil)
 
 	// update metrics regardless of error, so do them before handling error
 	applyEnd := time.Since(applyStart)
@@ -266,7 +260,7 @@ func (mgr *Manager) RunDirectives(ctx context.Context) {
 
 	for _, d := range mgr.directives {
 		mgr.logger.WithFields(log.Fields{
-			"path": d,
+			"directive": d.String(),
 		}).Info("Running directive")
 	}
 }
@@ -280,12 +274,12 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 	}
 
 	labels := prometheus.Labels{
-		"module": mod.m.ID,
+		"module": mod.String(),
 	}
 
 	if mod.m.Test == "" {
 		mgr.logger.WithFields(log.Fields{
-			"path": mod.m.ID,
+			"module": mod.String(),
 		}).Warn("Module has no test script, proceeding to apply")
 	} else {
 		testStart := time.Now()
@@ -296,7 +290,7 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 			// if test script for a module fails, log a warning for user and continue with apply
 			metricManagerModuleRunFailedTotal.With(labels).Inc()
 			mgr.logger.WithFields(log.Fields{
-				"path": mod.m.Test,
+				"module": mod.m.Test,
 			}).Warn("Failed module test, running apply to get system to desired state")
 		} else {
 			metricManagerModuleRunTotal.With(labels).Inc()
@@ -336,12 +330,12 @@ func (mgr *Manager) RunModules(ctx context.Context) {
 
 	for _, mod := range mgr.modules {
 		mgr.logger.WithFields(log.Fields{
-			"path": mod,
+			"module": mod.String(),
 		}).Info("Running Module")
 
 		if err := mgr.RunModule(ctx, mod); err != nil {
 			mgr.logger.WithFields(log.Fields{
-				"path": mod,
+				"module": mod.String(),
 			}).Error("Module failed")
 		}
 	}
