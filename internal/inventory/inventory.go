@@ -334,7 +334,7 @@ func filterDuplicateModules(input []Module) []Module {
 		}
 	}
 
-	output := make([]Module, len(modMap))
+	var output []Module
 	for _, mod := range modMap {
 		output = append(output, mod)
 	}
