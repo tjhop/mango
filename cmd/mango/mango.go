@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -43,11 +44,12 @@ var (
 			Name: "mango_runtime_info",
 			Help: "A metric with a constant '1' value with labels for information about the mango runtime, such as system hostname.",
 		},
-		[]string{"hostname"},
+		[]string{"hostname", "enrolled"},
 	)
 )
 
 func mango(inventoryPath, hostname string) {
+	mangoStart := time.Now()
 	logger := log.WithFields(log.Fields{
 		"version":    config.Version,
 		"build_date": config.BuildDate,
@@ -58,9 +60,6 @@ func mango(inventoryPath, hostname string) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	metricMangoRuntimeInfo.With(prometheus.Labels{"hostname": hostname}).Set(1)
-	metricServiceStartSeconds.Set(float64(time.Now().Unix()))
 
 	// create directory for persistent logs
 	logDir := filepath.Join("/var/log", programName)
@@ -98,8 +97,9 @@ func mango(inventoryPath, hostname string) {
 	inv := inventory.NewInventory(inventoryPath, hostname)
 	// reload inventory
 	inv.Reload(ctx)
+	enrolled := inv.IsEnrolled()
 	log.WithFields(log.Fields{
-		"enrolled": inv.IsEnrolled(),
+		"enrolled": enrolled,
 	}).Info("Host enrollment check")
 
 	// start manager
@@ -109,6 +109,9 @@ func mango(inventoryPath, hostname string) {
 	mgr := manager.NewManager(hostname)
 	// reload manager
 	mgr.Reload(ctx, inv)
+
+	metricMangoRuntimeInfo.With(prometheus.Labels{"hostname": hostname, "enrolled": strconv.FormatBool(enrolled)}).Set(1)
+	metricServiceStartSeconds.Set(float64(mangoStart.Unix()))
 
 	reloadCh := make(chan struct{})
 	var g run.Group
