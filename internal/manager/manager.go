@@ -258,6 +258,7 @@ func (mgr *Manager) RunDirectives(ctx context.Context) {
 		return
 	}
 
+	defer mgr.logger.Info("All directives have been run")
 	for _, d := range mgr.directives {
 		mgr.logger.WithFields(log.Fields{
 			"directive": d.String(),
@@ -328,6 +329,7 @@ func (mgr *Manager) RunModules(ctx context.Context) {
 		return
 	}
 
+	defer mgr.logger.Info("All modules have been run")
 	for _, mod := range mgr.modules {
 		mgr.logger.WithFields(log.Fields{
 			"module": mod.String(),
