@@ -1,0 +1,5 @@
+mango_env_test_string="hello world, mango!"
+mango_env_test_array=( "some" "random" "words" )
+# associative arrays in bash can _only_ be created with `declare -A`
+declare -A mango_env_test_associative_array=( [one]=1, [two]=2, [three]=3, [four]=4, [five]=5 )
+mango_env_test_expansion="Unix Epoch, followed by date stamp: $(date +%s%t%Y-%m-%d)"

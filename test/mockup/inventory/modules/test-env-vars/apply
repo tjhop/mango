@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+FILE="/tmp/$0-$$"
+
+echo "Dumping environment to ${FILE}"
+
+/usr/bin/env > "${FILE}"
