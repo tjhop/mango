@@ -38,7 +38,7 @@ Since `mango` is intended to be run on the system it is managing and thus requir
 ```
 docker run \
 -v /path/to/inventory:/opt/mango/inventory \
---privileged
+--privileged \
 ghcr.io/tjhop/mango
 ```
 
