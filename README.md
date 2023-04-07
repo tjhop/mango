@@ -15,7 +15,9 @@ Project/design goals:
 - The daemon should be easy to analyze/inspect
     - [Pprof](https://github.com/google/pprof) enabled
     - Native [Prometheus](https://prometheus.io) metrics
-    - Structured logging
+    - Structured logging (`LogFmt` and `JSON`)
+    - Tracing for script manager execution stats (Planned)
+    - Exemplars to link metrics/logs to specific manager script run traces (Planned)
     - Grafana dashboard (Planned)
 
 ## Setup
