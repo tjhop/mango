@@ -8,7 +8,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	log "github.com/sirupsen/logrus"
-	"mvdan.cc/sh/v3/interp"
 
 	"github.com/tjhop/mango/internal/inventory"
 	"github.com/tjhop/mango/internal/shell"
@@ -124,7 +123,6 @@ type Manager struct {
 	modules       []Module
 	directives    []Directive
 	hostVariables shell.VariableMap
-	shellRunner   *interp.Runner // TODO: is this even used? I think I made it all lib references to `shell`
 }
 
 func (mgr *Manager) String() string { return mgr.id }
