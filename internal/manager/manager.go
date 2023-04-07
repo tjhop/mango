@@ -265,7 +265,7 @@ func (mgr *Manager) RunDirectives(ctx context.Context) {
 		if err := mgr.RunDirective(ctx, d); err != nil {
 			mgr.logger.WithFields(log.Fields{
 				"directive": d.String(),
-				"error":  err,
+				"error":     err,
 			}).Error("Directive failed")
 		}
 	}
