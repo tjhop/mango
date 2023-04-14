@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-FILE="/tmp/$0-$$"
+FILE="/tmp/$(basename ${0%/*})-$$"
 
 echo "Dumping environment to ${FILE}"
 
