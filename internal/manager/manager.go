@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/oklog/ulid/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	log "github.com/sirupsen/logrus"
@@ -251,19 +252,23 @@ func (mgr *Manager) RunDirective(ctx context.Context, ds Directive) error {
 
 // RunDirectives runs all of the directive scripts being managed by the Manager
 func (mgr *Manager) RunDirectives(ctx context.Context) {
+	logger := mgr.logger.WithFields(log.Fields{
+		"run_id": ctx.Value("runID"),
+	})
+
 	if len(mgr.directives) <= 0 {
-		mgr.logger.Info("No Directives to run")
+		logger.Info("No Directives to run")
 		return
 	}
 
-	defer mgr.logger.Info("All directives have been run")
+	defer logger.Info("All directives have been run")
 	for _, d := range mgr.directives {
-		mgr.logger.WithFields(log.Fields{
+		logger.WithFields(log.Fields{
 			"directive": d.String(),
 		}).Info("Running directive")
 
 		if err := mgr.RunDirective(ctx, d); err != nil {
-			mgr.logger.WithFields(log.Fields{
+			logger.WithFields(log.Fields{
 				"directive": d.String(),
 				"error":     err,
 			}).Error("Directive failed")
@@ -274,6 +279,10 @@ func (mgr *Manager) RunDirectives(ctx context.Context) {
 // RunModule is responsible for actually executing a module, using the `shell`
 // package.
 func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
+	logger := mgr.logger.WithFields(log.Fields{
+		"run_id": ctx.Value("runID"),
+	})
+
 	if mod.m.Apply == "" {
 		// TODO: convert to const errs?
 		return fmt.Errorf("Module has no apply script")
@@ -284,7 +293,7 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 	}
 
 	if mod.m.Test == "" {
-		mgr.logger.WithFields(log.Fields{
+		logger.WithFields(log.Fields{
 			"module": mod.String(),
 		}).Warn("Module has no test script, proceeding to apply")
 	} else {
@@ -295,7 +304,7 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 		if err := shell.Run(ctx, mod.m.Test, mgr.hostVariables, mod.Variables); err != nil {
 			// if test script for a module fails, log a warning for user and continue with apply
 			metricManagerModuleRunFailedTotal.With(labels).Inc()
-			mgr.logger.WithFields(log.Fields{
+			logger.WithFields(log.Fields{
 				"module": mod.m.Test,
 			}).Warn("Failed module test, running apply to get system to desired state")
 		} else {
@@ -329,19 +338,23 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 
 // RunModules runs all of the modules being managed by the Manager
 func (mgr *Manager) RunModules(ctx context.Context) {
+	logger := mgr.logger.WithFields(log.Fields{
+		"run_id": ctx.Value("runID"),
+	})
+
 	if len(mgr.modules) <= 0 {
-		mgr.logger.Info("No Modules to run")
+		logger.Info("No Modules to run")
 		return
 	}
 
-	defer mgr.logger.Info("All modules have been run")
+	defer logger.Info("All modules have been run")
 	for _, mod := range mgr.modules {
-		mgr.logger.WithFields(log.Fields{
+		logger.WithFields(log.Fields{
 			"module": mod.String(),
 		}).Info("Running Module")
 
 		if err := mgr.RunModule(ctx, mod); err != nil {
-			mgr.logger.WithFields(log.Fields{
+			logger.WithFields(log.Fields{
 				"module": mod.String(),
 				"error":  err,
 			}).Error("Module failed")
@@ -352,6 +365,8 @@ func (mgr *Manager) RunModules(ctx context.Context) {
 // RunAll runs all of the Directives being managed by the Manager, followed by
 // all of the Modules being managed by the Manager.
 func (mgr *Manager) RunAll(ctx context.Context) {
-	mgr.RunDirectives(ctx)
-	mgr.RunModules(ctx)
+	runCtx := context.WithValue(ctx, "runID", ulid.Make())
+
+	mgr.RunDirectives(runCtx)
+	mgr.RunModules(runCtx)
 }

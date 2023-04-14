@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
+	"github.com/oklog/ulid/v2"
 	"github.com/spf13/viper"
 	"mvdan.cc/sh/v3/expand"
 	"mvdan.cc/sh/v3/interp"
@@ -113,11 +113,10 @@ func Run(ctx context.Context, path string, hostVars, modVars VariableMap) error 
 		vars[k] = v
 	}
 
-	// TODO: this should probably be something better.
-	runID := fmt.Sprintf("%d", time.Now().Unix())
+	runID := ctx.Value("runID").(ulid.ULID)
 
 	// setup log files for script output
-	logDir := filepath.Join(viper.GetString("mango.log-dir"), "manager/run", runID)
+	logDir := filepath.Join(viper.GetString("mango.log-dir"), "manager/run", runID.String())
 	if err := os.MkdirAll(logDir, 0750); err != nil && !os.IsExist(err) {
 		return fmt.Errorf("Failed to create directory for script logs: %v", err)
 	}
@@ -136,7 +135,7 @@ func Run(ctx context.Context, path string, hostVars, modVars VariableMap) error 
 	defer stderrLog.Close()
 
 	// runtime dir prep
-	workDir := filepath.Join(viper.GetString("mango.temp-dir"), runID)
+	workDir := filepath.Join(viper.GetString("mango.temp-dir"), runID.String())
 	if err := os.MkdirAll(workDir, 0750); err != nil && !os.IsExist(err) {
 		return fmt.Errorf("Failed to create working directory for script: %v", err)
 	}
