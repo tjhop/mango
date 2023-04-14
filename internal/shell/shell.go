@@ -99,7 +99,7 @@ func flattenEnvVarMap(varMap VariableMap) []string {
 // Run is responsible for assembling an interpreter's execution environment
 // (setting environment variables, working directory, IO/output, etc) and
 // running the command
-func Run(ctx context.Context, path string, hostVars, modVars VariableMap) error {
+func Run(ctx context.Context, runID ulid.ULID, path string, hostVars, modVars VariableMap) error {
 	if path == "" {
 		return fmt.Errorf("No script path provided")
 	}
@@ -112,8 +112,6 @@ func Run(ctx context.Context, path string, hostVars, modVars VariableMap) error 
 	for k, v := range modVars {
 		vars[k] = v
 	}
-
-	runID := ctx.Value("runID").(ulid.ULID)
 
 	// setup log files for script output
 	logDir := filepath.Join(viper.GetString("mango.log-dir"), "manager/run", runID.String())

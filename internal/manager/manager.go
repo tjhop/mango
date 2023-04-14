@@ -14,7 +14,15 @@ import (
 	"github.com/tjhop/mango/internal/shell"
 )
 
+type contextKey string
+
+func (c contextKey) String() string {
+	return "mango manager context key " + string(c)
+}
+
 var (
+	contextKeyRunID = contextKey("runID")
+
 	// prometheus metrics
 
 	// module run stat metrics
@@ -227,6 +235,7 @@ func (mgr *Manager) Reload(ctx context.Context, inv inventory.Store) {
 // RunDirective is responsible for actually executing a module, using the `shell`
 // package.
 func (mgr *Manager) RunDirective(ctx context.Context, ds Directive) error {
+	runID := ctx.Value(contextKeyRunID).(ulid.ULID)
 	applyStart := time.Now()
 	labels := prometheus.Labels{
 		"directive": ds.String(),
@@ -234,7 +243,7 @@ func (mgr *Manager) RunDirective(ctx context.Context, ds Directive) error {
 	metricManagerDirectiveRunTimestamp.With(labels).Set(float64(applyStart.Unix()))
 
 	// TODO: are host vars allowed in directives?
-	err := shell.Run(ctx, ds.String(), nil, nil)
+	err := shell.Run(ctx, runID, ds.String(), nil, nil)
 
 	// update metrics regardless of error, so do them before handling error
 	applyEnd := time.Since(applyStart)
@@ -252,8 +261,9 @@ func (mgr *Manager) RunDirective(ctx context.Context, ds Directive) error {
 
 // RunDirectives runs all of the directive scripts being managed by the Manager
 func (mgr *Manager) RunDirectives(ctx context.Context) {
+	runID := ctx.Value(contextKeyRunID).(ulid.ULID)
 	logger := mgr.logger.WithFields(log.Fields{
-		"run_id": ctx.Value("runID"),
+		"run_id": runID.String(),
 	})
 
 	if len(mgr.directives) <= 0 {
@@ -279,8 +289,9 @@ func (mgr *Manager) RunDirectives(ctx context.Context) {
 // RunModule is responsible for actually executing a module, using the `shell`
 // package.
 func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
+	runID := ctx.Value(contextKeyRunID).(ulid.ULID)
 	logger := mgr.logger.WithFields(log.Fields{
-		"run_id": ctx.Value("runID"),
+		"run_id": runID.String(),
 	})
 
 	if mod.m.Apply == "" {
@@ -301,7 +312,7 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 		labels["script"] = "test"
 		metricManagerModuleRunTimestamp.With(labels).Set(float64(testStart.Unix()))
 
-		if err := shell.Run(ctx, mod.m.Test, mgr.hostVariables, mod.Variables); err != nil {
+		if err := shell.Run(ctx, runID, mod.m.Test, mgr.hostVariables, mod.Variables); err != nil {
 			// if test script for a module fails, log a warning for user and continue with apply
 			metricManagerModuleRunFailedTotal.With(labels).Inc()
 			logger.WithFields(log.Fields{
@@ -320,7 +331,7 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 	labels["script"] = "apply"
 	metricManagerModuleRunTimestamp.With(labels).Set(float64(applyStart.Unix()))
 
-	err := shell.Run(ctx, mod.m.Apply, mgr.hostVariables, mod.Variables)
+	err := shell.Run(ctx, runID, mod.m.Apply, mgr.hostVariables, mod.Variables)
 
 	// update metrics regardless of error, so do them before handling error
 	applyEnd := time.Since(applyStart)
@@ -338,8 +349,9 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 
 // RunModules runs all of the modules being managed by the Manager
 func (mgr *Manager) RunModules(ctx context.Context) {
+	runID := ctx.Value(contextKeyRunID).(ulid.ULID)
 	logger := mgr.logger.WithFields(log.Fields{
-		"run_id": ctx.Value("runID"),
+		"run_id": runID.String(),
 	})
 
 	if len(mgr.modules) <= 0 {
@@ -365,7 +377,7 @@ func (mgr *Manager) RunModules(ctx context.Context) {
 // RunAll runs all of the Directives being managed by the Manager, followed by
 // all of the Modules being managed by the Manager.
 func (mgr *Manager) RunAll(ctx context.Context) {
-	runCtx := context.WithValue(ctx, "runID", ulid.Make())
+	runCtx := context.WithValue(ctx, contextKeyRunID, ulid.Make())
 
 	mgr.RunDirectives(runCtx)
 	mgr.RunModules(runCtx)
