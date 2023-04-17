@@ -114,7 +114,9 @@ func Run(ctx context.Context, runID ulid.ULID, path string, hostVars, modVars Va
 	}
 
 	// setup log files for script output
-	logDir := filepath.Join(viper.GetString("mango.log-dir"), "manager/run", runID.String())
+	// example path:
+	//	/var/log/manager/run/$runID/$module/$file
+	logDir := filepath.Join(viper.GetString("mango.log-dir"), "manager/run", runID.String(), path)
 	if err := os.MkdirAll(logDir, 0750); err != nil && !os.IsExist(err) {
 		return fmt.Errorf("Failed to create directory for script logs: %v", err)
 	}
