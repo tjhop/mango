@@ -143,7 +143,7 @@ func Run(ctx context.Context, runID ulid.ULID, path string, hostVars, modVars Va
 	// create shell interpreter
 	runner, err := interp.New(
 		interp.Env(expand.ListEnviron(flattenEnvVarMap(vars)...)),
-		interp.StdIO(nil, stdoutLog, stderrLog), // TODO: @tjhop make file log output configurable?
+		interp.StdIO(nil, stdoutLog, stderrLog),
 		interp.Dir(workDir),
 	)
 	if err != nil {

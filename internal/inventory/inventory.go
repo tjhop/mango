@@ -310,8 +310,6 @@ func (i *Inventory) GetHost(host string) (Host, bool) {
 // GetVariablesForHost returns the path of the host's variables file, or the
 // empty string if no host/variables file found
 func (i *Inventory) GetVariablesForHost(host string) string {
-	// TODO: eventually, merging variables need to be supported. override
-	// over should module variables supercede host variables.
 	if h, found := i.GetHost(host); found {
 		return h.variables
 	}

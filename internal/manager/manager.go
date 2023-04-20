@@ -242,7 +242,6 @@ func (mgr *Manager) RunDirective(ctx context.Context, ds Directive) error {
 	}
 	metricManagerDirectiveRunTimestamp.With(labels).Set(float64(applyStart.Unix()))
 
-	// TODO: are host vars allowed in directives?
 	err := shell.Run(ctx, runID, ds.String(), nil, nil)
 
 	// update metrics regardless of error, so do them before handling error
@@ -295,7 +294,6 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 	})
 
 	if mod.m.Apply == "" {
-		// TODO: convert to const errs?
 		return fmt.Errorf("Module has no apply script")
 	}
 
