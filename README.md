@@ -33,6 +33,18 @@ While packages are built for several systems, there are currently no plans to at
 mango --inventory.path /path/to/inventory
 ```
 
+All options:
+
+```bash
+~/go/src/github.com/tjhop/mango (main [ U ]) -> ./dist/mango_linux_amd64_v1/mango -h
+Usage of ./dist/mango_linux_amd64_v1/mango:
+      --hostname string         Custom hostname to use (default's to system hostname if unset)
+  -i, --inventory.path string   Path to mango configuration inventory
+  -l, --logging.level string    Logging level may be one of: [trace, debug, info, warning, error, fatal and panic]
+      --logging.output string   Logging format may be one of: [logfmt, json] (default "logfmt")
+pflag: help requested
+```
+
 ### Docker Usage
 
 Since `mango` is intended to be run on the system it is managing and thus requires access to the host system, if you must run `mango` with Docker you may want to use the `--privileged` flag.
@@ -66,6 +78,36 @@ git init
 git add .
 git commit -m "initial commit"
 ```
+
+*NOTE*: While `aviary.sh`'s inventory system is designed to work with bash
+scripts, it's possible to write a module in any language. Mango treats module
+test scripts as optional (yet recommended), and module/host variables are
+similarly optional. The module's `apply` script is the only required script for
+a module, so it's possible to simply use the `apply` script as a launcher to
+whatever other idempotent scripts/configs written in other languages.
+
+#### Differences from [Aviary.sh](https://github.com/frameable/aviary.sh)
+
+| Aviary.sh | Mango |
+| --- | --- |
+| Short lived process | Long lived process |
+| Runs as scheduled service (`cron`, `systemd-timer`, etc) | Runs as systemd daemon (Systemd unit, etc) |
+| Inventory updated during config management runs | Inventory updated via scheduled service (`cron`, `systemd-timer`, etc) |
+| Inventory scripts executed directly by shell | Inventory scripts executed by [Go shell interpreter library](https://github.com/mvdan/sh). Bash is supported [with some caveats](https://github.com/mvdan/sh#caveats) |
+
+## Monitoring and Alerting
+
+### Metrics
+
+Mango exposes [Prometheus metrics](https://prometheus.io/) on port `9555` on all interfaces by default.
+
+### Alerts
+
+Sample alerts are planned.
+
+### Dashboards
+
+A Grafana dashboard is in progress.
 
 ## Development
 
