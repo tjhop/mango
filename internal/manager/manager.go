@@ -3,6 +3,7 @@ package manager
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -132,6 +133,7 @@ type Manager struct {
 	modules       []Module
 	directives    []Directive
 	hostVariables shell.VariableMap
+	runLock       sync.Mutex
 }
 
 func (mgr *Manager) String() string { return mgr.id }
@@ -270,7 +272,8 @@ func (mgr *Manager) RunDirectives(ctx context.Context) {
 		return
 	}
 
-	defer logger.Info("All directives have been run")
+	logger.Info("Directive run started")
+	defer logger.Info("Directive run finished")
 	for _, d := range mgr.directives {
 		logger.WithFields(log.Fields{
 			"directive": d.String(),
@@ -357,7 +360,8 @@ func (mgr *Manager) RunModules(ctx context.Context) {
 		return
 	}
 
-	defer logger.Info("All modules have been run")
+	logger.Info("Module run started")
+	defer logger.Info("Module run finished")
 	for _, mod := range mgr.modules {
 		logger.WithFields(log.Fields{
 			"module": mod.String(),
@@ -375,8 +379,20 @@ func (mgr *Manager) RunModules(ctx context.Context) {
 // RunAll runs all of the Directives being managed by the Manager, followed by
 // all of the Modules being managed by the Manager.
 func (mgr *Manager) RunAll(ctx context.Context) {
-	runCtx := context.WithValue(ctx, contextKeyRunID, ulid.Make())
+	go func() {
+		runID := ulid.Make()
+		runCtx := context.WithValue(ctx, contextKeyRunID, runID)
+		logger := mgr.logger.WithFields(log.Fields{
+			"run_id": runID.String(),
+		})
 
-	mgr.RunDirectives(runCtx)
-	mgr.RunModules(runCtx)
+		if !mgr.runLock.TryLock() {
+			logger.Warn("Manager run already in progress, aborting")
+			return
+		}
+		defer mgr.runLock.Unlock()
+
+		mgr.RunDirectives(runCtx)
+		mgr.RunModules(runCtx)
+	}()
 }

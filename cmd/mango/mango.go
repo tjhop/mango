@@ -50,6 +50,7 @@ var (
 
 func mango(inventoryPath, hostname string) {
 	mangoStart := time.Now()
+	metricServiceStartSeconds.Set(float64(mangoStart.Unix()))
 	logger := log.WithFields(log.Fields{
 		"version":    config.Version,
 		"build_date": config.BuildDate,
@@ -98,20 +99,21 @@ func mango(inventoryPath, hostname string) {
 	// reload inventory
 	inv.Reload(ctx)
 	enrolled := inv.IsEnrolled()
+	metricMangoRuntimeInfo.With(prometheus.Labels{"hostname": hostname, "enrolled": strconv.FormatBool(enrolled)}).Set(1)
 	log.WithFields(log.Fields{
+		"hostname": hostname,
 		"enrolled": enrolled,
 	}).Info("Host enrollment check")
 
-	// start manager
+	// start manager, reload it with data from inventory, and then start a run of everything for the system
 	log.WithFields(log.Fields{
 		"manager": hostname,
 	}).Info("Initializing mango manager")
 	mgr := manager.NewManager(hostname)
-	// reload manager
 	mgr.Reload(ctx, inv)
 
-	metricMangoRuntimeInfo.With(prometheus.Labels{"hostname": hostname, "enrolled": strconv.FormatBool(enrolled)}).Set(1)
-	metricServiceStartSeconds.Set(float64(mangoStart.Unix()))
+	log.Info("Starting initial run of all modules")
+	mgr.RunAll(ctx)
 
 	reloadCh := make(chan struct{})
 	var g run.Group
@@ -189,9 +191,6 @@ func mango(inventoryPath, hostname string) {
 		cancel := make(chan struct{})
 		g.Add(
 			func() error {
-				log.Info("Starting initial run of all modules")
-				mgr.RunAll(ctx)
-
 				// block and wait for reload/close signals from channels
 				for {
 					select {
@@ -199,11 +198,6 @@ func mango(inventoryPath, hostname string) {
 						// when a signal is received on the
 						// reload channel, trigger a new run
 						// for all modules.
-
-						// TODO(@tjhop): add logic to prevent
-						// triggering a module run when one is
-						// already active
-						log.Info("Running all modules")
 						mgr.RunAll(ctx)
 					case <-cancel:
 						return nil
