@@ -1,0 +1,7 @@
+#!env bash
+
+FILE="/tmp/$(basename ${0%/*})-$$"
+
+echo "[$(date +%s)] Sleeping for 1m" > "${FILE}"
+sleep 60
+echo "[$(date +%s)] Done" > "${FILE}"
