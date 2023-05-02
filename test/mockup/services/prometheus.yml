@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 5s # this should be increased for real deploys
+  external_labels:
+    source: ns1-dell-prom
+
+rule_files:
+  # - rules.yml
+
+scrape_configs:
+  - job_name: "mango"
+    static_configs:
+      - targets: ["localhost:9555"]
+
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]

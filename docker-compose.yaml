@@ -1,0 +1,39 @@
+# Compose file to set up the following services for local testing:
+  # - grafana
+  # - prometheus
+  # - loki
+  # - promtail
+# based heavily on:
+# https://grafana.com/docs/grafana-cloud/quickstart/docker-compose-linux/
+# https://raw.githubusercontent.com/grafana/loki/v2.8.0/production/docker-compose.yaml
+
+version: "3.9"
+
+volumes:
+  prometheus_data: {}
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    volumes:
+      - ./test/mockup/services/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    network_mode: host
+
+  grafana:
+    environment:
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    volumes:
+      - ./test/mockup/services/grafana:/etc/grafana/provisioning
+      - ./grafana:/var/lib/grafana/dashboards
+    image: grafana/grafana:latest
+    network_mode: host
