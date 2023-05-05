@@ -150,21 +150,24 @@ func Run(ctx context.Context, runID ulid.ULID, path string, hostVars, modVars Va
 		return fmt.Errorf("Failed to create shell interpreter: %s", err)
 	}
 
-	// open script file
-	f, err := os.Open(path)
+	// run script through template
+	renderedScript, err := templateScript(ctx, path, templateData{
+		HostVars:   hostVars,
+		ModuleVars: modVars,
+		Vars:       vars,
+	})
 	if err != nil {
-		return fmt.Errorf("Failed to open: %v", err)
+		return fmt.Errorf("Failed to template script: %s", err)
 	}
-	defer f.Close()
 
-	// parse script file
-	file, err := syntax.NewParser().Parse(f, path)
+	// create shell parser based on rendered template script
+	file, err := syntax.NewParser().Parse(strings.NewReader(renderedScript), path)
 	if err != nil {
 		return fmt.Errorf("Failed to parse: %v", err)
 	}
 
 	// run it!
-	if err := runner.Run(ctx, file); err != nil {
+	if err = runner.Run(ctx, file); err != nil {
 		return fmt.Errorf("Failed to run script %s: %v", path, err)
 	}
 
