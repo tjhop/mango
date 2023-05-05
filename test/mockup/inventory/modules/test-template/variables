@@ -1,0 +1,2 @@
+mango_module_template_var="Hi, I'm a module variable!"
+mango_host_var_for_override="Module has updated host var!"

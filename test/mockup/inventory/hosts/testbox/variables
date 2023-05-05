@@ -1,0 +1,2 @@
+mango_host_template_var="Hi, I'm a host variable!"
+mango_host_var_for_override="This is the original host variable content."

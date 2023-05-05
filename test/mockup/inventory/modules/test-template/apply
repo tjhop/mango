@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+FILE="/tmp/$(basename ${0%/*})-$$"
+
+cat > ${FILE} <<EOF
+    Testing templating!
+    Printing all variables available, via template
+    -------------------
+    Printing host variables:
+    {{- range $k, $v := .HostVars }}
+    {{ $k }} : {{ $v }}
+    {{- end }}
+    -------------------
+    Printing module variables:
+    {{- range $k, $v := .ModuleVars }}
+    {{ $k }} : {{ $v }}
+    {{- end }}
+    -------------------
+    Printing all variables (merged, where module variables override host variables):
+    {{- range $k, $v := .Vars }}
+    {{ $k }} : {{ $v }}
+    {{- end }}
+    -------------------
+    Done.
+EOF
