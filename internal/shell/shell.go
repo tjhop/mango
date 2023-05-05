@@ -105,7 +105,7 @@ func Run(ctx context.Context, runID ulid.ULID, path string, hostVars, modVars Va
 	}
 
 	// apply variables for the module on top of the host modules to override
-	vars := make(VariableMap, len(hostVars)+len(modVars))
+	vars := make(VariableMap)
 	for k, v := range hostVars {
 		vars[k] = v
 	}
@@ -114,8 +114,10 @@ func Run(ctx context.Context, runID ulid.ULID, path string, hostVars, modVars Va
 	}
 
 	// setup log files for script output
-	// example path:
-	//	/var/log/manager/run/$runID/$module/$file
+	// format of paths:
+	//	/var/log/mango/manager/run/$runID/$module/$file
+	// example path (started with `inventory.path`: './test/mockup/inventory'):
+	//	/var/log/mango/manager/run/01GZF2QSPGTCKHFSECPBQ6H8FQ/test/mockup/inventory/modules/test-env-vars/apply/stdout
 	logDir := filepath.Join(viper.GetString("mango.log-dir"), "manager/run", runID.String(), path)
 	if err := os.MkdirAll(logDir, 0750); err != nil && !os.IsExist(err) {
 		return fmt.Errorf("Failed to create directory for script logs: %v", err)
