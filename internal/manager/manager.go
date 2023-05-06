@@ -114,7 +114,7 @@ var (
 // variables for the given module
 type Module struct {
 	m         inventory.Module
-	Variables shell.VariableMap
+	Variables []string
 }
 
 func (mod Module) String() string { return mod.m.String() }
@@ -132,7 +132,7 @@ type Manager struct {
 	logger        *log.Entry
 	modules       []Module
 	directives    []Directive
-	hostVariables shell.VariableMap
+	hostVariables []string
 	runLock       sync.Mutex
 }
 
@@ -167,7 +167,6 @@ func (mgr *Manager) ReloadModules(ctx context.Context, inv inventory.Store) {
 	modules := make([]Module, len(rawMods))
 	for i, mod := range rawMods {
 		newMod := Module{m: mod}
-		newModVars := make(shell.VariableMap)
 
 		// if the module has a variables file set, source it and store
 		// the expanded variables
@@ -178,20 +177,12 @@ func (mgr *Manager) ReloadModules(ctx context.Context, inv inventory.Store) {
 					"error": err,
 				}).Error("Failed to expand module variables")
 			} else {
-				var varKeys []string
-				for k := range vars {
-					varKeys = append(varKeys, k)
-				}
-				mgr.logger.WithFields(log.Fields{
-					"variables": varKeys,
-				}).Debug("Expanding module variables")
-				newModVars = vars
+				newMod.Variables = vars
 			}
 		} else {
 			mgr.logger.Debug("No module variables")
 		}
 
-		newMod.Variables = newModVars
 		modules[i] = newMod
 	}
 
@@ -220,13 +211,6 @@ func (mgr *Manager) Reload(ctx context.Context, inv inventory.Store) {
 				"path": hostVarsPath,
 			}).Error("Failed to reload host variables")
 		} else {
-			varKeys := make([]string, len(vars))
-			for k := range vars {
-				varKeys = append(varKeys, k)
-			}
-			mgr.logger.WithFields(log.Fields{
-				"variables": varKeys,
-			}).Debug("Reloading host variables")
 			mgr.hostVariables = vars
 		}
 	} else {

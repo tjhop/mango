@@ -14,15 +14,18 @@ import (
 	"mvdan.cc/sh/v3/syntax"
 )
 
-// VariableMap is an alias for `map[string]expand.Variable` It's used to store
-// variable data in key,value format, using the same format for variables that
-// are worked with later with sh lib in the manager
-type VariableMap map[string]expand.Variable
+// VariableSlice is an alias for `[]string`, where each item is an environment
+// variable in `key=value` form, the same as returned by `os.Environ()`
+type VariableSlice []string
+
+// VariableMap is an alias for `map[string]string`, where the key is the
+// variable name and the string is the variable value
+type VariableMap map[string]string
 
 // func with const []string return containing environment variables that get
 // removed from the environent when sourcing a file
 func getEnvVarBlacklist() []string {
-	return []string{"PWD", "HOME", "PATH", "IFS", "OPTIND"}
+	return []string{"PWD", "HOME", "PATH", "IFS", "OPTIND", "GID", "UID"}
 }
 
 // SourceFile()/SourceNode() functions inspired heavily by old convenience
@@ -39,7 +42,7 @@ func getEnvVarBlacklist() []string {
 // This function should be used with caution, as it can interpret arbitrary
 // code. Untrusted shell programs shoudn't be sourced outside of a sandbox
 // environment.
-func SourceFile(ctx context.Context, path string) (VariableMap, error) {
+func SourceFile(ctx context.Context, path string) (VariableSlice, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to open: %v", err)
@@ -52,32 +55,93 @@ func SourceFile(ctx context.Context, path string) (VariableMap, error) {
 	return SourceNode(ctx, file)
 }
 
-// SourceNode sources a shell program from a node and returns the
-// variables declared in it. It accepts the same set of node types that
-// interp/Runner.Run does.
+// SourceNode sources a shell program from a node and returns the variables
+// declared in it. Variables are returned in the same format as `os.Environ()`
+// -- ie, `[]string{"key=value",...}`. It accepts the same set of node types
+// that interp/Runner.Run does.
 //
 // This function should be used with caution, as it can interpret arbitrary
 // code. Untrusted shell programs shoudn't be sourced outside of a sandbox
 // environment.
-func SourceNode(ctx context.Context, node syntax.Node) (VariableMap, error) {
+func SourceNode(ctx context.Context, node syntax.Node) (VariableSlice, error) {
 	r, _ := interp.New()
+
+	// take initial copy of environment variables
+	oldVars := os.Environ()
+
 	if err := r.Run(ctx, node); err != nil {
 		return nil, fmt.Errorf("Failed to run: %v", err)
 	}
-	// delete the internal shell vars that the user is not
-	// interested in
-	for _, envVar := range getEnvVarBlacklist() {
-		delete(r.Vars, envVar)
+
+	newVars := getUpdatedVars(oldVars, flattenEnvVarMap(r.Vars))
+	var filteredVars VariableSlice
+	for _, v := range newVars {
+		found := false
+		for _, x := range getEnvVarBlacklist() {
+			if strings.HasPrefix(v, x) {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			// only return the variable if it isn't found on the blacklist
+			filteredVars = append(filteredVars, v)
+		}
 	}
 
-	return r.Vars, nil
+	return filteredVars, nil
+}
+
+func getUpdatedVars(oldVars, newVars VariableSlice) VariableSlice {
+	var keep VariableSlice
+
+	// compare envs before and after and only return the new/updated variables
+	for _, newKV := range newVars {
+		newTokens := strings.Split(newKV, "=")
+		if len(newTokens) != 2 {
+			continue
+		}
+		nKey := newTokens[0]
+		nValue := newTokens[1]
+		found := false
+
+		for _, oldKV := range oldVars {
+			oldTokens := strings.Split(oldKV, "=")
+			if len(oldTokens) != 2 {
+				continue
+			}
+			oKey := oldTokens[0]
+			oValue := oldTokens[1]
+
+			if nKey == oKey {
+				found = true
+				if nValue != oValue {
+					// var was updated new running, it has a new value -- keep it
+					keep = append(keep, newKV)
+				}
+				break
+			}
+		}
+
+		if !found {
+			// if a var name found new running doesn't have a
+			// corresponding var name found in the vars before
+			// running, it's a new variable -- keep it
+			keep = append(keep, newKV)
+		}
+	}
+
+	return keep
 }
 
 // flattenEnvVarMap is a convenience function that takes a map of raw
 // expand.Variables and flattens them all into cmdline compatible `key=value`
-// export assignment for ingestion into the interpeter
-func flattenEnvVarMap(varMap VariableMap) []string {
-	varSlice := []string{}
+// export assignment for ingestion into the interpeter.
+// This function is also used as a conversion step to resolve and transform the
+// variables into simpler data types with their end-state values.
+func flattenEnvVarMap(varMap map[string]expand.Variable) VariableSlice {
+	varSlice := VariableSlice{}
 
 	for name, data := range varMap {
 		switch data.Kind {
@@ -96,22 +160,48 @@ func flattenEnvVarMap(varMap VariableMap) []string {
 	return varSlice
 }
 
+func makeVariableMap(varSlice VariableSlice) VariableMap {
+	varMap := make(VariableMap)
+	for _, v := range varSlice {
+		tokens := strings.Split(v, "=")
+		if len(tokens) != 2 {
+			continue
+		}
+		varMap[tokens[0]] = tokens[1]
+	}
+	return varMap
+}
+
+func mergeVars(base, top VariableMap) VariableSlice {
+	vars := make(VariableMap)
+	for k, v := range base {
+		vars[k] = v
+	}
+	for k, v := range top {
+		vars[k] = v
+	}
+
+	varSlice := make(VariableSlice, len(vars))
+	for k, v := range vars {
+		varSlice = append(varSlice, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	return varSlice
+}
+
 // Run is responsible for assembling an interpreter's execution environment
 // (setting environment variables, working directory, IO/output, etc) and
 // running the command
-func Run(ctx context.Context, runID ulid.ULID, path string, hostVars, modVars VariableMap) error {
+func Run(ctx context.Context, runID ulid.ULID, path string, hostVars, modVars VariableSlice) error {
 	if path == "" {
 		return fmt.Errorf("No script path provided")
 	}
 
 	// apply variables for the module on top of the host modules to override
-	vars := make(VariableMap)
-	for k, v := range hostVars {
-		vars[k] = v
-	}
-	for k, v := range modVars {
-		vars[k] = v
-	}
+	hostVarsMap := makeVariableMap(hostVars)
+	modVarsMap := makeVariableMap(modVars)
+	allVars := mergeVars(hostVarsMap, modVarsMap)
+	allVarsMap := makeVariableMap(allVars)
 
 	// setup log files for script output
 	// format of paths:
@@ -144,7 +234,7 @@ func Run(ctx context.Context, runID ulid.ULID, path string, hostVars, modVars Va
 
 	// create shell interpreter
 	runner, err := interp.New(
-		interp.Env(expand.ListEnviron(append(os.Environ(), flattenEnvVarMap(vars)...)...)),
+		interp.Env(expand.ListEnviron(append(os.Environ(), allVars...)...)),
 		interp.StdIO(nil, stdoutLog, stderrLog),
 		interp.Dir(workDir),
 	)
@@ -154,9 +244,9 @@ func Run(ctx context.Context, runID ulid.ULID, path string, hostVars, modVars Va
 
 	// run script through template
 	renderedScript, err := templateScript(ctx, path, templateData{
-		HostVars:   hostVars,
-		ModuleVars: modVars,
-		Vars:       vars,
+		HostVars:   hostVarsMap,
+		ModuleVars: modVarsMap,
+		Vars:       allVarsMap,
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to template script: %s", err)
