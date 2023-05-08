@@ -44,7 +44,7 @@ var (
 			Name: "mango_runtime_info",
 			Help: "A metric with a constant '1' value with labels for information about the mango runtime, such as system hostname.",
 		},
-		[]string{"hostname", "enrolled"},
+		[]string{"hostname", "enrolled", "manager"},
 	)
 )
 
@@ -99,11 +99,6 @@ func mango(inventoryPath, hostname string) {
 	// reload inventory
 	inv.Reload(ctx)
 	enrolled := inv.IsEnrolled()
-	metricMangoRuntimeInfo.With(prometheus.Labels{"hostname": hostname, "enrolled": strconv.FormatBool(enrolled)}).Set(1)
-	log.WithFields(log.Fields{
-		"hostname": hostname,
-		"enrolled": enrolled,
-	}).Info("Host enrollment check")
 
 	// start manager, reload it with data from inventory, and then start a run of everything for the system
 	log.WithFields(log.Fields{
@@ -111,6 +106,16 @@ func mango(inventoryPath, hostname string) {
 	}).Info("Initializing mango manager")
 	mgr := manager.NewManager(hostname)
 	mgr.Reload(ctx, inv)
+	metricMangoRuntimeInfo.With(prometheus.Labels{
+		"hostname": hostname,
+		"enrolled": strconv.FormatBool(enrolled),
+		"manager":  mgr.String(),
+	}).Set(1)
+	log.WithFields(log.Fields{
+		"hostname": hostname,
+		"enrolled": enrolled,
+		"manager":  mgr.String(),
+	}).Info("Host enrollment check")
 
 	log.Info("Starting initial run of all modules")
 	mgr.RunAll(ctx)
