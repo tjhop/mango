@@ -107,6 +107,17 @@ var (
 		},
 		[]string{"directive"},
 	)
+
+	// don't add runID to run-in-progress metric -- even though it could be
+	// useful, it'll hurt cardinality. Consider adding it later as a
+	// trace/examplar.
+	metricManagerRunInProgress = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "mango_manager_run_in_progress",
+			Help: "A metric with a constant '1' when the named manager is actively running directives/modules",
+		},
+		[]string{"manager"},
+	)
 )
 
 // Module is a wrapper struct that encapsulates an inventory.Module, and
@@ -364,6 +375,8 @@ func (mgr *Manager) RunModules(ctx context.Context) {
 // all of the Modules being managed by the Manager.
 func (mgr *Manager) RunAll(ctx context.Context) {
 	go func() {
+		metricManagerRunInProgress.With(prometheus.Labels{"manager": mgr.String()}).Set(1)
+		defer metricManagerRunInProgress.With(prometheus.Labels{"manager": mgr.String()}).Set(0)
 		runID := ulid.Make()
 		runCtx := context.WithValue(ctx, contextKeyRunID, runID)
 		logger := mgr.logger.WithFields(log.Fields{
