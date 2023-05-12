@@ -16,10 +16,16 @@ type templateView struct {
 	Mango templateData
 }
 
+type metadata struct {
+	Enrolled bool
+	RunID    string
+}
+
 type templateData struct {
 	HostVars   VariableMap
 	ModuleVars VariableMap
 	Vars       VariableMap
+	Metadata   metadata
 }
 
 func templateScript(ctx context.Context, path string, view templateView) (string, error) {

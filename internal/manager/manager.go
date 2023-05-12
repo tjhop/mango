@@ -22,7 +22,7 @@ func (c contextKey) String() string {
 }
 
 var (
-	contextKeyRunID = contextKey("runID")
+	contextKeyRunID    = contextKey("runID")
 	contextKeyEnrolled = contextKey("enrolled")
 
 	// prometheus metrics
@@ -324,6 +324,10 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 	modVarsMap := shell.MakeVariableMap(mod.Variables)
 	allVars := shell.MergeVariables(hostVarsMap, modVarsMap)
 	allVarsMap := shell.MakeVariableMap(allVars)
+	runtimeData := metadata{
+		RunID:    ctx.Value(contextKeyRunID).(ulid.ULID).String(),
+		Enrolled: ctx.Value(contextKeyEnrolled).(bool),
+	}
 
 	if mod.m.Test == "" {
 		logger.WithFields(log.Fields{
@@ -339,6 +343,7 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 				HostVars:   VariableMap(hostVarsMap),
 				ModuleVars: VariableMap(modVarsMap),
 				Vars:       VariableMap(allVarsMap),
+				Metadata:   runtimeData,
 			},
 		})
 		if err != nil {
@@ -369,6 +374,7 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 			HostVars:   VariableMap(hostVarsMap),
 			ModuleVars: VariableMap(modVarsMap),
 			Vars:       VariableMap(allVarsMap),
+			Metadata:   runtimeData,
 		},
 	})
 	if err != nil {
