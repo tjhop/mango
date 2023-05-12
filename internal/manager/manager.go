@@ -121,11 +121,11 @@ var (
 )
 
 // Module is a wrapper struct that encapsulates an inventory.Module, and
-// exports a `Variables`, which is a `shell.VariableMap` of the expanded
-// variables for the given module
+// exports a `Variables`, which a `VariableSlce`, where each item is a variable for
+// the module in `key=value` form (the same as returned by `os.Environ()`)
 type Module struct {
 	m         inventory.Module
-	Variables []string
+	Variables VariableSlice
 }
 
 func (mod Module) String() string { return mod.m.String() }
@@ -138,12 +138,13 @@ type Directive struct {
 func (dir Directive) String() string { return dir.d.String() }
 
 // Manager contains fields related to track and execute runnable modules and statistics.
+// TODO: manager will eventually hold at least the func map for templates
 type Manager struct {
 	id            string
 	logger        *log.Entry
 	modules       []Module
 	directives    []Directive
-	hostVariables []string
+	hostVariables VariableSlice
 	runLock       sync.Mutex
 }
 
@@ -239,7 +240,12 @@ func (mgr *Manager) RunDirective(ctx context.Context, ds Directive) error {
 	}
 	metricManagerDirectiveRunTimestamp.With(labels).Set(float64(applyStart.Unix()))
 
-	err := shell.Run(ctx, runID, ds.String(), nil, nil)
+	renderedScript, err := templateScript(ctx, ds.String(), templateView{})
+	if err != nil {
+		return fmt.Errorf("Failed to template script: %s", err)
+	}
+
+	err = shell.Run(ctx, runID, ds.String(), renderedScript, nil)
 
 	// update metrics regardless of error, so do them before handling error
 	applyEnd := time.Since(applyStart)
@@ -299,6 +305,11 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 		"module": mod.String(),
 	}
 
+	hostVarsMap := shell.MakeVariableMap(mgr.hostVariables)
+	modVarsMap := shell.MakeVariableMap(mod.Variables)
+	allVars := shell.MergeVariables(hostVarsMap, modVarsMap)
+	allVarsMap := shell.MakeVariableMap(allVars)
+
 	if mod.m.Test == "" {
 		logger.WithFields(log.Fields{
 			"module": mod.String(),
@@ -308,7 +319,18 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 		labels["script"] = "test"
 		metricManagerModuleRunTimestamp.With(labels).Set(float64(testStart.Unix()))
 
-		if err := shell.Run(ctx, runID, mod.m.Test, mgr.hostVariables, mod.Variables); err != nil {
+		renderedTest, err := templateScript(ctx, mod.m.Test, templateView{
+			Mango: templateData{
+				HostVars:   VariableMap(hostVarsMap),
+				ModuleVars: VariableMap(modVarsMap),
+				Vars:       VariableMap(allVarsMap),
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("Failed to template script: %s", err)
+		}
+
+		if err := shell.Run(ctx, runID, mod.m.Test, renderedTest, allVars); err != nil {
 			// if test script for a module fails, log a warning for user and continue with apply
 			metricManagerModuleRunFailedTotal.With(labels).Inc()
 			logger.WithFields(log.Fields{
@@ -327,7 +349,18 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 	labels["script"] = "apply"
 	metricManagerModuleRunTimestamp.With(labels).Set(float64(applyStart.Unix()))
 
-	err := shell.Run(ctx, runID, mod.m.Apply, mgr.hostVariables, mod.Variables)
+	renderedApply, err := templateScript(ctx, mod.m.Apply, templateView{
+		Mango: templateData{
+			HostVars:   VariableMap(hostVarsMap),
+			ModuleVars: VariableMap(modVarsMap),
+			Vars:       VariableMap(allVarsMap),
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("Failed to template script: %s", err)
+	}
+
+	err = shell.Run(ctx, runID, mod.m.Apply, renderedApply, allVars)
 
 	// update metrics regardless of error, so do them before handling error
 	applyEnd := time.Since(applyStart)

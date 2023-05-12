@@ -160,7 +160,9 @@ func flattenEnvVarMap(varMap map[string]expand.Variable) VariableSlice {
 	return varSlice
 }
 
-func makeVariableMap(varSlice VariableSlice) VariableMap {
+// MakeVariableMap is a convenience function to conert a `VariableSlice` to a
+// `VariableMap`
+func MakeVariableMap(varSlice VariableSlice) VariableMap {
 	varMap := make(VariableMap)
 	for _, v := range varSlice {
 		tokens := strings.Split(v, "=")
@@ -172,7 +174,7 @@ func makeVariableMap(varSlice VariableSlice) VariableMap {
 	return varMap
 }
 
-func mergeVars(base, top VariableMap) VariableSlice {
+func MergeVariables(base, top VariableMap) VariableSlice {
 	vars := make(VariableMap)
 	for k, v := range base {
 		vars[k] = v
@@ -192,16 +194,17 @@ func mergeVars(base, top VariableMap) VariableSlice {
 // Run is responsible for assembling an interpreter's execution environment
 // (setting environment variables, working directory, IO/output, etc) and
 // running the command
-func Run(ctx context.Context, runID ulid.ULID, path string, hostVars, modVars VariableSlice) error {
-	if path == "" {
-		return fmt.Errorf("No script path provided")
+// Accepts:
+//   - context
+//   - ULID specific to this run
+//   - path to the script
+//   - string containing the contents of the templated script
+//   - a slice of strings in `key=value` pair containing the merged variables to
+//     be provided to the script as environment variables
+func Run(ctx context.Context, runID ulid.ULID, path, content string, allVars []string) error {
+	if content == "" {
+		return fmt.Errorf("No script data provided")
 	}
-
-	// apply variables for the module on top of the host modules to override
-	hostVarsMap := makeVariableMap(hostVars)
-	modVarsMap := makeVariableMap(modVars)
-	allVars := mergeVars(hostVarsMap, modVarsMap)
-	allVarsMap := makeVariableMap(allVars)
 
 	// setup log files for script output
 	// format of paths:
@@ -242,18 +245,8 @@ func Run(ctx context.Context, runID ulid.ULID, path string, hostVars, modVars Va
 		return fmt.Errorf("Failed to create shell interpreter: %s", err)
 	}
 
-	// run script through template
-	renderedScript, err := templateScript(ctx, path, templateData{
-		HostVars:   hostVarsMap,
-		ModuleVars: modVarsMap,
-		Vars:       allVarsMap,
-	})
-	if err != nil {
-		return fmt.Errorf("Failed to template script: %s", err)
-	}
-
 	// create shell parser based on rendered template script
-	file, err := syntax.NewParser().Parse(strings.NewReader(renderedScript), path)
+	file, err := syntax.NewParser().Parse(strings.NewReader(content), path)
 	if err != nil {
 		return fmt.Errorf("Failed to parse: %v", err)
 	}
