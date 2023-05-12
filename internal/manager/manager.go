@@ -141,6 +141,7 @@ func (dir Directive) String() string { return dir.d.String() }
 // TODO: manager will eventually hold at least the func map for templates
 type Manager struct {
 	id            string
+	inv           inventory.Store // TODO: move this interface to be defined consumer-side in manager vs in inventory
 	logger        *log.Entry
 	modules       []Module
 	directives    []Directive
@@ -161,9 +162,9 @@ func NewManager(id string) *Manager {
 }
 
 // ReloadDirectives reloads the manager's directives from the specified inventory.
-func (mgr *Manager) ReloadDirectives(ctx context.Context, inv inventory.Store) {
+func (mgr *Manager) ReloadDirectives(ctx context.Context) {
 	// get all directives (directives are applied to all systems if modtime threshold is passed)
-	rawDirScripts := inv.GetDirectivesForSelf()
+	rawDirScripts := mgr.inv.GetDirectivesForSelf()
 	dirScripts := make([]Directive, len(rawDirScripts))
 	for i, ds := range rawDirScripts {
 		dirScripts[i] = Directive{d: ds}
@@ -173,9 +174,9 @@ func (mgr *Manager) ReloadDirectives(ctx context.Context, inv inventory.Store) {
 }
 
 // ReloadModules reloads the manager's modules from the specified inventory.
-func (mgr *Manager) ReloadModules(ctx context.Context, inv inventory.Store) {
+func (mgr *Manager) ReloadModules(ctx context.Context) {
 	// get all modules from inventory applicable to this system
-	rawMods := inv.GetModulesForSelf()
+	rawMods := mgr.inv.GetModulesForSelf()
 	modules := make([]Module, len(rawMods))
 	for i, mod := range rawMods {
 		newMod := Module{m: mod}
@@ -206,11 +207,12 @@ func (mgr *Manager) ReloadModules(ctx context.Context, inv inventory.Store) {
 func (mgr *Manager) Reload(ctx context.Context, inv inventory.Store) {
 	mgr.logger.Info("Reloading items from inventory")
 
+	mgr.inv = inv
 	// reload modules
-	mgr.ReloadModules(ctx, inv)
+	mgr.ReloadModules(ctx)
 
 	// reload directives
-	mgr.ReloadDirectives(ctx, inv)
+	mgr.ReloadDirectives(ctx)
 
 	// ensure vars are only on manager reload, to avoid needlessly sourcing
 	// variables potentially multiple times during a run (which is
