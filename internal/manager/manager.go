@@ -23,6 +23,7 @@ func (c contextKey) String() string {
 
 var (
 	contextKeyRunID = contextKey("runID")
+	contextKeyEnrolled = contextKey("enrolled")
 
 	// prometheus metrics
 
@@ -200,6 +201,18 @@ func (mgr *Manager) ReloadModules(ctx context.Context) {
 	}
 
 	mgr.modules = modules
+}
+
+// ReloadAndRunAll is a wrapper function to reload from the specified
+// inventory, populate some run specific context, and initiate a run of all
+// managed modules
+func (mgr *Manager) ReloadAndRunAll(ctx context.Context, inv inventory.Store) {
+	mgr.Reload(ctx, inv)
+
+	// add context data relevant to this run, for use with templating and things
+	ctx = context.WithValue(ctx, contextKeyEnrolled, inv.IsEnrolled())
+
+	mgr.RunAll(ctx)
 }
 
 // Reload accepts a struct that fulfills the inventory.Store interface and

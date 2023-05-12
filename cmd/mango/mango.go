@@ -105,7 +105,6 @@ func mango(inventoryPath, hostname string) {
 		"manager": hostname,
 	}).Info("Initializing mango manager")
 	mgr := manager.NewManager(hostname)
-	mgr.Reload(ctx, inv)
 	metricMangoRuntimeInfo.With(prometheus.Labels{
 		"hostname": hostname,
 		"enrolled": strconv.FormatBool(enrolled),
@@ -118,7 +117,7 @@ func mango(inventoryPath, hostname string) {
 	}).Info("Host enrollment check")
 
 	log.Info("Starting initial run of all modules")
-	mgr.RunAll(ctx)
+	mgr.ReloadAndRunAll(ctx, inv)
 
 	reloadCh := make(chan struct{})
 	var g run.Group
@@ -170,9 +169,8 @@ func mango(inventoryPath, hostname string) {
 							"signal": sig.String(),
 						}).Info("Caught signal, reloading configuration and inventory")
 
-						// reload inventory and manager
+						// reload inventory
 						inv.Reload(ctx)
-						mgr.Reload(ctx, inv)
 
 						// signal the manager runner
 						// goroutine that a reload
@@ -203,7 +201,7 @@ func mango(inventoryPath, hostname string) {
 						// when a signal is received on the
 						// reload channel, trigger a new run
 						// for all modules.
-						mgr.RunAll(ctx)
+						mgr.ReloadAndRunAll(ctx, inv)
 					case <-cancel:
 						return nil
 					}
