@@ -7,17 +7,17 @@ cat > ${FILE} <<EOF
     Printing all variables available, via template
     -------------------
     Printing host variables:
-    {{- range $k, $v := .HostVars }}
+    {{- range $k, $v := .Mango.HostVars }}
     {{ $k }} : {{ $v }}
     {{- end }}
     -------------------
     Printing module variables:
-    {{- range $k, $v := .ModuleVars }}
+    {{- range $k, $v := .Mango.ModuleVars }}
     {{ $k }} : {{ $v }}
     {{- end }}
     -------------------
     Printing all variables (merged, where module variables override host variables):
-    {{- range $k, $v := .Vars }}
+    {{- range $k, $v := .Mango.Vars }}
     {{ $k }} : {{ $v }}
     {{- end }}
     -------------------
