@@ -8,18 +8,25 @@ cat > ${FILE} <<EOF
     -------------------
     Printing host variables:
     {{- range $k, $v := .Mango.HostVars }}
-    {{ $k }} : {{ $v }}
+    {{ $k }}: {{ $v }}
     {{- end }}
     -------------------
     Printing module variables:
     {{- range $k, $v := .Mango.ModuleVars }}
-    {{ $k }} : {{ $v }}
+    {{ $k }}: {{ $v }}
     {{- end }}
     -------------------
     Printing all variables (merged, where module variables override host variables):
     {{- range $k, $v := .Mango.Vars }}
-    {{ $k }} : {{ $v }}
+    {{ $k }}: {{ $v }}
     {{- end }}
+    -------------------
+    Printing all Mango metadata:
+    Enrollment status: {{ .Mango.Metadata.Enrolled }}
+    Run ID: {{ .Mango.Metadata.RunID }}
+    Manager Name: {{ .Mango.Metadata.ManagerName }}
+    Inventory Path: {{ .Mango.Metadata.InventoryPath }}
+    Hostname: {{ .Mango.Metadata.Hostname }}
     -------------------
     Done.
 EOF

@@ -17,8 +17,11 @@ type templateView struct {
 }
 
 type metadata struct {
-	Enrolled bool
-	RunID    string
+	Enrolled      bool
+	RunID         string
+	ManagerName   string
+	InventoryPath string
+	Hostname      string
 }
 
 type templateData struct {

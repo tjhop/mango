@@ -71,6 +71,12 @@ type Inventory struct {
 // String is a stringer to return the inventory path
 func (i *Inventory) String() string { return i.inventoryPath }
 
+// GetInventoryPath returns the inventory path as a string
+func (i *Inventory) GetInventoryPath() string { return i.inventoryPath }
+
+// GetHostname returns the inventory path as a string
+func (i *Inventory) GetHostname() string { return i.hostname }
+
 // Store is the set of methods that Inventory must
 // implement to serve as a backing store for an inventory
 // implementation. This is to try and keep a consistent API
@@ -81,8 +87,10 @@ type Store interface {
 	// Inventory management functions
 	Reload(ctx context.Context)
 
-	// Enrollment Checks
+	// Enrollment and runtime/metadata checks
 	IsEnrolled() bool
+	GetInventoryPath() string
+	GetHostname() string
 
 	// General Inventory Getters
 	GetDirectives() []Directive

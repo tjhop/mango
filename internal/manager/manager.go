@@ -22,8 +22,12 @@ func (c contextKey) String() string {
 }
 
 var (
-	contextKeyRunID    = contextKey("runID")
-	contextKeyEnrolled = contextKey("enrolled")
+	// context keys for metadata that manager uses for feeding mango metadata in templates
+	contextKeyRunID         = contextKey("runID")
+	contextKeyEnrolled      = contextKey("enrolled")
+	contextKeyManagerName   = contextKey("manager name")
+	contextKeyInventoryPath = contextKey("inventory path")
+	contextKeyHostname      = contextKey("hostname")
 
 	// prometheus metrics
 
@@ -211,6 +215,9 @@ func (mgr *Manager) ReloadAndRunAll(ctx context.Context, inv inventory.Store) {
 
 	// add context data relevant to this run, for use with templating and things
 	ctx = context.WithValue(ctx, contextKeyEnrolled, inv.IsEnrolled())
+	ctx = context.WithValue(ctx, contextKeyManagerName, mgr.String())
+	ctx = context.WithValue(ctx, contextKeyInventoryPath, mgr.inv.GetInventoryPath())
+	ctx = context.WithValue(ctx, contextKeyHostname, mgr.inv.GetHostname())
 
 	mgr.RunAll(ctx)
 }
@@ -325,8 +332,11 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 	allVars := shell.MergeVariables(hostVarsMap, modVarsMap)
 	allVarsMap := shell.MakeVariableMap(allVars)
 	runtimeData := metadata{
-		RunID:    ctx.Value(contextKeyRunID).(ulid.ULID).String(),
-		Enrolled: ctx.Value(contextKeyEnrolled).(bool),
+		RunID:         ctx.Value(contextKeyRunID).(ulid.ULID).String(),
+		Enrolled:      ctx.Value(contextKeyEnrolled).(bool),
+		ManagerName:   ctx.Value(contextKeyManagerName).(string),
+		InventoryPath: ctx.Value(contextKeyInventoryPath).(string),
+		Hostname:      ctx.Value(contextKeyHostname).(string),
 	}
 
 	if mod.m.Test == "" {
