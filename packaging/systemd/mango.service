@@ -5,6 +5,7 @@ After=network.target
 
 [Service]
 ExecStart=/usr/bin/mango
+ExecReload=/bin/kill -SIGHUP $MAINPID
 Restart=on-failure
 KillSignal=SIGINT
 LimitNOFILE=8192
