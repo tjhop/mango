@@ -36,7 +36,7 @@ mango --inventory.path /path/to/inventory
 All options:
 
 ```bash
-~/go/src/github.com/tjhop/mango (main [ U ]) -> ./dist/mango_linux_amd64_v1/mango -h
+~/go/src/github.com/tjhop/mango (main [ ]) -> ./dist/mango_linux_amd64_v1/mango -h
 Usage of ./dist/mango_linux_amd64_v1/mango:
       --hostname string         Custom hostname to use (default's to system hostname if unset)
   -i, --inventory.path string   Path to mango configuration inventory
@@ -111,13 +111,31 @@ A Grafana dashboard is in progress.
 
 ## Development
 
+### Required Software
+
+This project uses:
+- [goreleaser](https://goreleaser.com/) to manage builds.
+- [docker compose](https://docs.docker.com/compose/) to run supplementary services during testing
+- [podman](https://podman.io/) to build and run containers
+
 ### Build From Source
 
-This project uses [goreleaser](https://goreleaser.com/) to manage builds.
-To manually make a build for local development/testing, you can clone this project and run:
+Most development work can be done with the included Makefile:
 
 ```bash
-goreleaser build --clean --single-target --snapshot
+~/go/src/github.com/tjhop/mango (main [ ]) -> make help
+# autogenerate help messages for comment lines with 2 `#`
+ help:			print this help message
+ tidy:			tidy modules
+ fmt:			apply go code style formatter
+ binary:		build a binary
+ build:			alias for `binary`
+ docker:		build docker container with binary
+ test-docker:		build ubuntu docker container with binary for testing purposes
+ services:		use docker compose to spin up local grafana, prometheus, etc
+ run-test-inventory:	use podman to create an ubuntu-systemd container that runs mango with the test inventory
+ reload-test-inventory: use podman to reload the mango systemd service running in the ubuntu test container
+ clean:			stop test environment and any other cleanup
 ```
 
 ### Testing
@@ -125,8 +143,7 @@ goreleaser build --clean --single-target --snapshot
 A [skeleton inventory ](./test/mockup/inventory/) is included for use with testing:
 
 ```bash
-goreleaser build --clean --single-target --snapshot
-./dist/mango_linux_amd64_v1/mango --inventory.path ./test/mockup/inventory/ --logging.level debug
+make run-test-inventory
 ```
 
 ### Contributions
