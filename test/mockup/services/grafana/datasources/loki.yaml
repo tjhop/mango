@@ -5,7 +5,7 @@ datasources:
   type: loki
   access: proxy
   orgId: 1
-  url: http://loki:3100
+  url: http://localhost:3100
   basicAuth: false
   isDefault: false
   version: 1

@@ -13,6 +13,13 @@ volumes:
   prometheus_data: {}
 
 services:
+  loki:
+    image: grafana/loki:latest
+    volumes:
+      - ./test/mockup/services/loki-config.yaml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+    network_mode: host
+
   prometheus:
     image: prom/prometheus:latest
     restart: unless-stopped

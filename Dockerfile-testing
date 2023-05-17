@@ -5,10 +5,17 @@ RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y systemd && \
     apt-get clean
+
+# setup mango
 COPY ./mango /usr/bin/mango
 COPY ./packaging/systemd/mango.service /etc/systemd/system/
 COPY ./test/mockup/inventory /opt/mango/inventory/
-
 RUN systemctl enable mango.service
+
+# setup promtail
+COPY --from=docker.io/grafana/promtail:latest /usr/bin/promtail /usr/bin/promtail
+COPY ./test/mockup/services/promtail-config.yaml /etc/promtail/config.yaml
+COPY ./test/mockup/services/promtail.service /etc/systemd/system/
+RUN systemctl enable promtail.service
 
 CMD ["/lib/systemd/systemd"]
