@@ -332,6 +332,7 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 	allVars := shell.MergeVariables(hostVarsMap, modVarsMap)
 	allVarsMap := shell.MakeVariableMap(allVars)
 	runtimeData := metadata{
+		ModuleName:    mod.String(),
 		RunID:         ctx.Value(contextKeyRunID).(ulid.ULID).String(),
 		Enrolled:      ctx.Value(contextKeyEnrolled).(bool),
 		ManagerName:   ctx.Value(contextKeyManagerName).(string),

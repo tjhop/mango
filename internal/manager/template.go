@@ -17,6 +17,7 @@ type templateView struct {
 }
 
 type metadata struct {
+	ModuleName    string // name of the module/directive executing the template
 	Enrolled      bool
 	RunID         string
 	ManagerName   string
