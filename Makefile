@@ -46,6 +46,7 @@ run-test-inventory: test-docker services
 			--net=host \
 			--systemd=true \
 			--hostname testbox \
+			-v ./test/mockup/inventory:/opt/mango/inventory/:ro \
 			--name "${TEST_CONTAINER_NAME}" \
 			"${TEST_CONTAINER_NAME}:latest"
 
