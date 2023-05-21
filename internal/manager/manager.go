@@ -3,12 +3,15 @@ package manager
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
+	kernelParser "github.com/moby/moby/pkg/parsers/kernel"
 	"github.com/oklog/ulid/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	distro "github.com/quay/claircore/osrelease"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/tjhop/mango/internal/inventory"
@@ -327,6 +330,7 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 		"module": mod.String(),
 	}
 
+	// runtime metadata for templates
 	hostVarsMap := shell.MakeVariableMap(mgr.hostVariables)
 	modVarsMap := shell.MakeVariableMap(mod.Variables)
 	allVars := shell.MergeVariables(hostVarsMap, modVarsMap)
@@ -340,6 +344,43 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 		Hostname:      ctx.Value(contextKeyHostname).(string),
 	}
 
+	// os metadata for templates
+	osReleaseFile, err := os.Open(distro.Path)
+	if err != nil {
+		return fmt.Errorf("Failed to open %s: %s", distro.Path, err)
+	}
+	osRelease, err := distro.Parse(ctx, osReleaseFile)
+	if err != nil {
+		return fmt.Errorf("Failed to parse %s: %s", distro.Path, err)
+	}
+	osData := osMetadata{
+		OSRelease: osRelease,
+	}
+
+	// kernel metadata for templates
+	kernelInfo, err := kernelParser.GetKernelVersion()
+	if err != nil {
+		return fmt.Errorf("Failed to get kernel info: %s", err)
+	}
+	kernelData := kernelMetadata{
+		Kernel: kernelInfo.Kernel,
+		Major:  kernelInfo.Major,
+		Minor:  kernelInfo.Minor,
+		Flavor: kernelInfo.Flavor,
+	}
+
+	// assemble all template data
+	allTemplateData := templateView{
+		Mango: templateData{
+			HostVars:   VariableMap(hostVarsMap),
+			ModuleVars: VariableMap(modVarsMap),
+			Vars:       VariableMap(allVarsMap),
+			Metadata:   runtimeData,
+			OS:         osData,
+			Kernel:     kernelData,
+		},
+	}
+
 	if mod.m.Test == "" {
 		logger.WithFields(log.Fields{
 			"module": mod.String(),
@@ -349,14 +390,7 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 		labels["script"] = "test"
 		metricManagerModuleRunTimestamp.With(labels).Set(float64(testStart.Unix()))
 
-		renderedTest, err := templateScript(ctx, mod.m.Test, templateView{
-			Mango: templateData{
-				HostVars:   VariableMap(hostVarsMap),
-				ModuleVars: VariableMap(modVarsMap),
-				Vars:       VariableMap(allVarsMap),
-				Metadata:   runtimeData,
-			},
-		})
+		renderedTest, err := templateScript(ctx, mod.m.Test, allTemplateData)
 		if err != nil {
 			return fmt.Errorf("Failed to template script: %s", err)
 		}
@@ -380,14 +414,7 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 	labels["script"] = "apply"
 	metricManagerModuleRunTimestamp.With(labels).Set(float64(applyStart.Unix()))
 
-	renderedApply, err := templateScript(ctx, mod.m.Apply, templateView{
-		Mango: templateData{
-			HostVars:   VariableMap(hostVarsMap),
-			ModuleVars: VariableMap(modVarsMap),
-			Vars:       VariableMap(allVarsMap),
-			Metadata:   runtimeData,
-		},
-	})
+	renderedApply, err := templateScript(ctx, mod.m.Apply, allTemplateData)
 	if err != nil {
 		return fmt.Errorf("Failed to template script: %s", err)
 	}
