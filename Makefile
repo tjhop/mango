@@ -1,6 +1,6 @@
 GOCMD := go
 GOFMT := ${GOCMD} fmt
-GOMOD := ${GOCMD} fmt
+GOMOD := ${GOCMD} mod
 COMMIT := $(shell git rev-parse HEAD)
 TEST_CONTAINER_NAME := "mango-test-ubuntu"
 RELEASE_CONTAINER_NAME := "mango"
