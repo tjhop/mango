@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"text/template"
 	"time"
 
 	kernelParser "github.com/moby/moby/pkg/parsers/kernel"
@@ -155,17 +156,23 @@ type Manager struct {
 	directives    []Directive
 	hostVariables VariableSlice
 	runLock       sync.Mutex
+	funcMap       template.FuncMap
 }
 
 func (mgr *Manager) String() string { return mgr.id }
 
 // NewManager returns a new Manager struct instantiated with the given ID
 func NewManager(id string) *Manager {
+	funcs := template.FuncMap{
+		"sockaddrTemplate": sockaddrTemplate,
+	}
+
 	return &Manager{
 		id: id,
 		logger: log.WithFields(log.Fields{
 			"manager": id,
 		}),
+		funcMap: funcs,
 	}
 }
 
@@ -265,7 +272,7 @@ func (mgr *Manager) RunDirective(ctx context.Context, ds Directive) error {
 	}
 	metricManagerDirectiveRunTimestamp.With(labels).Set(float64(applyStart.Unix()))
 
-	renderedScript, err := templateScript(ctx, ds.String(), templateView{})
+	renderedScript, err := templateScript(ctx, ds.String(), templateView{}, mgr.funcMap)
 	if err != nil {
 		return fmt.Errorf("Failed to template script: %s", err)
 	}
@@ -390,7 +397,7 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 		labels["script"] = "test"
 		metricManagerModuleRunTimestamp.With(labels).Set(float64(testStart.Unix()))
 
-		renderedTest, err := templateScript(ctx, mod.m.Test, allTemplateData)
+		renderedTest, err := templateScript(ctx, mod.m.Test, allTemplateData, mgr.funcMap)
 		if err != nil {
 			return fmt.Errorf("Failed to template script: %s", err)
 		}
@@ -414,7 +421,7 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 	labels["script"] = "apply"
 	metricManagerModuleRunTimestamp.With(labels).Set(float64(applyStart.Unix()))
 
-	renderedApply, err := templateScript(ctx, mod.m.Apply, allTemplateData)
+	renderedApply, err := templateScript(ctx, mod.m.Apply, allTemplateData, mgr.funcMap)
 	if err != nil {
 		return fmt.Errorf("Failed to template script: %s", err)
 	}

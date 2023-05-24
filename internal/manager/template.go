@@ -3,9 +3,13 @@ package manager
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"path/filepath"
+	"strings"
 	"text/template"
 
+	socktmpl "github.com/hashicorp/go-sockaddr/template"
+	log "github.com/sirupsen/logrus"
 	"github.com/tjhop/mango/internal/shell"
 )
 
@@ -50,7 +54,7 @@ type templateData struct {
 	Kernel     kernelMetadata
 }
 
-func templateScript(ctx context.Context, path string, view templateView) (string, error) {
+func templateScript(ctx context.Context, path string, view templateView, funcMap template.FuncMap) (string, error) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.WithFields(log.Fields{
@@ -60,11 +64,29 @@ func templateScript(ctx context.Context, path string, view templateView) (string
 	}()
 
 	var buf bytes.Buffer
-	t := template.Must(template.New(filepath.Base(path)).ParseFiles(path))
+	t := template.Must(template.New(filepath.Base(path)).Funcs(funcMap).ParseFiles(path))
 	err := t.Execute(&buf, view)
 	if err != nil {
 		return "", err
 	}
 
 	return buf.String(), nil
+}
+
+// custom template functions
+
+// sockaddrTemplate is a wrapper around Hashicorp's sockaddr library's
+// template.Parse() function. all this wrapper does is take the raw text of the
+// template and wrap it in `{{ }}` to feed into the sockaddr template Parse()
+// funtion.
+func sockaddrTemplate(tmpl ...string) (string, error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.WithFields(log.Fields{
+				"panic": r,
+			}).Error("Failed to parse sockaddr template")
+		}
+	}()
+
+	return socktmpl.Parse(fmt.Sprintf("{{ %s }}", strings.Join(tmpl, " ")))
 }
