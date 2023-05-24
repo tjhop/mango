@@ -39,5 +39,8 @@ Major: {{ .Mango.Kernel.Major }}
 Minor: {{ .Mango.Kernel.Minor }}
 Flavor: {{ .Mango.Kernel.Flavor }}
 -------------------
+Testing template functions:
+Private IP: {{ sockaddrTemplate "GetPrivateIP" }}
+Interfaces: {{  sockaddrTemplate "GetAllInterfaces" }}
 Done.
 EOF
