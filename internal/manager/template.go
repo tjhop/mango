@@ -51,6 +51,14 @@ type templateData struct {
 }
 
 func templateScript(ctx context.Context, path string, view templateView) (string, error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.WithFields(log.Fields{
+				"panic": r,
+			}).Error("Failed to template script")
+		}
+	}()
+
 	var buf bytes.Buffer
 	t := template.Must(template.New(filepath.Base(path)).ParseFiles(path))
 	err := t.Execute(&buf, view)
