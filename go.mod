@@ -3,6 +3,7 @@ module github.com/tjhop/mango
 go 1.20
 
 require (
+	github.com/hashicorp/go-sockaddr v1.0.2
 	github.com/moby/moby v24.0.1+incompatible
 	github.com/oklog/run v1.1.0
 	github.com/oklog/ulid/v2 v2.1.0
@@ -20,6 +21,7 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
+	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
