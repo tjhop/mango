@@ -19,6 +19,10 @@ tidy:
 fmt:
 	${GOFMT} -x ./...
 
+## lint:		run linters
+lint:
+	golangci-lint run
+
 ## binary:		build a binary
 binary: fmt
 	goreleaser build --clean --single-target --snapshot --output .
