@@ -24,7 +24,7 @@ lint:
 	golangci-lint run
 
 ## binary:		build a binary
-binary: fmt
+binary: fmt tidy lint
 	goreleaser build --clean --single-target --snapshot --output .
 
 ## build:			alias for `binary`
