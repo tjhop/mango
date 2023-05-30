@@ -49,5 +49,15 @@ More complex sockaddr template:
     {{ sockaddr_attr "address" . }}
   {{- end -}}
 {{- end }}
+Checking IPv4 Validation:
+    Google DNS 8.8.8.8: {{ isIPv4 "8.8.8.8" }}
+    My IP {{ sockaddr_GetPrivateIP }}: {{ sockaddr_GetPrivateIP | isIPv4 }}
+    Bad IP '1.2.j': {{ isIPv4 "1.2.j" }}
+{{- with $myipv6 := sockaddr_GetAllInterfaces | sockaddr_include "type" "IPv6" | sockaddr_include "flags" "global unicast" | sockaddr_attr "address" }}
+Checking IPv6 Validation:
+    Google DNS 2001:4860:4860::8888: {{ isIPv6 "2001:4860:4860::8888" }}
+    My IP {{ $myipv6 }}: {{ $myipv6 | isIPv6 }}
+    Bad IP '1.2.j': {{ isIPv6 "1.2.j" }}
+{{- end }}
 Done.
 EOF
