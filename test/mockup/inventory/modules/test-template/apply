@@ -40,7 +40,14 @@ Minor: {{ .Mango.Kernel.Minor }}
 Flavor: {{ .Mango.Kernel.Flavor }}
 -------------------
 Testing template functions:
-Private IP: {{ sockaddrTemplate "GetPrivateIP" }}
-Interfaces: {{  sockaddrTemplate "GetAllInterfaces" }}
+Private IP: {{ GetPrivateIP }}
+Public IP: {{ GetPublicIP }}
+Interfaces: {{ GetAllInterfaces }}
+More complex sockaddr template:
+{{ with $ifAddrs := GetAllInterfaces | include "type" "ipv6" | include "flags" "forwardable" | exclude "flags" "loopback" | sort "+address" -}}
+  {{- range $ifAddrs }}
+    {{ attr "address" . }}
+  {{- end -}}
+{{- end }}
 Done.
 EOF
