@@ -40,13 +40,13 @@ Minor: {{ .Mango.Kernel.Minor }}
 Flavor: {{ .Mango.Kernel.Flavor }}
 -------------------
 Testing template functions:
-Private IP: {{ GetPrivateIP }}
-Public IP: {{ GetPublicIP }}
-Interfaces: {{ GetAllInterfaces }}
+Private IP: {{ sockaddr_GetPrivateIP }}
+Public IP: {{ sockaddr_GetPublicIP }}
+Interfaces: {{ sockaddr_GetAllInterfaces }}
 More complex sockaddr template:
-{{ with $ifAddrs := GetAllInterfaces | include "type" "ipv6" | include "flags" "forwardable" | exclude "flags" "loopback" | sort "+address" -}}
+{{ with $ifAddrs := sockaddr_GetAllInterfaces | sockaddr_include "type" "ipv6" | sockaddr_include "flags" "forwardable" | sockaddr_exclude "flags" "loopback" | sockaddr_sort "+address" -}}
   {{- range $ifAddrs }}
-    {{ attr "address" . }}
+    {{ sockaddr_attr "address" . }}
   {{- end -}}
 {{- end }}
 Done.
