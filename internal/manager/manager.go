@@ -163,9 +163,7 @@ func (mgr *Manager) String() string { return mgr.id }
 
 // NewManager returns a new Manager struct instantiated with the given ID
 func NewManager(id string) *Manager {
-	funcs := template.FuncMap{
-		"sockaddrTemplate": sockaddrTemplate,
-	}
+	funcs := template.FuncMap{}
 
 	return &Manager{
 		id: id,
