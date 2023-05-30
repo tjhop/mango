@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net"
 	"path/filepath"
 	"text/template"
 
@@ -86,3 +87,30 @@ func templateScript(ctx context.Context, path string, view templateView, funcMap
 }
 
 // custom template functions
+
+// isIPv4 returns true if the given string is an IPv4 address and false otherwise
+func isIPv4(s string) bool {
+	ip := net.ParseIP(s)
+	if ip == nil {
+		return false
+	}
+
+	ip4 := ip.To4()
+	return ip4 != nil
+}
+
+// isIPv6 returns true if the given string is an IPv6 address and false otherwise
+func isIPv6(s string) bool {
+	// short circuit if it's an IPv4
+	if isIPv4(s) {
+		return false
+	}
+
+	ip := net.ParseIP(s)
+	if ip == nil {
+		return false
+	}
+
+	ip6 := ip.To16()
+	return ip6 != nil
+}
