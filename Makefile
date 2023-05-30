@@ -19,7 +19,7 @@ tidy:
 fmt:
 	${GOFMT} -x ./...
 
-## lint:		run linters
+## lint:			run linters
 lint:
 	golangci-lint run
 
