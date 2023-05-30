@@ -3,7 +3,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y systemd build-essential wget curl vim tmux htop tar && \
+    apt-get install -y systemd build-essential wget curl vim tmux htop tar iproute2 && \
     apt-get clean
 
 # setup mango
