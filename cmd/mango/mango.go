@@ -116,6 +116,38 @@ func mango(inventoryPath, hostname string) {
 		"manager":  mgr.String(),
 	}).Info("Host enrollment check")
 
+	// setup a ticker for auto reloads, if configured
+	tickerDone := make(chan struct{})
+	interval := viper.GetString("inventory.reload-interval")
+	if interval == "" {
+		// auto update not enabled, log and carry on
+		log.Info("Inventory auto reload is not enabled, mango will only re-apply inventory if sent a SIGHUP")
+	} else {
+		// auto update enabled, attempt to configure or exit and cleanup
+		dur, err := time.ParseDuration(interval)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Error("Failed to parse duration for inventory auto reload, exiting")
+
+			cancel()
+
+			return
+		}
+
+		ticker := time.NewTicker(dur)
+		go func() {
+			for {
+				select {
+				case <-ticker.C:
+					mgr.ReloadAndRunAll(ctx, inv)
+				case <-tickerDone:
+					cancel()
+				}
+			}
+		}()
+	}
+
 	log.Info("Starting initial run of all modules")
 	mgr.ReloadAndRunAll(ctx, inv)
 
@@ -146,6 +178,7 @@ func mango(inventoryPath, hostname string) {
 
 					// close the reload -> manager run signal channel
 					close(reloadCh)
+					close(tickerDone)
 				}
 
 				return nil
@@ -206,7 +239,8 @@ func mango(inventoryPath, hostname string) {
 						return nil
 					}
 				}
-			}, func(error) {
+			},
+			func(error) {
 				close(cancel)
 			},
 		)
@@ -241,6 +275,7 @@ func cleanup() {
 func main() {
 	// prep and parse flags
 	flag.StringP("inventory.path", "i", "", "Path to mango configuration inventory")
+	flag.String("inventory.reload-interval", "", "Time duration for how frequently mango will auto reload and apply the inventory [default disabled]")
 	flag.StringP("logging.level", "l", "", "Logging level may be one of: [trace, debug, info, warning, error, fatal and panic]")
 	flag.String("logging.output", "logfmt", "Logging format may be one of: [logfmt, json]")
 	flag.String("hostname", "", "Custom hostname to use (default's to system hostname if unset)")
