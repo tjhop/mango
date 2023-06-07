@@ -30,17 +30,35 @@ binary: fmt tidy lint
 ## build:			alias for `binary`
 build: binary
 
-## docker:		build docker container with binary
-docker: binary
+## container: 		build container image with binary
+container: binary
 	podman image build -t "${RELEASE_CONTAINER_NAME}:latest" .
 
-## test-docker:		build ubuntu docker container with binary for testing purposes
-test-docker: binary docker
+## image:			alias for `container`
+image: container
+
+## podman:		alias for `container`
+podman: container
+
+## docker:		alias for `container`
+docker: container
+
+## test-container:	build ubuntu container with binary for testing purposes
+test-container: binary container
 	podman image build -t "${TEST_CONTAINER_NAME}:latest" -f Dockerfile-testing .
+
+## test-image:		alias for `container`
+test-image: container
+
+## test-podman:		alias for `container`
+test-podman: container
+
+## test-docker:		alias for `container`
+test-docker: container
 
 ## services:		use docker compose to spin up local grafana, prometheus, etc
 services:
-	docker compose up -d
+	podman-compose up -d
 
 ## run-test-inventory:	use podman to create an ubuntu-systemd container that runs mango with the test inventory
 run-test-inventory: test-docker services
@@ -61,7 +79,7 @@ reload-test-inventory: run-test-inventory
 
 ## clean:			stop test environment and any other cleanup
 clean:
-	docker compose down
+	podman-compose down
 	podman container stop "${TEST_CONTAINER_NAME}" 2>/dev/null || true
 	podman container stop "${RELEASE_CONTAINER_NAME}" 2>/dev/null || true
 	podman container rm "${TEST_CONTAINER_NAME}" 2>/dev/null || true

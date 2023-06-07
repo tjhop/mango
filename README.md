@@ -45,12 +45,13 @@ Usage of ./dist/mango_linux_amd64_v1/mango:
 pflag: help requested
 ```
 
-### Docker Usage
+### Container Usage
 
-Since `mango` is intended to be run on the system it is managing and thus requires access to the host system, if you must run `mango` with Docker you may want to use the `--privileged` flag.
+Since `mango` is intended to be run on the system it is managing and thus requires access to the host system, if you must run `mango` as a container, you may want to use the `--privileged` flag.
 
 ```
-docker run \
+# docker works too, but podman is wonderful
+podman run \
 -v /path/to/inventory:/opt/mango/inventory \
 --privileged \
 ghcr.io/tjhop/mango
@@ -115,7 +116,7 @@ A Grafana dashboard is in progress.
 
 This project uses:
 - [goreleaser](https://goreleaser.com/) to manage builds.
-- [docker compose](https://docs.docker.com/compose/) to run supplementary services during testing
+- [podman compose](https://github.com/containers/podman-compose) to run supplementary services during testing
 - [podman](https://podman.io/) to build and run containers
 
 ### Build From Source
