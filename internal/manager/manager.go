@@ -147,7 +147,6 @@ type Directive struct {
 func (dir Directive) String() string { return dir.d.String() }
 
 // Manager contains fields related to track and execute runnable modules and statistics.
-// TODO: manager will eventually hold at least the func map for templates
 type Manager struct {
 	id            string
 	inv           inventory.Store // TODO: move this interface to be defined consumer-side in manager vs in inventory
@@ -157,9 +156,47 @@ type Manager struct {
 	hostVariables VariableSlice
 	runLock       sync.Mutex
 	funcMap       template.FuncMap
+	tmplData      templateData
 }
 
 func (mgr *Manager) String() string { return mgr.id }
+
+func getSystemMetadata() (osMetadata, kernelMetadata) {
+	// os metadata for templates
+	osReleaseFile, err := os.Open(distro.Path)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"path":  distro.Path,
+		}).Error("Failed to open os-release file")
+	}
+	osRelease, err := distro.Parse(context.Background(), osReleaseFile)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"path":  distro.Path,
+		}).Error("Failed to parse os-release file")
+	}
+	osData := osMetadata{
+		OSRelease: osRelease,
+	}
+
+	// kernel metadata for templates
+	kernelInfo, err := kernelParser.GetKernelVersion()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("Failed to parse kernel info")
+	}
+	kernelData := kernelMetadata{
+		Kernel: kernelInfo.Kernel,
+		Major:  kernelInfo.Major,
+		Minor:  kernelInfo.Minor,
+		Flavor: kernelInfo.Flavor,
+	}
+
+	return osData, kernelData
+}
 
 // NewManager returns a new Manager struct instantiated with the given ID
 func NewManager(id string) *Manager {
@@ -261,6 +298,10 @@ func (mgr *Manager) Reload(ctx context.Context, inv inventory.Store) {
 	} else {
 		mgr.logger.Debug("No host variables")
 	}
+
+	osData, kernelData := getSystemMetadata()
+	mgr.tmplData.OS = osData
+	mgr.tmplData.Kernel = kernelData
 }
 
 // RunDirective is responsible for actually executing a module, using the `shell`
@@ -352,31 +393,6 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 		Hostname:      ctx.Value(contextKeyHostname).(string),
 	}
 
-	// os metadata for templates
-	osReleaseFile, err := os.Open(distro.Path)
-	if err != nil {
-		return fmt.Errorf("Failed to open %s: %s", distro.Path, err)
-	}
-	osRelease, err := distro.Parse(ctx, osReleaseFile)
-	if err != nil {
-		return fmt.Errorf("Failed to parse %s: %s", distro.Path, err)
-	}
-	osData := osMetadata{
-		OSRelease: osRelease,
-	}
-
-	// kernel metadata for templates
-	kernelInfo, err := kernelParser.GetKernelVersion()
-	if err != nil {
-		return fmt.Errorf("Failed to get kernel info: %s", err)
-	}
-	kernelData := kernelMetadata{
-		Kernel: kernelInfo.Kernel,
-		Major:  kernelInfo.Major,
-		Minor:  kernelInfo.Minor,
-		Flavor: kernelInfo.Flavor,
-	}
-
 	// assemble all template data
 	allTemplateData := templateView{
 		Mango: templateData{
@@ -384,8 +400,8 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 			ModuleVars: VariableMap(modVarsMap),
 			Vars:       VariableMap(allVarsMap),
 			Metadata:   runtimeData,
-			OS:         osData,
-			Kernel:     kernelData,
+			OS:         mgr.tmplData.OS,
+			Kernel:     mgr.tmplData.Kernel,
 		},
 	}
 
