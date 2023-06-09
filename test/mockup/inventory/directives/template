@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+FILE="/tmp/$(basename {{ .Mango.Metadata.ModuleName }})-{{ .Mango.Metadata.RunID }}"
+
+cat > ${FILE} <<EOF
+Testing templating!
+Printing all variables available, via template
+-------------------
+Printing host variables:
+{{- range $k, $v := .Mango.HostVars }}
+{{ $k }}: {{ $v }}
+{{- end }}
+-------------------
+Printing module variables:
+{{- range $k, $v := .Mango.ModuleVars }}
+{{ $k }}: {{ $v }}
+{{- end }}
+-------------------
+Printing all variables (merged, where module variables override host variables):
+{{- range $k, $v := .Mango.Vars }}
+{{ $k }}: {{ $v }}
+{{- end }}
+-------------------
+Printing all Mango runtime metadata:
+Enrollment status: {{ .Mango.Metadata.Enrolled }}
+Run ID: {{ .Mango.Metadata.RunID }}
+Manager Name: {{ .Mango.Metadata.ManagerName }}
+Inventory Path: {{ .Mango.Metadata.InventoryPath }}
+Hostname: {{ .Mango.Metadata.Hostname }}
+-------------------
+Printing all OS metadata:
+{{- range $k, $v := .Mango.OS.OSRelease }}
+{{ $k }}: {{ $v }}
+{{- end }}
+-------------------
+Printing all kernel metadata:
+Kernel: {{ .Mango.Kernel.Kernel }}
+Major: {{ .Mango.Kernel.Major }}
+Minor: {{ .Mango.Kernel.Minor }}
+Flavor: {{ .Mango.Kernel.Flavor }}
+-------------------
+Testing template functions:
+Private IP: {{ sockaddr_GetPrivateIP }}
+Public IP: {{ sockaddr_GetPublicIP }}
+Interfaces: {{ sockaddr_GetAllInterfaces }}
+More complex sockaddr template:
+{{ with $ifAddrs := sockaddr_GetAllInterfaces | sockaddr_include "type" "ipv6" | sockaddr_include "flags" "forwardable" | sockaddr_exclude "flags" "loopback" | sockaddr_sort "+address" -}}
+  {{- range $ifAddrs }}
+    {{ sockaddr_attr "address" . }}
+  {{- end -}}
+{{- end }}
+Checking IPv4 Validation:
+    Google DNS 8.8.8.8: {{ isIPv4 "8.8.8.8" }}
+    My IP {{ sockaddr_GetPrivateIP }}: {{ sockaddr_GetPrivateIP | isIPv4 }}
+    Bad IP '1.2.j': {{ isIPv4 "1.2.j" }}
+{{- with $myipv6 := sockaddr_GetAllInterfaces | sockaddr_include "type" "IPv6" | sockaddr_include "flags" "global unicast" | sockaddr_attr "address" }}
+Checking IPv6 Validation:
+    Google DNS 2001:4860:4860::8888: {{ isIPv6 "2001:4860:4860::8888" }}
+    My IP {{ $myipv6 }}: {{ $myipv6 | isIPv6 }}
+    Bad IP '1.2.j': {{ isIPv6 "1.2.j" }}
+{{- end }}
+Done.
+EOF

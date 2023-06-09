@@ -304,7 +304,7 @@ func (mgr *Manager) Reload(ctx context.Context, inv inventory.Store) {
 	mgr.tmplData.Kernel = kernelData
 }
 
-// RunDirective is responsible for actually executing a module, using the `shell`
+// RunDirective is responsible for actually executing a directive, using the `shell`
 // package.
 func (mgr *Manager) RunDirective(ctx context.Context, ds Directive) error {
 	runID := ctx.Value(contextKeyRunID).(ulid.ULID)
@@ -314,7 +314,10 @@ func (mgr *Manager) RunDirective(ctx context.Context, ds Directive) error {
 	}
 	metricManagerDirectiveRunTimestamp.With(labels).Set(float64(applyStart.Unix()))
 
-	renderedScript, err := templateScript(ctx, ds.String(), templateView{}, mgr.funcMap)
+	hostVarsMap := shell.MakeVariableMap(mgr.hostVariables)
+	allTemplateData := mgr.getTemplateData(ctx, ds.String(), hostVarsMap, nil, hostVarsMap)
+
+	renderedScript, err := templateScript(ctx, ds.String(), allTemplateData, mgr.funcMap)
 	if err != nil {
 		return fmt.Errorf("Failed to template script: %s", err)
 	}
@@ -363,6 +366,32 @@ func (mgr *Manager) RunDirectives(ctx context.Context) {
 	}
 }
 
+func (mgr *Manager) getTemplateData(ctx context.Context, name string, host, mod, all VariableMap) templateView {
+	// runtime metadata for templates
+	runtimeData := metadata{
+		ModuleName:    name,
+		RunID:         ctx.Value(contextKeyRunID).(ulid.ULID).String(),
+		Enrolled:      ctx.Value(contextKeyEnrolled).(bool),
+		ManagerName:   ctx.Value(contextKeyManagerName).(string),
+		InventoryPath: ctx.Value(contextKeyInventoryPath).(string),
+		Hostname:      ctx.Value(contextKeyHostname).(string),
+	}
+
+	// assemble all template data
+	allTemplateData := templateData{
+		HostVars:   VariableMap(host),
+		ModuleVars: VariableMap(mod),
+		Vars:       VariableMap(all),
+		Metadata:   runtimeData,
+		OS:         mgr.tmplData.OS,
+		Kernel:     mgr.tmplData.Kernel,
+	}
+
+	return templateView{
+		Mango: allTemplateData,
+	}
+}
+
 // RunModule is responsible for actually executing a module, using the `shell`
 // package.
 func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
@@ -379,31 +408,11 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 		"module": mod.String(),
 	}
 
-	// runtime metadata for templates
 	hostVarsMap := shell.MakeVariableMap(mgr.hostVariables)
 	modVarsMap := shell.MakeVariableMap(mod.Variables)
 	allVars := shell.MergeVariables(hostVarsMap, modVarsMap)
 	allVarsMap := shell.MakeVariableMap(allVars)
-	runtimeData := metadata{
-		ModuleName:    mod.String(),
-		RunID:         ctx.Value(contextKeyRunID).(ulid.ULID).String(),
-		Enrolled:      ctx.Value(contextKeyEnrolled).(bool),
-		ManagerName:   ctx.Value(contextKeyManagerName).(string),
-		InventoryPath: ctx.Value(contextKeyInventoryPath).(string),
-		Hostname:      ctx.Value(contextKeyHostname).(string),
-	}
-
-	// assemble all template data
-	allTemplateData := templateView{
-		Mango: templateData{
-			HostVars:   VariableMap(hostVarsMap),
-			ModuleVars: VariableMap(modVarsMap),
-			Vars:       VariableMap(allVarsMap),
-			Metadata:   runtimeData,
-			OS:         mgr.tmplData.OS,
-			Kernel:     mgr.tmplData.Kernel,
-		},
-	}
+	allTemplateData := mgr.getTemplateData(ctx, mod.String(), hostVarsMap, modVarsMap, allVarsMap)
 
 	if mod.m.Test == "" {
 		logger.WithFields(log.Fields{
