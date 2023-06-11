@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"text/template"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	distro "github.com/quay/claircore/osrelease"
 	log "github.com/sirupsen/logrus"
+	"mvdan.cc/sh/v3/syntax"
 
 	"github.com/tjhop/mango/internal/inventory"
 	"github.com/tjhop/mango/internal/shell"
@@ -237,14 +239,7 @@ func (mgr *Manager) ReloadModules(ctx context.Context) {
 		// if the module has a variables file set, source it and store
 		// the expanded variables
 		if mod.Variables != "" {
-			vars, err := shell.SourceFile(ctx, mod.Variables)
-			if err != nil {
-				mgr.logger.WithFields(log.Fields{
-					"error": err,
-				}).Error("Failed to expand module variables")
-			} else {
-				newMod.Variables = vars
-			}
+			newMod.Variables = mgr.ReloadVariables(ctx, mod.Variables, shell.MakeVariableMap(mgr.hostVariables))
 		} else {
 			mgr.logger.Debug("No module variables")
 		}
@@ -259,20 +254,27 @@ func (mgr *Manager) ReloadModules(ctx context.Context) {
 // inventory, populate some run specific context, and initiate a run of all
 // managed modules
 func (mgr *Manager) ReloadAndRunAll(ctx context.Context, inv inventory.Store) {
-	mgr.Reload(ctx, inv)
-
 	// add context data relevant to this run, for use with templating and things
+	runID := ulid.Make()
+	ctx = context.WithValue(ctx, contextKeyRunID, runID)
 	ctx = context.WithValue(ctx, contextKeyEnrolled, inv.IsEnrolled())
 	ctx = context.WithValue(ctx, contextKeyManagerName, mgr.String())
-	ctx = context.WithValue(ctx, contextKeyInventoryPath, mgr.inv.GetInventoryPath())
-	ctx = context.WithValue(ctx, contextKeyHostname, mgr.inv.GetHostname())
+	ctx = context.WithValue(ctx, contextKeyInventoryPath, inv.GetInventoryPath())
+	ctx = context.WithValue(ctx, contextKeyHostname, inv.GetHostname())
 
+	mgr.Reload(ctx, inv)
 	mgr.RunAll(ctx)
 }
 
 // Reload accepts a struct that fulfills the inventory.Store interface and
 // reloads the hosts modules/directives from the inventory
 func (mgr *Manager) Reload(ctx context.Context, inv inventory.Store) {
+	// reload manager's knowledge of system info
+	osData, kernelData := getSystemMetadata()
+	mgr.tmplData.OS = osData
+	mgr.tmplData.Kernel = kernelData
+
+	// reload manager's copy of inventory from provided inventory
 	mgr.logger.Info("Reloading items from inventory")
 
 	mgr.inv = inv
@@ -282,26 +284,48 @@ func (mgr *Manager) Reload(ctx context.Context, inv inventory.Store) {
 	// reload directives
 	mgr.ReloadDirectives(ctx)
 
-	// ensure vars are only on manager reload, to avoid needlessly sourcing
-	// variables potentially multiple times during a run (which is
+	// ensure vars are only sourced on manager reload, to avoid needlessly
+	// sourcing variables potentially multiple times during a run (which is
 	// triggered directly after a reload of data from inventory)
 	hostVarsPath := inv.GetVariablesForSelf()
 	if hostVarsPath != "" {
-		vars, err := shell.SourceFile(ctx, hostVarsPath)
-		if err != nil {
-			mgr.logger.WithFields(log.Fields{
-				"path": hostVarsPath,
-			}).Error("Failed to reload host variables")
-		} else {
-			mgr.hostVariables = vars
-		}
+		mgr.hostVariables = mgr.ReloadVariables(ctx, hostVarsPath, nil)
 	} else {
 		mgr.logger.Debug("No host variables")
 	}
+}
 
-	osData, kernelData := getSystemMetadata()
-	mgr.tmplData.OS = osData
-	mgr.tmplData.Kernel = kernelData
+func (mgr *Manager) ReloadVariables(ctx context.Context, path string, hostVars VariableMap) VariableSlice {
+	allTemplateData := mgr.getTemplateData(ctx, path, hostVars, nil, hostVars)
+	renderedVars, err := templateScript(ctx, path, allTemplateData, mgr.funcMap)
+	if err != nil {
+		mgr.logger.WithFields(log.Fields{
+			"path":  path,
+			"error": err,
+		}).Error("Failed to template variables")
+		return nil
+	}
+
+	// source variables from the templated variables file
+	file, err := syntax.NewParser().Parse(strings.NewReader(renderedVars), "")
+	if err != nil {
+		mgr.logger.WithFields(log.Fields{
+			"path":  path,
+			"error": err,
+		}).Error("Failed to parse variables")
+		return nil
+	}
+
+	vars, err := shell.SourceNode(ctx, file)
+	if err != nil {
+		mgr.logger.WithFields(log.Fields{
+			"path":  path,
+			"error": err,
+		}).Error("Failed to reload variables")
+		return nil
+	}
+
+	return vars
 }
 
 // RunDirective is responsible for actually executing a directive, using the `shell`
@@ -500,13 +524,15 @@ func (mgr *Manager) RunModules(ctx context.Context) {
 // all of the Modules being managed by the Manager.
 func (mgr *Manager) RunAll(ctx context.Context) {
 	go func() {
-		metricManagerRunInProgress.With(prometheus.Labels{"manager": mgr.String()}).Set(1)
-		defer metricManagerRunInProgress.With(prometheus.Labels{"manager": mgr.String()}).Set(0)
-		runID := ulid.Make()
-		runCtx := context.WithValue(ctx, contextKeyRunID, runID)
 		logger := mgr.logger.WithFields(log.Fields{
-			"run_id": runID.String(),
+			"run_id": ctx.Value(contextKeyRunID).(ulid.ULID).String(),
 		})
+		metricManagerRunInProgress.With(prometheus.Labels{"manager": mgr.String()}).Set(1)
+
+		defer func() {
+			metricManagerRunInProgress.With(prometheus.Labels{"manager": mgr.String()}).Set(0)
+			logger.Info("Finished run")
+		}()
 
 		if !mgr.runLock.TryLock() {
 			logger.Warn("Manager run already in progress, aborting")
@@ -514,7 +540,7 @@ func (mgr *Manager) RunAll(ctx context.Context) {
 		}
 		defer mgr.runLock.Unlock()
 
-		mgr.RunDirectives(runCtx)
-		mgr.RunModules(runCtx)
+		mgr.RunDirectives(ctx)
+		mgr.RunModules(ctx)
 	}()
 }
