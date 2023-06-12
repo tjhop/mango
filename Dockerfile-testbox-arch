@@ -1,0 +1,29 @@
+FROM archlinux:latest
+
+RUN pacman -Syu --needed --noconfirm && \
+    pacman -S --needed --noconfirm \
+        wget \
+        curl \
+        vim \
+        tmux \
+        htop \
+        tar \
+        iproute2 \
+        jq \
+        less \
+        && \
+pacman -Scc --needed --noconfirm
+
+# setup mango
+COPY ./mango /usr/bin/mango
+COPY ./packaging/systemd/mango.service /etc/systemd/system/
+COPY ./test/mockup/services/mango/test-flags.conf /etc/systemd/system/mango.service.d/test-flags.conf
+RUN systemctl enable mango.service
+
+# setup promtail
+COPY --from=docker.io/grafana/promtail:latest /usr/bin/promtail /usr/bin/promtail
+COPY ./test/mockup/services/promtail-config.yaml /etc/promtail/config.yaml
+COPY ./test/mockup/services/promtail.service /etc/systemd/system/
+RUN systemctl enable promtail.service
+
+CMD ["/lib/systemd/systemd"]

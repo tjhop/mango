@@ -2,7 +2,6 @@ GOCMD := go
 GOFMT := ${GOCMD} fmt
 GOMOD := ${GOCMD} mod
 COMMIT := $(shell git rev-parse HEAD)
-TEST_CONTAINER_NAME := "mango-test-ubuntu"
 RELEASE_CONTAINER_NAME := "mango"
 
 ## help:			print this help message
@@ -43,9 +42,10 @@ podman: container
 ## docker:		alias for `container`
 docker: container
 
-## test-container:	build ubuntu container with binary for testing purposes
+## test-container:	build test containers with binary for testing purposes
 test-container: binary container
-	podman image build -t "${TEST_CONTAINER_NAME}:latest" -f Dockerfile-testing .
+	podman image build -t "mango-test-ubuntu" -f Dockerfile-testbox-ubuntu .
+	podman image build -t "mango-test-arch" -f Dockerfile-testbox-arch .
 
 ## test-image:		alias for `container`
 test-image: container
@@ -56,31 +56,21 @@ test-podman: container
 ## test-docker:		alias for `container`
 test-docker: container
 
-## services:		use docker compose to spin up local grafana, prometheus, etc
+## services:		use podman compose to spin up local grafana, prometheus, etc
 services:
-	podman-compose up -d
+	podman-compose -f docker-compose-services.yaml up -d
 
-## run-test-inventory:	use podman to create an ubuntu-systemd container that runs mango with the test inventory
-run-test-inventory: test-docker services
+## run-test-containers	use podman compose to spin up test containers running systemd for use with the test inventory
+run-test-containers: test-container services
 	# TODO: put containers onto their own network? using host networking is convenience/laziness, at the moment.
-	podman container start ${TEST_CONTAINER_NAME} 2>/dev/null || \
-		podman container run -d \
-			--net=host \
-			--systemd=true \
-			--hostname testbox \
-			-v ./mango:/usr/bin/mango \
-			-v ./test/mockup/inventory:/opt/mango/inventory/:ro \
-			--name "${TEST_CONTAINER_NAME}" \
-			"${TEST_CONTAINER_NAME}:latest"
+	podman-compose -f docker-compose-test-mango.yaml --podman-run-args="--systemd=true" up -d
 
 ## reload-test-inventory: use podman to reload the mango systemd service running in the ubuntu test container
 reload-test-inventory: run-test-inventory
-	podman container exec -it "${TEST_CONTAINER_NAME}" /bin/bash -c 'systemctl reload mango.service'
+	podman-compose -f docker-compose-test-mango.yaml exec -T mango-archlinux /bin/bash -c 'systemctl reload mango.service'
+	podman-compose -f docker-compose-test-mango.yaml exec -T mango-ubuntu-2204 /bin/bash -c 'systemctl reload mango.service'
 
 ## clean:			stop test environment and any other cleanup
 clean:
-	podman-compose down
-	podman container stop "${TEST_CONTAINER_NAME}" 2>/dev/null || true
-	podman container stop "${RELEASE_CONTAINER_NAME}" 2>/dev/null || true
-	podman container rm "${TEST_CONTAINER_NAME}" 2>/dev/null || true
-	podman container rm "${RELEASE_CONTAINER_NAME}" 2>/dev/null || true
+	podman-compose -f docker-compose-services.yaml down
+	podman-compose -f docker-compose-test-mango.yaml down

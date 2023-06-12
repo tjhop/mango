@@ -1,0 +1,32 @@
+# Compose file to set up the following services for local testing:
+  # - grafana
+  # - prometheus
+  # - loki
+  # - promtail
+# based heavily on:
+# https://grafana.com/docs/grafana-cloud/quickstart/docker-compose-linux/
+# https://raw.githubusercontent.com/grafana/loki/v2.8.0/production/docker-compose.yaml
+#
+# NOTE:
+# this compose file should be invoked with `--podman-run-args="--systemd=true"`
+
+version: "3.9"
+
+services:
+  mango-ubuntu-2204:
+    image: mango-test-ubuntu:latest
+    hostname: testbox-ubuntu
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./mango:/usr/bin/mango
+      - ./test/mockup/inventory:/opt/mango/inventory/:ro
+
+  mango-archlinux:
+    image: mango-test-arch:latest
+    hostname: testbox-arch
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./mango:/usr/bin/mango
+      - ./test/mockup/inventory:/opt/mango/inventory/:ro
