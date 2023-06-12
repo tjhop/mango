@@ -70,7 +70,7 @@ reload-test-inventory: run-test-inventory
 	podman-compose -f docker-compose-test-mango.yaml exec -T mango-archlinux /bin/bash -c 'systemctl reload mango.service'
 	podman-compose -f docker-compose-test-mango.yaml exec -T mango-ubuntu-2204 /bin/bash -c 'systemctl reload mango.service'
 
-## clean:			stop test environment and any other cleanup
-clean:
+## stop:			stop test environment and any other cleanup
+stop:
 	podman-compose -f docker-compose-services.yaml down
 	podman-compose -f docker-compose-test-mango.yaml down
