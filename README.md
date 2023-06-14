@@ -118,6 +118,7 @@ This project uses:
 - [goreleaser](https://goreleaser.com/) to manage builds.
 - [podman compose](https://github.com/containers/podman-compose) to run supplementary services during testing
 - [podman](https://podman.io/) to build and run containers
+- [aardvark-dns](https://github.com/containers/aardvark-dns) for container DNS resolution (default in podman 4+, required for compose service name resolution within containers.
 
 ### Build From Source
 
