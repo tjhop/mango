@@ -12,12 +12,19 @@
 
 version: "3.9"
 
+networks:
+  mango:
+    driver: bridge
+
 services:
   mango-ubuntu-2204:
     image: mango-test-ubuntu:latest
     hostname: testbox-ubuntu
     restart: unless-stopped
-    network_mode: host
+    ports:
+      - "9555"
+    networks:
+      - mango
     volumes:
       - ./mango:/usr/bin/mango
       - ./test/mockup/inventory:/opt/mango/inventory/:ro
@@ -26,7 +33,10 @@ services:
     image: mango-test-arch:latest
     hostname: testbox-arch
     restart: unless-stopped
-    network_mode: host
+    ports:
+      - "9555"
+    networks:
+      - mango
     volumes:
       - ./mango:/usr/bin/mango
       - ./test/mockup/inventory:/opt/mango/inventory/:ro

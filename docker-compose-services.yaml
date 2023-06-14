@@ -9,6 +9,10 @@
 
 version: "3.9"
 
+networks:
+  mango:
+    driver: bridge
+
 volumes:
   prometheus_data: {}
 
@@ -18,7 +22,10 @@ services:
     volumes:
       - ./test/mockup/services/loki-config.yaml:/etc/loki/local-config.yaml
     command: -config.file=/etc/loki/local-config.yaml
-    network_mode: host
+    networks:
+      - mango
+    ports:
+      - "3100:3100"
 
   prometheus:
     image: docker.io/prom/prometheus:latest
@@ -32,7 +39,10 @@ services:
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--web.enable-lifecycle'
-    network_mode: host
+    networks:
+      - mango
+    ports:
+      - "9090"
 
   grafana:
     environment:
@@ -43,4 +53,7 @@ services:
       - ./test/mockup/services/grafana:/etc/grafana/provisioning
       - ./grafana:/var/lib/grafana/dashboards
     image: docker.io/grafana/grafana:latest
-    network_mode: host
+    networks:
+      - mango
+    ports:
+      - "3000:3000"
