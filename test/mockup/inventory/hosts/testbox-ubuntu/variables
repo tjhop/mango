@@ -1,0 +1,9 @@
+mango_host_template_var="Hi, I'm a host variable!"
+mango_host_var_for_override="This is the original host variable content."
+{{- with $os := .Mango.OS.OSRelease.ID }}
+{{- if eq $os "arch" }}
+package_install="pacman -Sy"
+{{- else if or (eq $os "ubuntu") (eq $os "debian") }}
+package_install="apt-get install -y"
+{{- end }}
+{{- end }}
