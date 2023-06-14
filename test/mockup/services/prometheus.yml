@@ -9,7 +9,9 @@ rule_files:
 scrape_configs:
   - job_name: "mango"
     static_configs:
-      - targets: ["localhost:9555"]
+      - targets:
+        - mango-ubuntu-2204:9555
+        - mango-archlinux:9555
 
   - job_name: "prometheus"
     static_configs:
@@ -17,4 +19,4 @@ scrape_configs:
 
   - job_name: "loki"
     static_configs:
-      - targets: ["localhost:3100"]
+      - targets: ["loki:3100"]
