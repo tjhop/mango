@@ -62,7 +62,6 @@ services:
 
 ## run-test-containers	use podman compose to spin up test containers running systemd for use with the test inventory
 run-test-containers: test-container services
-	# TODO: put containers onto their own network? using host networking is convenience/laziness, at the moment.
 	podman-compose -f docker-compose-test-mango.yaml --podman-run-args="--systemd=true" up -d
 
 ## reload-test-inventory: use podman to reload the mango systemd service running in the ubuntu test container
