@@ -3,6 +3,7 @@ module github.com/tjhop/mango
 go 1.20
 
 require (
+	github.com/dominikbraun/graph v0.22.3
 	github.com/hashicorp/go-sockaddr v1.0.2
 	github.com/moby/moby v24.0.1+incompatible
 	github.com/oklog/run v1.1.0

@@ -9,6 +9,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/dominikbraun/graph"
 	kernelParser "github.com/moby/moby/pkg/parsers/kernel"
 	"github.com/oklog/ulid/v2"
 	"github.com/prometheus/client_golang/prometheus"
@@ -141,6 +142,12 @@ type Module struct {
 
 func (mod Module) String() string { return mod.m.String() }
 
+// moduleHash is the hash function used to set up the directed acyclic graph
+// for module ordering/dependency management
+var moduleHash = func(m Module) string {
+	return m.String()
+}
+
 // Directive is a wrapper struct that encapsulates an inventory.Directive
 type Directive struct {
 	d inventory.Directive
@@ -153,7 +160,7 @@ type Manager struct {
 	id            string
 	inv           inventory.Store // TODO: move this interface to be defined consumer-side in manager vs in inventory
 	logger        *log.Entry
-	modules       []Module
+	modules       graph.Graph[string, Module]
 	directives    []Directive
 	hostVariables VariableSlice
 	runLock       sync.Mutex
@@ -213,6 +220,7 @@ func NewManager(id string) *Manager {
 			"manager": id,
 		}),
 		funcMap: funcs,
+		modules: graph.New(moduleHash, graph.Directed(), graph.Acyclic()),
 	}
 }
 
@@ -232,8 +240,8 @@ func (mgr *Manager) ReloadDirectives(ctx context.Context) {
 func (mgr *Manager) ReloadModules(ctx context.Context) {
 	// get all modules from inventory applicable to this system
 	rawMods := mgr.inv.GetModulesForSelf()
-	modules := make([]Module, len(rawMods))
-	for i, mod := range rawMods {
+	modGraph := graph.New(moduleHash, graph.Directed(), graph.Acyclic())
+	for _, mod := range rawMods {
 		newMod := Module{m: mod}
 
 		// if the module has a variables file set, source it and store
@@ -244,10 +252,16 @@ func (mgr *Manager) ReloadModules(ctx context.Context) {
 			mgr.logger.Debug("No module variables")
 		}
 
-		modules[i] = newMod
+		err := modGraph.AddVertex(newMod)
+		if err != nil {
+			mgr.logger.WithFields(log.Fields{
+				"module": mod.String(),
+				"error":  err,
+			}).Error("Failed to add module to DAG")
+		}
 	}
 
-	mgr.modules = modules
+	mgr.modules = modGraph
 }
 
 // ReloadAndRunAll is a wrapper function to reload from the specified
@@ -499,14 +513,30 @@ func (mgr *Manager) RunModules(ctx context.Context) {
 		"run_id": runID.String(),
 	})
 
-	if len(mgr.modules) <= 0 {
+	logger.Info("Module run started")
+	defer logger.Info("Module run finished")
+
+	order, err := graph.TopologicalSort(mgr.modules)
+	if err != nil {
+		mgr.logger.WithFields(log.Fields{
+			"error": err,
+		}).Error("Failed to sort DAG")
+	}
+
+	if len(order) <= 0 {
 		logger.Info("No Modules to run")
 		return
 	}
 
-	logger.Info("Module run started")
-	defer logger.Info("Module run finished")
-	for _, mod := range mgr.modules {
+	for _, v := range order {
+		mod, err := mgr.modules.Vertex(v)
+		if err != nil {
+			logger.WithFields(log.Fields{
+				"module": mod.String(),
+				"error":  err,
+			}).Error("Module failed")
+		}
+
 		logger.WithFields(log.Fields{
 			"module": mod.String(),
 		}).Info("Running Module")
