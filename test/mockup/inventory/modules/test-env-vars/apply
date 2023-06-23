@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 FILE="/tmp/$(basename ${0%/*})-$$"
+# capture ordering info
+echo "{{ .Mango.Metadata.ModuleName }}" >> /tmp/mango-dependency-testing
 
 echo "Dumping environment to ${FILE}"
 

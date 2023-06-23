@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"text/template"
@@ -20,6 +21,7 @@ import (
 
 	"github.com/tjhop/mango/internal/inventory"
 	"github.com/tjhop/mango/internal/shell"
+	"github.com/tjhop/mango/internal/utils"
 )
 
 type contextKey string
@@ -240,7 +242,7 @@ func (mgr *Manager) ReloadDirectives(ctx context.Context) {
 func (mgr *Manager) ReloadModules(ctx context.Context) {
 	// get all modules from inventory applicable to this system
 	rawMods := mgr.inv.GetModulesForSelf()
-	modGraph := graph.New(moduleHash, graph.Directed(), graph.Acyclic())
+	modGraph := graph.New(moduleHash, graph.Directed(), graph.PreventCycles())
 	for _, mod := range rawMods {
 		newMod := Module{m: mod}
 
@@ -258,6 +260,33 @@ func (mgr *Manager) ReloadModules(ctx context.Context) {
 				"module": mod.String(),
 				"error":  err,
 			}).Error("Failed to add module to DAG")
+		}
+	}
+
+	for _, mod := range rawMods {
+		// if the module has a requirements file set, parse it line by
+		// line and add edges to the graph for ordering
+		if mod.Requires == "" {
+			mgr.logger.Debug("No module variables")
+			continue
+		}
+
+		lines := utils.ReadFileLines(mod.Requires)
+		for line := range lines {
+			if line.Err != nil {
+				log.WithFields(log.Fields{
+					"path":  mod.Requires,
+					"error": line.Err,
+				}).Error("Failed to read requirements for this module")
+			} else {
+				err := modGraph.AddEdge(filepath.Join(mgr.inv.GetInventoryPath(), "modules", line.Text), mod.ID)
+				if err != nil {
+					mgr.logger.WithFields(log.Fields{
+						"module": mod.String(),
+						"error":  err,
+					}).Error("Failed to add module to DAG")
+				}
+			}
 		}
 	}
 

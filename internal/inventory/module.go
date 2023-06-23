@@ -16,12 +16,14 @@ import (
 // - ID: string idenitfying the module (generally the file path to the module)
 // - Apply: path to apply script for the module
 // - Variables: path to variables file for the module, if present
+// - Requires: path to requirements file for the module, if present
 // - Test: path to test script to check module's application status
 type Module struct {
 	ID        string
 	Apply     string
 	Variables string
 	Test      string
+	Requires  string
 }
 
 // String is a stringer to return the module ID
@@ -81,6 +83,8 @@ func (i *Inventory) ParseModules(ctx context.Context) error {
 						mod.Test = filepath.Join(mod.ID, "test")
 					case "variables":
 						mod.Variables = filepath.Join(mod.ID, "variables")
+					case "requires":
+						mod.Requires = filepath.Join(mod.ID, "requires")
 					default:
 						log.WithFields(log.Fields{
 							"file": fileName,

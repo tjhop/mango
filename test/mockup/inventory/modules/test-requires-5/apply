@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+FILE="/tmp/mango-dependency-testing"
+
+echo "{{ .Mango.Metadata.ModuleName }}" >> ${FILE}
