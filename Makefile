@@ -73,3 +73,5 @@ reload-test-inventory: run-test-inventory
 stop:
 	podman-compose -f docker-compose-services.yaml down
 	podman-compose -f docker-compose-test-mango.yaml down
+
+## clean: 		alias for `stop`

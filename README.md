@@ -128,17 +128,25 @@ Most development work can be done with the included Makefile:
 ```bash
 ~/go/src/github.com/tjhop/mango (main [ ]) -> make help
 # autogenerate help messages for comment lines with 2 `#`
- help:			print this help message
- tidy:			tidy modules
- fmt:			apply go code style formatter
- binary:		build a binary
- build:			alias for `binary`
- docker:		build docker container with binary
- test-docker:		build ubuntu docker container with binary for testing purposes
- services:		use docker compose to spin up local grafana, prometheus, etc
- run-test-inventory:	use podman to create an ubuntu-systemd container that runs mango with the test inventory
+ help:                  print this help message
+ tidy:                  tidy modules
+ fmt:                   apply go code style formatter
+ lint:                  run linters
+ binary:                build a binary
+ build:                 alias for `binary`
+ container:             build container image with binary
+ image:                 alias for `container`
+ podman:                alias for `container`
+ docker:                alias for `container`
+ test-container:        build test containers with binary for testing purposes
+ test-image:            alias for `container`
+ test-podman:           alias for `container`
+ test-docker:           alias for `container`
+ services:              use podman compose to spin up local grafana, prometheus, etc
+ run-test-containers    use podman compose to spin up test containers running systemd for use with the test inventory
  reload-test-inventory: use podman to reload the mango systemd service running in the ubuntu test container
- clean:			stop test environment and any other cleanup
+ stop:                  stop test environment and any other cleanup
+ clean:                 alias for `stop`
 ```
 
 ### Testing
