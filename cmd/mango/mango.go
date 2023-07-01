@@ -327,10 +327,17 @@ func main() {
 		log.Fatal("Inventory not defined, please set `inventory.path` flag or config variable to the path to the inventory")
 	}
 
-	// run mango daemon
-	me := viper.GetString("hostname")
-	if me == "" {
-		me = self.GetHostname()
+	// get hostname for inventory
+	me := self.GetHostname()
+
+	// only allow setting custom hostname if running as root
+	if os.Geteuid() == 0 {
+		customHostname := viper.GetString("hostname")
+		if customHostname != "" {
+			me = customHostname
+		}
 	}
+
+	// run mango daemon
 	mango(inventoryPath, me)
 }
