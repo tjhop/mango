@@ -1,9 +1,0 @@
-things:
-  file:
-    'Set MOTD':
-      source: "template:example_1"
-      destination: '/etc/motd'
-      owner: root
-      group: root
-      mode: 0644
-      enforce: true
