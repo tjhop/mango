@@ -24,12 +24,6 @@ type Host struct {
 	variables string
 }
 
-// GetVariables returns a VariableMap of variables
-// assigned to this host
-func (h Host) GetVariables() string {
-	return h.variables
-}
-
 // String is a stringer to return the host ID
 func (h Host) String() string { return h.id }
 

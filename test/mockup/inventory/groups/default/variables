@@ -1,0 +1,8 @@
+mango_group_template_var="Hi, I'm a group variable!"
+{{- with $os := .Mango.OS.OSRelease.ID }}
+{{- if eq $os "arch" }}
+package_install="pacman -Sy"
+{{- else if or (eq $os "ubuntu") (eq $os "debian") }}
+package_install="apt-get install -y"
+{{- end }}
+{{- end }}

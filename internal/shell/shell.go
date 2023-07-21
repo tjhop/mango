@@ -174,13 +174,13 @@ func MakeVariableMap(varSlice VariableSlice) VariableMap {
 	return varMap
 }
 
-func MergeVariables(base, top VariableMap) VariableSlice {
+func MergeVariables(maps ...VariableMap) VariableSlice {
 	vars := make(VariableMap)
-	for k, v := range base {
-		vars[k] = v
-	}
-	for k, v := range top {
-		vars[k] = v
+
+	for _, varMap := range maps {
+		for k, v := range varMap {
+			vars[k] = v
+		}
 	}
 
 	varSlice := make(VariableSlice, len(vars))

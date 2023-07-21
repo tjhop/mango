@@ -59,6 +59,7 @@ var (
 // - Modules: a slice of `Module` structs for each parsed module
 // - Roles: a slice of `Role` structs for each parsed role
 // - Directives: a slice of `Directive` structs, containing for each parsed directive
+// - Groups: a slice of `Group` structs, containing globs/patterns for hostname matching
 type Inventory struct {
 	inventoryPath string
 	hostname      string
@@ -66,6 +67,7 @@ type Inventory struct {
 	modules       []Module
 	roles         []Role
 	directives    []Directive
+	groups        []Group
 }
 
 // String is a stringer to return the inventory path
@@ -97,11 +99,13 @@ type Store interface {
 	GetHosts() []Host
 	GetModules() []Module
 	GetRoles() []Role
+	GetGroups() []Group
 
 	// Inventory checks by component IDs
 	GetHost(host string) (Host, bool)
 	GetModule(module string) (Module, bool)
 	GetRole(role string) (Role, bool)
+	GetGroup(group string) (Group, bool)
 
 	// Checks by host
 	GetDirectivesForHost(host string) []Directive
@@ -114,7 +118,7 @@ type Store interface {
 	GetDirectivesForSelf() []Directive
 	GetModulesForSelf() []Module
 	GetRolesForSelf() []Role
-	GetVariablesForSelf() string
+	GetVariablesForSelf() []string
 }
 
 // NewInventory parses the files/directories in the provided path
@@ -139,6 +143,13 @@ func NewInventory(path, name string) *Inventory {
 // - Directives
 func (i *Inventory) Reload(ctx context.Context) {
 	// populate the inventory
+
+	// parse groups
+	if err := i.ParseGroups(ctx); err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("Failed to reload groups")
+	}
 
 	// parse hosts
 	if err := i.ParseHosts(ctx); err != nil {
@@ -169,11 +180,21 @@ func (i *Inventory) Reload(ctx context.Context) {
 	}
 }
 
-// IsEnrolled returns true is this system's hostname is found
-// in the inventory's Host map, and false otherwise.
+// IsEnrolled returns if the hostname of the system is defined in the
+// inventory, or if the hostname of the system matches any group match
+// parameters
 func (i *Inventory) IsEnrolled() bool {
-	_, found := i.GetHost(i.hostname)
-	return found
+	if _, found := i.GetHost(i.hostname); found {
+		return true
+	}
+
+	for _, group := range i.groups {
+		if group.IsHostEnrolled(i.hostname) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // GetDirectives returns a copy of the inventory's slice of Directive
@@ -250,10 +271,52 @@ func (i *Inventory) GetModulesForHost(host string) []Module {
 	return filterDuplicateModules(mods)
 }
 
+// GetModulesForGroup returns a slice of Modules, containing all of the
+// Modules for the specified host system (including modules in all assigned roles, as well as ad-hoc modules).
+func (i *Inventory) GetModulesForGroup(group string) []Module {
+	mods := []Module{}
+
+	if g, found := i.GetGroup(group); found {
+		// get modules from all roles group is assigned
+		for _, r := range g.roles {
+			mods = append(mods, i.GetModulesForRole(r)...)
+		}
+
+		// get raw group modules
+		for _, m := range g.modules {
+			if mod, found := i.GetModule(m); found {
+				mods = append(mods, mod)
+			}
+		}
+	}
+
+	return filterDuplicateModules(mods)
+}
+
+func (i *Inventory) GetRolesForGroup(group string) []Role {
+	roles := []Role{}
+
+	if g, found := i.GetGroup(group); found {
+		for _, r := range g.roles {
+			if role, found := i.GetRole(r); found {
+				roles = append(roles, role)
+			}
+		}
+	}
+	return roles
+}
+
 // GetModulesForSelf returns a slice of Modules, containing all of the
 // Modules for the running system from the inventory.
 func (i *Inventory) GetModulesForSelf() []Module {
-	return i.GetModulesForHost(i.hostname)
+	var mods []Module
+
+	mods = append(mods, i.GetModulesForHost(i.hostname)...)
+	for _, group := range i.groups {
+		mods = append(mods, i.GetModulesForGroup(group.String())...)
+	}
+
+	return filterDuplicateModules(mods)
 }
 
 // GetRole returns a copy of the Role struct for a role identified
@@ -294,7 +357,16 @@ func (i *Inventory) GetRolesForHost(host string) []Role {
 // GetRolesForSelf returns a slice of Roles, containing all of the
 // Roles for the running system from the inventory.
 func (i *Inventory) GetRolesForSelf() []Role {
-	return i.GetRolesForHost(i.hostname)
+	// return i.GetRolesForHost(i.hostname)
+
+	var roles []Role
+
+	roles = append(roles, i.GetRolesForHost(i.hostname)...)
+	for _, group := range i.groups {
+		roles = append(roles, i.GetRolesForGroup(group.String())...)
+	}
+
+	return filterDuplicateRoles(roles)
 }
 
 // GetHosts returns a copy of the inventory's Hosts.
@@ -325,10 +397,25 @@ func (i *Inventory) GetVariablesForHost(host string) string {
 	return ""
 }
 
-// GetVariablesForSelf returns a copy of the variable map for the running
-// system.
-func (i *Inventory) GetVariablesForSelf() string {
-	return i.GetVariablesForHost(i.hostname)
+// GetVariablesForSelf returns slice of strings, containing the paths of any
+// variables files found for this host. All group variables a provided first,
+// with host-specific variables provided last (to allow for overriding default
+// group variable data).
+func (i *Inventory) GetVariablesForSelf() []string {
+	var tmp, varFiles []string
+
+	for _, group := range i.groups {
+		tmp = append(tmp, i.GetVariablesForGroup(group.String()))
+	}
+
+	tmp = append(tmp, i.GetVariablesForHost(i.hostname))
+	for _, file := range tmp {
+		if file != "" {
+			varFiles = append(varFiles, file)
+		}
+	}
+
+	return varFiles
 }
 
 func filterDuplicateModules(input []Module) []Module {
@@ -346,4 +433,49 @@ func filterDuplicateModules(input []Module) []Module {
 	}
 
 	return output
+}
+
+func filterDuplicateRoles(input []Role) []Role {
+	roleMap := make(map[string]Role)
+
+	for _, r := range input {
+		if _, found := roleMap[r.String()]; !found {
+			roleMap[r.String()] = r
+		}
+	}
+
+	var output []Role
+	for _, role := range roleMap {
+		output = append(output, role)
+	}
+
+	return output
+}
+
+// GetGroups returns a copy of the inventory's Groups.
+func (i *Inventory) GetGroups() []Group {
+	return i.groups
+}
+
+// GetGroup returns a copy of the Group struct for a system identified by `group`
+// name, and a boolean indicating whether or not the named group was found in
+// the inventory.
+func (i *Inventory) GetGroup(group string) (Group, bool) {
+	for _, g := range i.groups {
+		if filepath.Base(g.id) == group {
+			return g, true
+		}
+	}
+
+	return Group{}, false
+}
+
+// GetVariablesForGroup returns the path of the group's variables file, or the
+// empty string if no group/variables file found
+func (i *Inventory) GetVariablesForGroup(group string) string {
+	if g, found := i.GetGroup(group); found {
+		return g.variables
+	}
+
+	return ""
 }

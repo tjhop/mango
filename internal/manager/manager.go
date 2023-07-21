@@ -249,7 +249,7 @@ func (mgr *Manager) ReloadModules(ctx context.Context) {
 		// if the module has a variables file set, source it and store
 		// the expanded variables
 		if mod.Variables != "" {
-			newMod.Variables = mgr.ReloadVariables(ctx, mod.Variables, shell.MakeVariableMap(mgr.hostVariables))
+			newMod.Variables = mgr.ReloadVariables(ctx, []string{mod.Variables}, shell.MakeVariableMap(mgr.hostVariables))
 		} else {
 			mgr.logger.Debug("No module variables")
 		}
@@ -330,45 +330,51 @@ func (mgr *Manager) Reload(ctx context.Context, inv inventory.Store) {
 	// ensure vars are only sourced on manager reload, to avoid needlessly
 	// sourcing variables potentially multiple times during a run (which is
 	// triggered directly after a reload of data from inventory)
-	hostVarsPath := inv.GetVariablesForSelf()
-	if hostVarsPath != "" {
-		mgr.hostVariables = mgr.ReloadVariables(ctx, hostVarsPath, nil)
+	hostVarsPaths := inv.GetVariablesForSelf()
+	if len(hostVarsPaths) > 0 {
+		mgr.hostVariables = mgr.ReloadVariables(ctx, hostVarsPaths, nil)
 	} else {
 		mgr.logger.Debug("No host variables")
 	}
 }
 
-func (mgr *Manager) ReloadVariables(ctx context.Context, path string, hostVars VariableMap) VariableSlice {
-	allTemplateData := mgr.getTemplateData(ctx, path, hostVars, nil, hostVars)
-	renderedVars, err := templateScript(ctx, path, allTemplateData, mgr.funcMap)
-	if err != nil {
-		mgr.logger.WithFields(log.Fields{
-			"path":  path,
-			"error": err,
-		}).Error("Failed to template variables")
-		return nil
+func (mgr *Manager) ReloadVariables(ctx context.Context, paths []string, hostVars VariableMap) VariableSlice {
+	var varMaps []VariableMap
+
+	for _, path := range paths {
+		allTemplateData := mgr.getTemplateData(ctx, path, hostVars, nil, hostVars)
+		renderedVars, err := templateScript(ctx, path, allTemplateData, mgr.funcMap)
+		if err != nil {
+			mgr.logger.WithFields(log.Fields{
+				"path":  path,
+				"error": err,
+			}).Error("Failed to template variables")
+			return nil
+		}
+
+		// source variables from the templated variables file
+		file, err := syntax.NewParser().Parse(strings.NewReader(renderedVars), "")
+		if err != nil {
+			mgr.logger.WithFields(log.Fields{
+				"path":  path,
+				"error": err,
+			}).Error("Failed to parse variables")
+			return nil
+		}
+
+		vars, err := shell.SourceNode(ctx, file)
+		if err != nil {
+			mgr.logger.WithFields(log.Fields{
+				"path":  path,
+				"error": err,
+			}).Error("Failed to reload variables")
+			return nil
+		}
+
+		varMaps = append(varMaps, shell.MakeVariableMap(vars))
 	}
 
-	// source variables from the templated variables file
-	file, err := syntax.NewParser().Parse(strings.NewReader(renderedVars), "")
-	if err != nil {
-		mgr.logger.WithFields(log.Fields{
-			"path":  path,
-			"error": err,
-		}).Error("Failed to parse variables")
-		return nil
-	}
-
-	vars, err := shell.SourceNode(ctx, file)
-	if err != nil {
-		mgr.logger.WithFields(log.Fields{
-			"path":  path,
-			"error": err,
-		}).Error("Failed to reload variables")
-		return nil
-	}
-
-	return vars
+	return shell.MergeVariables(varMaps...)
 }
 
 // RunDirective is responsible for actually executing a directive, using the `shell`
