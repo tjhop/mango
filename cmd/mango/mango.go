@@ -278,7 +278,7 @@ func main() {
 	flag.String("inventory.reload-interval", "", "Time duration for how frequently mango will auto reload and apply the inventory [default disabled]")
 	flag.StringP("logging.level", "l", "", "Logging level may be one of: [trace, debug, info, warning, error, fatal and panic]")
 	flag.String("logging.output", "logfmt", "Logging format may be one of: [logfmt, json]")
-	flag.String("hostname", "", "Custom hostname to use (default's to system hostname if unset)")
+	flag.String("hostname", "", "(Requires root) Custom hostname to use [default is system hostname]")
 
 	flag.Parse()
 	if err := viper.BindPFlags(flag.CommandLine); err != nil {
