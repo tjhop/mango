@@ -116,38 +116,6 @@ func mango(inventoryPath, hostname string) {
 		"manager":  mgr.String(),
 	}).Info("Host enrollment check")
 
-	// setup a ticker for auto reloads, if configured
-	tickerDone := make(chan struct{})
-	interval := viper.GetString("inventory.reload-interval")
-	if interval == "" {
-		// auto update not enabled, log and carry on
-		log.Info("Inventory auto reload is not enabled, mango will only re-apply inventory if sent a SIGHUP")
-	} else {
-		// auto update enabled, attempt to configure or exit and cleanup
-		dur, err := time.ParseDuration(interval)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-			}).Error("Failed to parse duration for inventory auto reload, exiting")
-
-			cancel()
-
-			return
-		}
-
-		ticker := time.NewTicker(dur)
-		go func() {
-			for {
-				select {
-				case <-ticker.C:
-					mgr.ReloadAndRunAll(ctx, inv)
-				case <-tickerDone:
-					cancel()
-				}
-			}
-		}()
-	}
-
 	log.Info("Starting initial run of all modules")
 	mgr.ReloadAndRunAll(ctx, inv)
 
@@ -178,7 +146,6 @@ func mango(inventoryPath, hostname string) {
 
 					// close the reload -> manager run signal channel
 					close(reloadCh)
-					close(tickerDone)
 				}
 
 				return nil
@@ -239,6 +206,51 @@ func mango(inventoryPath, hostname string) {
 						return nil
 					}
 				}
+			},
+			func(error) {
+				close(cancel)
+			},
+		)
+	}
+	{
+		// ticker routine for auto reload, if configured
+		cancel := make(chan struct{})
+		g.Add(
+			func() error {
+				interval := viper.GetString("inventory.reload-interval")
+				if interval == "" {
+					// auto update not enabled, log and carry on
+					log.Info("Inventory auto-reload is not enabled, mango will only re-apply inventory if sent a SIGHUP")
+					<-cancel
+				} else {
+					// auto update enabled, attempt to configure or carry on
+					dur, err := time.ParseDuration(interval)
+					if err != nil {
+						log.WithFields(log.Fields{
+							"error": err,
+						}).Error("Failed to parse duration for inventory auto-reload, continuing without enabling")
+
+						return nil
+					}
+
+					ticker := time.NewTicker(dur)
+
+					log.WithFields(log.Fields{
+						"interval": dur.String(),
+					}).Info("Inventory auto-reload enabled")
+
+					for {
+						select {
+						case <-ticker.C:
+							log.Info("Inventory auto-reload signal received, reloading inventory and rerunning modules")
+							mgr.ReloadAndRunAll(ctx, inv)
+						case <-cancel:
+							return nil
+						}
+					}
+				}
+
+				return nil
 			},
 			func(error) {
 				close(cancel)
