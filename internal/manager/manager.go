@@ -204,6 +204,7 @@ func getSystemMetadata() (osMetadata, kernelMetadata) {
 		Major:  kernelInfo.Major,
 		Minor:  kernelInfo.Minor,
 		Flavor: kernelInfo.Flavor,
+		Full:   fmt.Sprintf("%d.%d.%d%s", kernelInfo.Kernel, kernelInfo.Major, kernelInfo.Minor, kernelInfo.Flavor),
 	}
 
 	return osData, kernelData

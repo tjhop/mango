@@ -42,6 +42,7 @@ type kernelMetadata struct {
 	// Recreate them for use with template:
 	Kernel, Major, Minor int
 	Flavor               string
+	Full                 string
 }
 
 type templateData struct {
