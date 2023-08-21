@@ -9,6 +9,7 @@ import (
 	"text/template"
 
 	socktmpl "github.com/hashicorp/go-sockaddr/template"
+	"github.com/oklog/ulid/v2"
 	"github.com/tjhop/mango/internal/shell"
 )
 
@@ -85,6 +86,32 @@ func templateScript(ctx context.Context, path string, view templateView, funcMap
 	}
 
 	return buf.String(), nil
+}
+
+func (mgr *Manager) getTemplateData(ctx context.Context, name string, host, mod, all VariableMap) templateView {
+	// runtime metadata for templates
+	runtimeData := metadata{
+		ModuleName:    name,
+		RunID:         ctx.Value(contextKeyRunID).(ulid.ULID).String(),
+		Enrolled:      ctx.Value(contextKeyEnrolled).(bool),
+		ManagerName:   ctx.Value(contextKeyManagerName).(string),
+		InventoryPath: ctx.Value(contextKeyInventoryPath).(string),
+		Hostname:      ctx.Value(contextKeyHostname).(string),
+	}
+
+	// assemble all template data
+	allTemplateData := templateData{
+		HostVars:   VariableMap(host),
+		ModuleVars: VariableMap(mod),
+		Vars:       VariableMap(all),
+		Metadata:   runtimeData,
+		OS:         mgr.tmplData.OS,
+		Kernel:     mgr.tmplData.Kernel,
+	}
+
+	return templateView{
+		Mango: allTemplateData,
+	}
 }
 
 // custom template functions

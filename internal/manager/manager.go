@@ -344,32 +344,6 @@ func (mgr *Manager) RunDirectives(ctx context.Context) {
 	}
 }
 
-func (mgr *Manager) getTemplateData(ctx context.Context, name string, host, mod, all VariableMap) templateView {
-	// runtime metadata for templates
-	runtimeData := metadata{
-		ModuleName:    name,
-		RunID:         ctx.Value(contextKeyRunID).(ulid.ULID).String(),
-		Enrolled:      ctx.Value(contextKeyEnrolled).(bool),
-		ManagerName:   ctx.Value(contextKeyManagerName).(string),
-		InventoryPath: ctx.Value(contextKeyInventoryPath).(string),
-		Hostname:      ctx.Value(contextKeyHostname).(string),
-	}
-
-	// assemble all template data
-	allTemplateData := templateData{
-		HostVars:   VariableMap(host),
-		ModuleVars: VariableMap(mod),
-		Vars:       VariableMap(all),
-		Metadata:   runtimeData,
-		OS:         mgr.tmplData.OS,
-		Kernel:     mgr.tmplData.Kernel,
-	}
-
-	return templateView{
-		Mango: allTemplateData,
-	}
-}
-
 // RunModule is responsible for actually executing a module, using the `shell`
 // package.
 func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
