@@ -3,7 +3,6 @@ package manager
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -11,10 +10,8 @@ import (
 	"time"
 
 	"github.com/dominikbraun/graph"
-	kernelParser "github.com/moby/moby/pkg/parsers/kernel"
 	"github.com/oklog/ulid/v2"
 	"github.com/prometheus/client_golang/prometheus"
-	distro "github.com/quay/claircore/osrelease"
 	log "github.com/sirupsen/logrus"
 	"mvdan.cc/sh/v3/syntax"
 
@@ -75,44 +72,6 @@ type Manager struct {
 }
 
 func (mgr *Manager) String() string { return mgr.id }
-
-func getSystemMetadata() (osMetadata, kernelMetadata) {
-	// os metadata for templates
-	osReleaseFile, err := os.Open(distro.Path)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"path":  distro.Path,
-		}).Error("Failed to open os-release file")
-	}
-	osRelease, err := distro.Parse(context.Background(), osReleaseFile)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"path":  distro.Path,
-		}).Error("Failed to parse os-release file")
-	}
-	osData := osMetadata{
-		OSRelease: osRelease,
-	}
-
-	// kernel metadata for templates
-	kernelInfo, err := kernelParser.GetKernelVersion()
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to parse kernel info")
-	}
-	kernelData := kernelMetadata{
-		Kernel: kernelInfo.Kernel,
-		Major:  kernelInfo.Major,
-		Minor:  kernelInfo.Minor,
-		Flavor: kernelInfo.Flavor,
-		Full:   fmt.Sprintf("%d.%d.%d%s", kernelInfo.Kernel, kernelInfo.Major, kernelInfo.Minor, kernelInfo.Flavor),
-	}
-
-	return osData, kernelData
-}
 
 // NewManager returns a new Manager struct instantiated with the given ID
 func NewManager(id string) *Manager {
