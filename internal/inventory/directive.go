@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tjhop/mango/internal/utils"
+	"github.com/tjhop/mango/pkg/utils"
 
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"

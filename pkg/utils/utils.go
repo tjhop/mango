@@ -5,7 +5,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 )

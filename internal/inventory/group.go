@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tjhop/mango/internal/utils"
+	"github.com/tjhop/mango/pkg/utils"
 
 	glob_util "github.com/gobwas/glob"
 	"github.com/prometheus/client_golang/prometheus"

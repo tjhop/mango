@@ -12,7 +12,7 @@ import (
 
 	"github.com/tjhop/mango/internal/inventory"
 	"github.com/tjhop/mango/internal/shell"
-	"github.com/tjhop/mango/internal/utils"
+	"github.com/tjhop/mango/pkg/utils"
 )
 
 // Module is a wrapper struct that encapsulates an inventory.Module, and
