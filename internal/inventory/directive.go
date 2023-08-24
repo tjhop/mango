@@ -25,10 +25,7 @@ type Directive struct {
 // String is a stringer to return the module ID
 func (d Directive) String() string { return d.ID }
 
-// ParseDirectives looks for scripts in the inventory's `directives/` folder, and
-// adds them to the inventory if they are executable. It also records the last modified time
-// (mtime) of the file, so that the we can determine if it's been modified within the last 24h
-// when we attempt to actually apply the directive scripts.
+// ParseDirectives looks for scripts in the inventory's `directives/` folder and adds them
 func (i *Inventory) ParseDirectives(ctx context.Context) error {
 	commonLabels := prometheus.Labels{
 		"inventory": i.inventoryPath,
