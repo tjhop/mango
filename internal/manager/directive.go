@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/oklog/ulid/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 
@@ -35,7 +34,7 @@ func (mgr *Manager) ReloadDirectives(ctx context.Context) {
 // RunDirective is responsible for actually executing a directive, using the `shell`
 // package.
 func (mgr *Manager) RunDirective(ctx context.Context, ds Directive) error {
-	runID := ctx.Value(contextKeyRunID).(ulid.ULID)
+	ctx, runID := getOrSetRunID(ctx)
 	applyStart := time.Now()
 	labels := prometheus.Labels{
 		"directive": ds.String(),
@@ -68,7 +67,7 @@ func (mgr *Manager) RunDirective(ctx context.Context, ds Directive) error {
 
 // RunDirectives runs all of the directive scripts being managed by the Manager
 func (mgr *Manager) RunDirectives(ctx context.Context) {
-	runID := ctx.Value(contextKeyRunID).(ulid.ULID)
+	ctx, runID := getOrSetRunID(ctx)
 	logger := mgr.logger.WithFields(log.Fields{
 		"run_id": runID.String(),
 	})

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/dominikbraun/graph"
-	"github.com/oklog/ulid/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 
@@ -34,6 +33,8 @@ var moduleHash = func(m Module) string {
 
 // ReloadModules reloads the manager's modules from the specified inventory.
 func (mgr *Manager) ReloadModules(ctx context.Context) {
+	ctx, _ = getOrSetRunID(ctx)
+
 	// get all modules from inventory applicable to this system
 	rawMods := mgr.inv.GetModulesForSelf()
 	modGraph := graph.New(moduleHash, graph.Directed(), graph.PreventCycles())
@@ -90,7 +91,7 @@ func (mgr *Manager) ReloadModules(ctx context.Context) {
 // RunModule is responsible for actually executing a module, using the `shell`
 // package.
 func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
-	runID := ctx.Value(contextKeyRunID).(ulid.ULID)
+	ctx, runID := getOrSetRunID(ctx)
 	logger := mgr.logger.WithFields(log.Fields{
 		"run_id": runID.String(),
 	})
@@ -165,7 +166,7 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 
 // RunModules runs all of the modules being managed by the Manager
 func (mgr *Manager) RunModules(ctx context.Context) {
-	runID := ctx.Value(contextKeyRunID).(ulid.ULID)
+	ctx, runID := getOrSetRunID(ctx)
 	logger := mgr.logger.WithFields(log.Fields{
 		"run_id": runID.String(),
 	})

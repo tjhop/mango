@@ -63,13 +63,23 @@ func NewManager(id string) *Manager {
 	}
 }
 
+func getOrSetRunID(ctx context.Context) (context.Context, ulid.ULID) {
+	id := ctx.Value(contextKeyRunID)
+
+	if id == nil || id.(ulid.ULID).String() == "" {
+		id = ulid.Make()
+		ctx = context.WithValue(ctx, contextKeyRunID, id)
+	}
+
+	return ctx, id.(ulid.ULID)
+}
+
 // ReloadAndRunAll is a wrapper function to reload from the specified
 // inventory, populate some run specific context, and initiate a run of all
 // managed modules
 func (mgr *Manager) ReloadAndRunAll(ctx context.Context, inv inventory.Store) {
 	// add context data relevant to this run, for use with templating and things
-	runID := ulid.Make()
-	ctx = context.WithValue(ctx, contextKeyRunID, runID)
+	ctx, _ = getOrSetRunID(ctx)
 	ctx = context.WithValue(ctx, contextKeyEnrolled, inv.IsEnrolled())
 	ctx = context.WithValue(ctx, contextKeyManagerName, mgr.String())
 	ctx = context.WithValue(ctx, contextKeyInventoryPath, inv.GetInventoryPath())
@@ -82,6 +92,8 @@ func (mgr *Manager) ReloadAndRunAll(ctx context.Context, inv inventory.Store) {
 // Reload accepts a struct that fulfills the inventory.Store interface and
 // reloads the hosts modules/directives from the inventory
 func (mgr *Manager) Reload(ctx context.Context, inv inventory.Store) {
+	ctx, _ = getOrSetRunID(ctx)
+
 	// reload manager's knowledge of system info
 	osData, kernelData := getSystemMetadata()
 	mgr.tmplData.OS = osData
@@ -150,6 +162,8 @@ func (mgr *Manager) ReloadVariables(ctx context.Context, paths []string, hostVar
 // RunAll runs all of the Directives being managed by the Manager, followed by
 // all of the Modules being managed by the Manager.
 func (mgr *Manager) RunAll(ctx context.Context) {
+	ctx, _ = getOrSetRunID(ctx)
+
 	go func() {
 		logger := mgr.logger.WithFields(log.Fields{
 			"run_id": ctx.Value(contextKeyRunID).(ulid.ULID).String(),
