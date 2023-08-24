@@ -37,41 +37,6 @@ func GetFilesInDirectory(path string) ([]fs.DirEntry, error) {
 	return files, nil
 }
 
-// GetFileModifiedTime accepts a path to a file/directory. It returns the
-// file's last modified time, or an empty time literal in the event of failure
-// (read: if this function fails, it returns the epoch timestamp -- use
-// `time.IsZero()` to check if return is the zero time instant for failures).
-func GetFileModifiedTime(path string) time.Time {
-	file, err := os.Stat(path)
-	if err != nil {
-		return time.Time{}
-	}
-
-	return file.ModTime()
-}
-
-// IsFileExecutableToAll accepts an `fs.DirEntry` struct and
-// simply returns true if the given file is executable to all
-// (ie, `--x--x--x`), else false.
-func IsFileExecutableToAll(file fs.DirEntry) bool {
-	info, err := file.Info()
-	if err != nil {
-		log.WithFields(log.Fields{
-			"file":  file.Name(),
-			"error": err,
-		}).Error("Failed to get file info")
-
-		return false
-	}
-
-	// check if apply file is executable by all
-	if info.Mode()&0111 == 0111 {
-		return true
-	}
-
-	return false
-}
-
 // FileLine contains fields corresponding to a single line entry
 // as received by `bufio.Scanner`. If Err is set, that means that a
 // non EOF error was received, indicating a file read failure of some
