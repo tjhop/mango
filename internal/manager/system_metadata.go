@@ -7,6 +7,7 @@ import (
 	"runtime"
 
 	kernelParser "github.com/moby/moby/pkg/parsers/kernel"
+	"github.com/pbnjay/memory"
 	distro "github.com/quay/claircore/osrelease"
 	log "github.com/sirupsen/logrus"
 )
@@ -30,6 +31,11 @@ type kernelMetadata struct {
 
 type cpuMetadata struct {
 	NumCPU int // exposes `runtime.NumCPU()` for CPU count in templates
+}
+
+type memoryMetadata struct {
+	TotalBytes uint64
+	FreeBytes  uint64
 }
 
 func getOSMetadata() osMetadata {
@@ -77,5 +83,12 @@ func getKernelMetadata() kernelMetadata {
 func getCPUMetadata() cpuMetadata {
 	return cpuMetadata{
 		NumCPU: runtime.NumCPU(),
+	}
+}
+
+func getMemoryMetadata() memoryMetadata {
+	return memoryMetadata{
+		TotalBytes: memory.TotalMemory(),
+		FreeBytes:  memory.FreeMemory(),
 	}
 }

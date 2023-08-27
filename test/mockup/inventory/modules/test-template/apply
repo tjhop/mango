@@ -45,6 +45,10 @@ Full: {{ .Mango.Kernel.Full }}
 Printing all CPU metadata:
 CPU Core Count: {{ .Mango.CPU.NumCPU }}
 -------------------
+Printing all memory metadata:
+Total System Memory: {{ .Mango.Memory.TotalBytes }}
+Free System Memory: {{ .Mango.Memory.FreeBytes }}
+-------------------
 Testing template functions:
 Private IP: {{ sockaddr_GetPrivateIP }}
 Public IP: {{ sockaddr_GetPublicIP }}
