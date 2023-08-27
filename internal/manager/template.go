@@ -29,27 +29,6 @@ type metadata struct {
 	Hostname      string
 }
 
-type osMetadata struct {
-	OSRelease map[string]string
-}
-
-type kernelMetadata struct {
-	// VersionInfo struct from moby (docker) provides the following keys
-	// for the kernel info:
-	// - Kernel int    // Version of the kernel (e.g. 4.1.2-generic -> 4)
-	// - Major  int    // Major part of the kernel version (e.g. 4.1.2-generic -> 1)
-	// - Minor  int    // Minor part of the kernel version (e.g. 4.1.2-generic -> 2)
-	// - Flavor string // Flavor of the kernel version (e.g. 4.1.2-generic -> generic)
-	// Recreate them for use with template:
-	Kernel, Major, Minor int
-	Flavor               string
-	Full                 string
-}
-
-type cpuMetadata struct {
-	NumCPU int // exposes `runtime.NumCPU()` for CPU count in templates
-}
-
 type templateData struct {
 	HostVars   VariableMap
 	ModuleVars VariableMap
