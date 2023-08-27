@@ -95,9 +95,9 @@ func (mgr *Manager) Reload(ctx context.Context, inv inventory.Store) {
 	ctx, _ = getOrSetRunID(ctx)
 
 	// reload manager's knowledge of system info
-	osData, kernelData := getSystemMetadata()
-	mgr.tmplData.OS = osData
-	mgr.tmplData.Kernel = kernelData
+	mgr.tmplData.OS = getOSMetadata()
+	mgr.tmplData.Kernel = getKernelMetadata()
+	mgr.tmplData.CPU = getCPUMetadata()
 
 	// reload manager's copy of inventory from provided inventory
 	mgr.logger.Info("Reloading items from inventory")

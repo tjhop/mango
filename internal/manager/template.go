@@ -46,6 +46,10 @@ type kernelMetadata struct {
 	Full                 string
 }
 
+type cpuMetadata struct {
+	NumCPU int // exposes `runtime.NumCPU()` for CPU count in templates
+}
+
 type templateData struct {
 	HostVars   VariableMap
 	ModuleVars VariableMap
@@ -53,6 +57,7 @@ type templateData struct {
 	Metadata   metadata
 	OS         osMetadata
 	Kernel     kernelMetadata
+	CPU        cpuMetadata
 }
 
 // namespaceTemplateFuncs prefixes all function.
@@ -107,6 +112,7 @@ func (mgr *Manager) getTemplateData(ctx context.Context, name string, host, mod,
 		Metadata:   runtimeData,
 		OS:         mgr.tmplData.OS,
 		Kernel:     mgr.tmplData.Kernel,
+		CPU:        mgr.tmplData.CPU,
 	}
 
 	return templateView{

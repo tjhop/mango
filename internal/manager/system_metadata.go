@@ -4,15 +4,12 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"runtime"
 
 	kernelParser "github.com/moby/moby/pkg/parsers/kernel"
 	distro "github.com/quay/claircore/osrelease"
 	log "github.com/sirupsen/logrus"
 )
-
-func getSystemMetadata() (osMetadata, kernelMetadata) {
-	return getOSMetadata(), getKernelMetadata()
-}
 
 func getOSMetadata() osMetadata {
 	// os metadata for templates
@@ -54,4 +51,10 @@ func getKernelMetadata() kernelMetadata {
 	}
 
 	return kernelData
+}
+
+func getCPUMetadata() cpuMetadata {
+	return cpuMetadata{
+		NumCPU: runtime.NumCPU(),
+	}
 }

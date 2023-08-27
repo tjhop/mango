@@ -42,6 +42,9 @@ Minor: {{ .Mango.Kernel.Minor }}
 Flavor: {{ .Mango.Kernel.Flavor }}
 Full: {{ .Mango.Kernel.Full }}
 -------------------
+Printing all CPU metadata:
+CPU Core Count: {{ .Mango.CPU.NumCPU }}
+-------------------
 Testing template functions:
 Private IP: {{ sockaddr_GetPrivateIP }}
 Public IP: {{ sockaddr_GetPublicIP }}
