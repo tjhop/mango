@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/dominikbraun/graph v0.22.3
+	github.com/dustin/go-humanize v1.0.1
 	github.com/gobwas/glob v0.2.3
 	github.com/hashicorp/go-sockaddr v1.0.2
 	github.com/moby/moby v24.0.1+incompatible

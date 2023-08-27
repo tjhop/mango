@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"text/template"
 
+	"github.com/dustin/go-humanize"
 	socktmpl "github.com/hashicorp/go-sockaddr/template"
 	"github.com/oklog/ulid/v2"
 	"github.com/tjhop/mango/internal/shell"
@@ -128,4 +129,12 @@ func isIPv6(s string) bool {
 
 	ip6 := ip.To16()
 	return ip6 != nil
+}
+
+func humanizeBytes(b uint64) string {
+	return humanize.Bytes(b)
+}
+
+func humanizeIBytes(b uint64) string {
+	return humanize.IBytes(b)
 }
