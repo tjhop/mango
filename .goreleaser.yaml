@@ -3,7 +3,6 @@ builds:
       - CGO_ENABLED=0
     goos:
       - linux
-      - darwin
     ldflags:
       - -X github.com/tjhop/mango/internal/config.BuildDate={{ .CommitDate }}
       - -X github.com/tjhop/mango/internal/config.Version={{ .Version }}
