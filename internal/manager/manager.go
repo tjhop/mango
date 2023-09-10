@@ -101,6 +101,7 @@ func (mgr *Manager) Reload(ctx context.Context, inv inventory.Store) {
 	mgr.tmplData.Kernel = getKernelMetadata()
 	mgr.tmplData.CPU = getCPUMetadata()
 	mgr.tmplData.Memory = getMemoryMetadata()
+	mgr.tmplData.Storage = getStorageMetadata()
 
 	// reload manager's copy of inventory from provided inventory
 	mgr.logger.Info("Reloading items from inventory")

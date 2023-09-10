@@ -39,6 +39,7 @@ type templateData struct {
 	Kernel     kernelMetadata
 	CPU        cpuMetadata
 	Memory     memoryMetadata
+	Storage    storageMetadata
 }
 
 // namespaceTemplateFuncs prefixes all function.
@@ -95,6 +96,7 @@ func (mgr *Manager) getTemplateData(ctx context.Context, name string, host, mod,
 		Kernel:     mgr.tmplData.Kernel,
 		CPU:        mgr.tmplData.CPU,
 		Memory:     mgr.tmplData.Memory,
+		Storage:    mgr.tmplData.Storage,
 	}
 
 	return templateView{

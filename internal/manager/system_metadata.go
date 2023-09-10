@@ -4,10 +4,14 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
+	"strings"
 
 	kernelParser "github.com/moby/moby/pkg/parsers/kernel"
 	"github.com/pbnjay/memory"
+	"github.com/prometheus/procfs"
+	"github.com/prometheus/procfs/blockdevice"
 	distro "github.com/quay/claircore/osrelease"
 	log "github.com/sirupsen/logrus"
 )
@@ -91,4 +95,91 @@ func getMemoryMetadata() memoryMetadata {
 		TotalBytes: memory.TotalMemory(),
 		FreeBytes:  memory.FreeMemory(),
 	}
+}
+
+// storage metadata
+
+const (
+	procDir       = "/proc"
+	mountInfoFile = procDir + "/self/mountinfo"
+	sysDir        = "/sys"
+	blockDevDir   = sysDir + "/block"
+)
+
+type disk struct {
+	Name    string
+	Virtual bool
+	SSD     bool
+}
+
+type storageMetadata struct {
+	Mounts []*procfs.MountInfo
+	Disks  []disk
+}
+
+func getStorageMetadata() storageMetadata {
+	storageMD := storageMetadata{}
+
+	fs, err := blockdevice.NewFS(procDir, sysDir)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("Failed to create blockdevice FS")
+	}
+
+	blockDevs, err := fs.SysBlockDevices()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"path":  blockDevDir,
+		}).Error("Failed to list block devices")
+	}
+
+	var disks []disk
+	for _, blockDev := range blockDevs {
+		qStats, err := fs.SysBlockDeviceQueueStats(blockDev)
+		log.WithFields(log.Fields{
+			"error":  err,
+			"device": blockDev,
+		}).Error("Failed to get queue stats for block device")
+
+		ssd := false
+		if qStats.Rotational == 0 {
+			ssd = true
+		}
+
+		blockDevPath := filepath.Join(blockDevDir, blockDev)
+
+		blockDevLink, err := os.Readlink(blockDevPath)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+				"path":  blockDevPath,
+			}).Error("Failed to get device link")
+		}
+
+		virtual := false
+		if strings.Contains(blockDevLink, "virtual") {
+			virtual = true
+		}
+
+		disks = append(disks, disk{
+			Name:    blockDevPath,
+			Virtual: virtual,
+			SSD:     ssd,
+		})
+	}
+
+	storageMD.Disks = disks
+
+	mounts, err := procfs.GetMounts()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"path":  mountInfoFile,
+		}).Error("Failed to get mounts")
+	}
+	storageMD.Mounts = mounts
+
+	return storageMD
 }

@@ -49,6 +49,25 @@ Printing all memory metadata:
 Total System Memory: {{ .Mango.Memory.TotalBytes | humanizeIBytes }}
 Free System Memory: {{ .Mango.Memory.FreeBytes | humanizeIBytes }}
 -------------------
+Printing all storage metadata:
+Disk/Blockdevice info:
+{{- range $i, $d := .Mango.Storage.Disks }}
+{{ $i }}:
+    Name: {{ .Name }}
+    Virtual: {{ .Virtual }}
+    SSD: {{ .SSD }}
+
+{{- end }}
+Mount info:
+{{- range $i, $m := .Mango.Storage.Mounts }}
+{{ $i }}:
+    Mount root: {{ .Root }}
+    Mount point under root: {{ .MountPoint }}
+    Filesystem type for mount: {{ .FSType }}
+    Mount source: {{ .Source }}
+
+{{- end }}
+-------------------
 Testing template functions:
 Private IP: {{ sockaddr_GetPrivateIP }}
 Public IP: {{ sockaddr_GetPublicIP }}
