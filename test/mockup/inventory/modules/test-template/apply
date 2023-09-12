@@ -43,7 +43,7 @@ Flavor: {{ .Mango.Kernel.Flavor }}
 Full: {{ .Mango.Kernel.Full }}
 -------------------
 Printing all CPU metadata:
-CPU Core Count: {{ .Mango.CPU.NumCPU }}
+CPU Core Count: {{ len .Mango.CPU.Cores }}
 -------------------
 Printing all memory metadata:
 Total System Memory: {{ .Mango.Memory.TotalBytes | humanizeIBytes }}

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	kernelParser "github.com/moby/moby/pkg/parsers/kernel"
@@ -14,6 +13,13 @@ import (
 	"github.com/prometheus/procfs/blockdevice"
 	distro "github.com/quay/claircore/osrelease"
 	log "github.com/sirupsen/logrus"
+)
+
+// general
+
+const (
+	procDir = "/proc"
+	sysDir  = "/sys"
 )
 
 // OS metadata
@@ -81,13 +87,25 @@ func getKernelMetadata() kernelMetadata {
 
 // CPU metadata
 type cpuMetadata struct {
-	NumCPU int // exposes `runtime.NumCPU()` for CPU count in templates
+	Cores []procfs.CPUInfo
 }
 
 func getCPUMetadata() cpuMetadata {
-	return cpuMetadata{
-		NumCPU: runtime.NumCPU(),
+	fs, err := procfs.NewFS(procDir)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("Failed to create procfs for cpu metadata")
 	}
+
+	cpuInfo, err := fs.CPUInfo()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("Failed to read cpu info")
+	}
+
+	return cpuMetadata{Cores: cpuInfo}
 }
 
 // memory metadata
@@ -107,9 +125,7 @@ func getMemoryMetadata() memoryMetadata {
 // storage metadata
 
 const (
-	procDir       = "/proc"
 	mountInfoFile = procDir + "/self/mountinfo"
-	sysDir        = "/sys"
 	blockDevDir   = sysDir + "/block"
 )
 
