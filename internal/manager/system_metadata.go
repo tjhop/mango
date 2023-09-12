@@ -160,7 +160,9 @@ func getStorageMetadata() storageMetadata {
 
 	var disks []disk
 	for _, blockDev := range blockDevs {
-		qStats, err := fs.SysBlockDeviceQueueStats(blockDev)
+		blockDevPath := filepath.Join(blockDevDir, blockDev)
+
+		qStats, err := fs.SysBlockDeviceQueueStats(blockDevPath)
 		log.WithFields(log.Fields{
 			"error":  err,
 			"device": blockDev,
@@ -170,8 +172,6 @@ func getStorageMetadata() storageMetadata {
 		if qStats.Rotational == 0 {
 			ssd = true
 		}
-
-		blockDevPath := filepath.Join(blockDevDir, blockDev)
 
 		blockDevLink, err := os.Readlink(blockDevPath)
 		if err != nil {
