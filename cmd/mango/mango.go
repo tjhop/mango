@@ -19,6 +19,8 @@ import (
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
+	"github.com/tjhop/mango/pkg/utils"
+
 	"github.com/tjhop/mango/internal/config"
 	"github.com/tjhop/mango/internal/inventory"
 	_ "github.com/tjhop/mango/internal/logging"
@@ -340,7 +342,7 @@ func main() {
 	}
 
 	// get hostname for inventory
-	me := self.GetHostname()
+	me := utils.GetHostname()
 
 	// only allow setting custom hostname if running as root
 	if os.Geteuid() == 0 {
