@@ -10,7 +10,6 @@ require (
 	github.com/moby/moby v24.0.1+incompatible
 	github.com/oklog/run v1.1.0
 	github.com/oklog/ulid/v2 v2.1.0
-	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
 	github.com/prometheus/client_golang v1.15.1
 	github.com/prometheus/procfs v0.9.0
 	github.com/quay/claircore v1.5.5

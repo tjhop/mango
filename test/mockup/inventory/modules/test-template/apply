@@ -46,8 +46,9 @@ Printing all CPU metadata:
 CPU Core Count: {{ len .Mango.CPU.Cores }}
 -------------------
 Printing all memory metadata:
-Total System Memory: {{ .Mango.Memory.TotalBytes | humanizeIBytes }}
-Free System Memory: {{ .Mango.Memory.FreeBytes | humanizeIBytes }}
+Total System Memory: {{ .Mango.Memory.MemTotal | humanizeIBytes }}
+Free System Memory: {{ .Mango.Memory.MemFree | humanizeIBytes }}
+Swap: {{ .Mango.Memory.SwapTotal | humanizeIBytes }}
 -------------------
 Printing all storage metadata:
 Disk/Blockdevice info:
