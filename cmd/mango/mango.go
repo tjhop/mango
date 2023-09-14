@@ -26,7 +26,6 @@ import (
 	_ "github.com/tjhop/mango/internal/logging"
 	"github.com/tjhop/mango/internal/manager"
 	"github.com/tjhop/mango/internal/metrics"
-	"github.com/tjhop/mango/internal/self"
 )
 
 const (
@@ -57,7 +56,7 @@ func mango(inventoryPath, hostname string) {
 		"version":    config.Version,
 		"build_date": config.BuildDate,
 		"commit":     config.Commit,
-		"go_version": self.GetRuntimeVersion(),
+		"go_version": runtime.Version(),
 	})
 	logger.Info("Mango server started")
 

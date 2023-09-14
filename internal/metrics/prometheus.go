@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	_ "net/http/pprof" // for profiling
+	"runtime"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -12,7 +13,6 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/tjhop/mango/internal/config"
-	"github.com/tjhop/mango/internal/self"
 )
 
 const (
@@ -29,7 +29,7 @@ func init() {
 				"version":    config.Version,
 				"commit":     config.Commit,
 				"build_date": config.BuildDate,
-				"goversion":  self.GetRuntimeVersion(),
+				"goversion":  runtime.Version(),
 			},
 		},
 		func() float64 { return 1 },
