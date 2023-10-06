@@ -2,12 +2,11 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"runtime"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -15,7 +14,6 @@ import (
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	log "github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
@@ -23,7 +21,6 @@ import (
 
 	"github.com/tjhop/mango/internal/config"
 	"github.com/tjhop/mango/internal/inventory"
-	_ "github.com/tjhop/mango/internal/logging"
 	"github.com/tjhop/mango/internal/manager"
 	"github.com/tjhop/mango/internal/metrics"
 )
@@ -40,6 +37,9 @@ var (
 		},
 	)
 
+	// TODO: @tjhop move `enrolled` to an inventory pkg metric
+	// TODO: @tjhop move `manager` to a manager pkg metric
+	// TODO: @tjhop add labels for: [auto_reload: true|false]
 	metricMangoRuntimeInfo = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "mango_runtime_info",
@@ -49,43 +49,60 @@ var (
 	)
 )
 
-func mango(inventoryPath, hostname string) {
+func mango(ctx context.Context, logger *slog.Logger, inventoryPath, hostname string) {
 	mangoStart := time.Now()
 	metricServiceStartSeconds.Set(float64(mangoStart.Unix()))
-	logger := log.WithFields(log.Fields{
-		"version":    config.Version,
-		"build_date": config.BuildDate,
-		"commit":     config.Commit,
-		"go_version": runtime.Version(),
-	})
-	logger.Info("Mango server started")
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cancel := context.WithCancel(ctx)
+	defer func() {
+		cancel()
+		cleanup(ctx, logger)
+		logger.LogAttrs(
+			ctx,
+			slog.LevelInfo,
+			"Mango server finished",
+		)
+	}()
+
+	logger.LogAttrs(
+		ctx,
+		slog.LevelInfo,
+		"Mango server started",
+	)
 
 	// create directory for persistent logs
 	logDir := filepath.Join("/var/log", programName)
 	err := os.MkdirAll(logDir, 0755)
 	if err != nil && !os.IsExist(err) {
-		logger.WithFields(log.Fields{
-			"err":  err,
-			"path": logDir,
-		}).Fatal("Failed to create persistent directory for logs")
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to create persistent directory for logs",
+			slog.String("err", err.Error()),
+		)
+		os.Exit(1)
 	}
 	viper.Set("mango.log-dir", logDir)
 
 	// create ephemeral directory for mango to store temporary files
 	tmpDir := viper.GetString("mango.temp-dir")
-	logger.WithFields(log.Fields{
-		"path": tmpDir,
-	}).Info("Creating temporary directory for mango runtime files")
+	logger.LogAttrs(
+		ctx,
+		slog.LevelInfo,
+		"Creating temporary directory for mango runtime files",
+		slog.String("path", tmpDir),
+	)
 
 	dir, err := os.MkdirTemp(tmpDir, programName)
 	if err != nil {
-		logger.WithFields(log.Fields{
-			"err":  err,
-			"path": tmpDir,
-		}).Fatal("Failed to create temporary directory for mango")
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to create temporary directory for mango",
+			slog.String("err", err.Error()),
+			slog.String("path", tmpDir),
+		)
+		os.Exit(1)
 	}
 	viper.Set("mango.temp-dir", dir)
 
@@ -93,31 +110,50 @@ func mango(inventoryPath, hostname string) {
 	go metrics.ExportPrometheusMetrics()
 
 	// load inventory
-	log.WithFields(log.Fields{
-		"path": inventoryPath,
-	}).Info("Initializing mango inventory")
+	logger.LogAttrs(
+		ctx,
+		slog.LevelInfo,
+		"Initializing mango inventory",
+		slog.String("path", inventoryPath),
+	)
 	inv := inventory.NewInventory(inventoryPath, hostname)
 	// reload inventory
 	inv.Reload(ctx)
-	enrolled := inv.IsEnrolled()
+	// enrolled := inv.IsEnrolled()
 
 	// start manager, reload it with data from inventory, and then start a run of everything for the system
-	log.WithFields(log.Fields{
-		"manager": hostname,
-	}).Info("Initializing mango manager")
+	logger.LogAttrs(
+		ctx,
+		slog.LevelInfo,
+		"Initializing mango manager",
+		slog.String("manager", hostname),
+	)
 	mgr := manager.NewManager(hostname)
-	metricMangoRuntimeInfo.With(prometheus.Labels{
-		"hostname": hostname,
-		"enrolled": strconv.FormatBool(enrolled),
-		"manager":  mgr.String(),
-	}).Set(1)
-	log.WithFields(log.Fields{
-		"hostname": hostname,
-		"enrolled": enrolled,
-		"manager":  mgr.String(),
-	}).Info("Host enrollment check")
 
-	log.Info("Starting initial run of all modules")
+	// // TODO(@tjhop): consider reworking this runtime var to be inventory
+	// // runtime info and move it to inventory pkg?
+	// metricMangoRuntimeInfo.With(prometheus.Labels{
+	// 	// TODO(@tjhop): include system/given hostname, similar to log on l384
+	// 	"hostname": hostname,
+	// 	"enrolled": strconv.FormatBool(enrolled),
+	// }).Set(1)
+	// logger = logger.With(
+	// 	slog.Group("hostname",
+	// 	slog.String("hostname", hostname),
+	// 	slog.Bool("enrolled", enrolled),
+	// 	),
+	// )
+	// logger.LogAttrs(
+	// 	ctx,
+	// 	slog.LevelInfo,
+	// 	"Host enrollment check",
+	// )
+
+	logger.LogAttrs(
+		ctx,
+		slog.LevelInfo,
+		"Starting initial run of all modules",
+	)
 	mgr.ReloadAndRunAll(ctx, inv)
 
 	reloadCh := make(chan struct{})
@@ -130,9 +166,12 @@ func mango(inventoryPath, hostname string) {
 			func() error {
 				select {
 				case sig := <-term:
-					log.WithFields(log.Fields{
-						"signal": sig.String(),
-					}).Warn("Caught signal, waiting for work to finish and terminating")
+					logger.LogAttrs(
+						ctx,
+						slog.LevelWarn,
+						"Caught signal, waiting for work to finish and terminating",
+						slog.String("signal", sig.String()),
+					)
 
 					// cancel context, triggering a
 					// cancelation of everything using it
@@ -140,9 +179,12 @@ func mango(inventoryPath, hostname string) {
 					cancel()
 				case <-ctx.Done():
 					if err := ctx.Err(); err != nil {
-						log.WithFields(log.Fields{
-							"error": err,
-						}).Error("Context canceled due to error")
+						logger.LogAttrs(
+							ctx,
+							slog.LevelError,
+							"Context canceled due to error",
+							slog.String("err", err.Error()),
+						)
 					}
 
 					// close the reload -> manager run signal channel
@@ -166,9 +208,12 @@ func mango(inventoryPath, hostname string) {
 				for {
 					select {
 					case sig := <-hup:
-						log.WithFields(log.Fields{
-							"signal": sig.String(),
-						}).Info("Caught signal, reloading configuration and inventory")
+						logger.LogAttrs(
+							ctx,
+							slog.LevelWarn,
+							"Caught signal, reloading configuration and inventory",
+							slog.String("signal", sig.String()),
+						)
 
 						// reload inventory
 						inv.Reload(ctx)
@@ -221,29 +266,43 @@ func mango(inventoryPath, hostname string) {
 				interval := viper.GetString("inventory.reload-interval")
 				if interval == "" {
 					// auto update not enabled, log and carry on
-					log.Info("Inventory auto-reload is not enabled, mango will only re-apply inventory if sent a SIGHUP")
+					logger.LogAttrs(
+						ctx,
+						slog.LevelInfo,
+						"Inventory auto-reload is not enabled, mango will only re-apply inventory if sent a SIGHUP",
+					)
 					<-cancel
 				} else {
 					// auto update enabled, attempt to configure or carry on
 					dur, err := time.ParseDuration(interval)
 					if err != nil {
-						log.WithFields(log.Fields{
-							"error": err,
-						}).Error("Failed to parse duration for inventory auto-reload, continuing without enabling")
+						logger.LogAttrs(
+							ctx,
+							slog.LevelError,
+							"Failed to parse duration for inventory auto-reload, continuing without enabling",
+							slog.String("err", err.Error()),
+						)
 
 						return nil
 					}
 
-					ticker := time.NewTicker(dur)
+					logger.LogAttrs(
+						ctx,
+						slog.LevelInfo,
+						"Inventory auto-reload enabled",
+						slog.String("interval", dur.String()),
+					)
 
-					log.WithFields(log.Fields{
-						"interval": dur.String(),
-					}).Info("Inventory auto-reload enabled")
+					ticker := time.NewTicker(dur)
 
 					for {
 						select {
 						case <-ticker.C:
-							log.Info("Inventory auto-reload signal received, reloading inventory and rerunning modules")
+							logger.LogAttrs(
+								ctx,
+								slog.LevelInfo,
+								"Inventory auto-reload signal received, reloading inventory and rerunning modules",
+							)
 							mgr.ReloadAndRunAll(ctx, inv)
 						case <-cancel:
 							return nil
@@ -259,29 +318,39 @@ func mango(inventoryPath, hostname string) {
 		)
 	}
 
-	logger.Info("Mango server ready")
-	defer func() {
-		cleanup()
-		logger.Info("Mango server finished")
-	}()
+	logger.LogAttrs(
+		ctx,
+		slog.LevelInfo,
+		"Mango server ready",
+	)
 	if err := g.Run(); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Mango server received error")
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Mango server received error",
+			slog.String("err", err.Error()),
+		)
 	}
 }
 
 // cleanup contains anything that needs to be run prior to mango gracefully
 // shutting down
-func cleanup() {
-	log.Debug("Cleaning up prior to exit")
+func cleanup(ctx context.Context, logger *slog.Logger) {
+	logger.LogAttrs(
+		ctx,
+		slog.LevelDebug,
+		"Cleaning up prior to exit",
+	)
 
 	tmpDir := viper.GetString("mango.temp-dir")
 	if err := os.RemoveAll(tmpDir); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"path":  tmpDir,
-		}).Error("Failed to remove temporary directory")
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to remove temporary directory",
+			slog.String("err", err.Error()),
+			slog.String("path", tmpDir),
+		)
 	}
 }
 
@@ -293,51 +362,68 @@ func main() {
 	flag.String("logging.output", "logfmt", "Logging format may be one of: [logfmt, json]")
 	flag.String("hostname", "", "(Requires root) Custom hostname to use [default is system hostname]")
 
+	// create root logger with default configs, parse out updated configs from flags
+	logLevel := new(slog.LevelVar) // default to info level logging
+	logHandlerOpts := &slog.HandlerOptions{
+		Level: logLevel,
+	}
+	logHandler := slog.NewTextHandler(os.Stdout, logHandlerOpts) // use logfmt handler by default
+	logger := slog.New(logHandler)
+	rootCtx := context.Background()
+
 	flag.Parse()
 	if err := viper.BindPFlags(flag.CommandLine); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Fatal("Failed to parse command line flags")
+		logger.LogAttrs(
+			rootCtx,
+			slog.LevelError,
+			"Failed to parse command line flags",
+			slog.String("err", err.Error()),
+		)
+		os.Exit(1)
 	}
 
-	logOutputFormat := strings.ToLower(viper.GetString("logging.output"))
+	// parse log level from flag
+	logLevelFlagVal := strings.TrimSpace(strings.ToLower(viper.GetString("logging.level")))
+	switch logLevelFlagVal {
+	case "info": // default is info, we're good
+	case "warn":
+		logLevel.Set(slog.LevelWarn)
+	case "debug":
+		logLevel.Set(slog.LevelDebug)
+	case "error":
+		logLevel.Set(slog.LevelError)
+	default:
+		logger.LogAttrs(
+			rootCtx,
+			slog.LevelError,
+			"Failed to parse log level from flag",
+			slog.String("err", "Unsupported log level"),
+			slog.String("level", logLevelFlagVal),
+		)
+		os.Exit(1)
+	}
+
+	// parse log output format from flag
+	logOutputFormat := strings.TrimSpace(strings.ToLower(viper.GetString("logging.output")))
 	if logOutputFormat == "json" {
-		log.SetFormatter(&log.JSONFormatter{})
-	} else {
-		log.SetFormatter(&log.TextFormatter{})
+		jsonLogHandler := slog.NewJSONHandler(os.Stdout, logHandlerOpts)
+		logger = slog.New(jsonLogHandler)
 	}
 
-	// set log level based on config
-	level, err := log.ParseLevel(viper.GetString("logging.level"))
-	if err != nil {
-		// if log level couldn't be parsed from config, default to info level
-		log.SetLevel(log.InfoLevel)
-	} else {
-		log.SetLevel(level)
-
-		if level >= log.DebugLevel {
-			// enable func/file logging
-			log.SetReportCaller(true)
-			logPrettyfierFunc := func(f *runtime.Frame) (string, string) {
-				fileName := filepath.Base(f.File)
-				funcName := filepath.Base(f.Function)
-				return fmt.Sprintf("%s()", funcName), fmt.Sprintf("%s:%d", fileName, f.Line)
-			}
-
-			if logOutputFormat == "json" {
-				log.SetFormatter(&log.JSONFormatter{CallerPrettyfier: logPrettyfierFunc})
-			} else {
-				log.SetFormatter(&log.TextFormatter{CallerPrettyfier: logPrettyfierFunc})
-			}
-		}
-
-		log.Infof("Log level set to: %s", level)
+	if logger.Enabled(rootCtx, slog.LevelDebug) {
+		logHandlerOpts.AddSource = true
 	}
 
 	// ensure inventory is set
 	inventoryPath := viper.GetString("inventory.path")
 	if inventoryPath == "" {
-		log.Fatal("Inventory not defined, please set `inventory.path` flag or config variable to the path to the inventory")
+		logger.LogAttrs(
+			rootCtx,
+			slog.LevelError,
+			"Failed to get inventory",
+			slog.String("err", "Inventory not defined, please set `--inventory.path` flag"),
+		)
+		os.Exit(1)
 	}
 
 	// get hostname for inventory
@@ -351,6 +437,28 @@ func main() {
 		}
 	}
 
+	logger = logger.With(
+		slog.Group("hostname",
+			slog.String("system", utils.GetHostname()),
+			slog.String("inventory", me),
+		),
+	)
+
+	logger.LogAttrs(
+		rootCtx,
+		slog.LevelInfo,
+		"Mango build information",
+		slog.Group("build",
+			slog.String("version", config.Version),
+			slog.String("build_date", config.BuildDate),
+			slog.String("commit", config.Commit),
+			slog.String("go_version", runtime.Version()),
+		),
+	)
+
+	// set logger as default
+	slog.SetDefault(logger)
+
 	// run mango daemon
-	mango(inventoryPath, me)
+	mango(rootCtx, logger, inventoryPath, me)
 }
