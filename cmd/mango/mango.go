@@ -110,15 +110,21 @@ func mango(ctx context.Context, logger *slog.Logger, inventoryPath, hostname str
 	go metrics.ExportPrometheusMetrics()
 
 	// load inventory
-	logger.LogAttrs(
+	inventoryLogger := logger.With(
+		slog.String("worker", "inventory"),
+		slog.Group(
+			"inventory",
+			slog.String("path", inventoryPath),
+		),
+	)
+	inventoryLogger.LogAttrs(
 		ctx,
 		slog.LevelInfo,
 		"Initializing mango inventory",
-		slog.String("path", inventoryPath),
 	)
 	inv := inventory.NewInventory(inventoryPath, hostname)
 	// reload inventory
-	inv.Reload(ctx)
+	inv.Reload(ctx, inventoryLogger)
 	// enrolled := inv.IsEnrolled()
 
 	// start manager, reload it with data from inventory, and then start a run of everything for the system
@@ -216,7 +222,7 @@ func mango(ctx context.Context, logger *slog.Logger, inventoryPath, hostname str
 						)
 
 						// reload inventory
-						inv.Reload(ctx)
+						inv.Reload(ctx, inventoryLogger)
 
 						// signal the manager runner
 						// goroutine that a reload

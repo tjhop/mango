@@ -2,6 +2,7 @@ package inventory
 
 import (
 	"context"
+	"log/slog"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -11,7 +12,6 @@ import (
 
 	glob_util "github.com/gobwas/glob"
 	"github.com/prometheus/client_golang/prometheus"
-	log "github.com/sirupsen/logrus"
 )
 
 // Group contains fields that represent a given group of groups in the inventory.
@@ -38,19 +38,28 @@ func (g Group) String() string { return g.id }
 // Each Group folder may contain a file `glob` containing a newline separated
 // list of glob matches, and a `regex` file containing regular expression
 // patterns for comparing groupnames.
-func (i *Inventory) ParseGroups(ctx context.Context) error {
+func (i *Inventory) ParseGroups(ctx context.Context, logger *slog.Logger) error {
 	commonLabels := prometheus.Labels{
 		"inventory": i.inventoryPath,
 		"component": "groups",
 	}
+	logger = logger.With(
+		slog.Group(
+			"inventory",
+			slog.String("component", "groups"),
+		),
+	)
 
 	path := filepath.Join(i.inventoryPath, "groups")
 	groupDirs, err := utils.GetFilesInDirectory(path)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"path":  path,
-			"error": err,
-		}).Error("Failed to get files in directory")
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to get files in directory",
+			slog.String("err", err.Error()),
+			slog.String("path", path),
+		)
 
 		// inventory counts haven't been altered, no need to update here
 		metricInventoryReloadFailedTotal.With(commonLabels).Inc()
@@ -65,10 +74,13 @@ func (i *Inventory) ParseGroups(ctx context.Context) error {
 			groupPath := filepath.Join(path, groupDir.Name())
 			groupFiles, err := utils.GetFilesInDirectory(groupPath)
 			if err != nil {
-				log.WithFields(log.Fields{
-					"path":  groupPath,
-					"error": err,
-				}).Error("Failed to parse group files")
+				logger.LogAttrs(
+					ctx,
+					slog.LevelError,
+					"Failed to parse group files",
+					slog.String("err", err.Error()),
+					slog.String("path", groupPath),
+				)
 
 				// inventory counts haven't been altered, no need to update here
 				metricInventoryReloadFailedTotal.With(commonLabels).Inc()
@@ -89,10 +101,13 @@ func (i *Inventory) ParseGroups(ctx context.Context) error {
 
 						for line := range lines {
 							if line.Err != nil {
-								log.WithFields(log.Fields{
-									"path":  globPath,
-									"error": line.Err,
-								}).Error("Failed to read globs for group")
+								logger.LogAttrs(
+									ctx,
+									slog.LevelError,
+									"Failed to read globs for group",
+									slog.String("err", line.Err.Error()),
+									slog.String("path", globPath),
+								)
 							} else {
 								globs = append(globs, line.Text)
 							}
@@ -106,10 +121,13 @@ func (i *Inventory) ParseGroups(ctx context.Context) error {
 
 						for line := range lines {
 							if line.Err != nil {
-								log.WithFields(log.Fields{
-									"path":  patternPath,
-									"error": line.Err,
-								}).Error("Failed to read regexs for group")
+								logger.LogAttrs(
+									ctx,
+									slog.LevelError,
+									"Failed to read regexs for group",
+									slog.String("err", line.Err.Error()),
+									slog.String("path", patternPath),
+								)
 							} else {
 								patterns = append(patterns, line.Text)
 							}
@@ -123,10 +141,13 @@ func (i *Inventory) ParseGroups(ctx context.Context) error {
 
 						for line := range lines {
 							if line.Err != nil {
-								log.WithFields(log.Fields{
-									"path":  rolePath,
-									"error": line.Err,
-								}).Error("Failed to read roles for group")
+								logger.LogAttrs(
+									ctx,
+									slog.LevelError,
+									"Failed to read roles for group",
+									slog.String("err", line.Err.Error()),
+									slog.String("path", rolePath),
+								)
 							} else {
 								roles = append(roles, line.Text)
 							}
@@ -140,10 +161,13 @@ func (i *Inventory) ParseGroups(ctx context.Context) error {
 
 						for line := range lines {
 							if line.Err != nil {
-								log.WithFields(log.Fields{
-									"path":  modPath,
-									"error": line.Err,
-								}).Error("Failed to read modules for group")
+								logger.LogAttrs(
+									ctx,
+									slog.LevelError,
+									"Failed to read modules for group",
+									slog.String("err", line.Err.Error()),
+									slog.String("path", modPath),
+								)
 							} else {
 								mods = append(mods, line.Text)
 							}
@@ -153,9 +177,12 @@ func (i *Inventory) ParseGroups(ctx context.Context) error {
 					case "variables":
 						group.variables = filepath.Join(groupPath, "variables")
 					default:
-						log.WithFields(log.Fields{
-							"file": fileName,
-						}).Debug("Not sure what to do with this file, so skipping it.")
+						logger.LogAttrs(
+							ctx,
+							slog.LevelWarn,
+							"Skipping file while parsing inventory",
+							slog.String("path", filepath.Join(groupPath, fileName)),
+						)
 					}
 				}
 			}

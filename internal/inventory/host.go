@@ -2,6 +2,7 @@ package inventory
 
 import (
 	"context"
+	"log/slog"
 	"path/filepath"
 	"strings"
 	"time"
@@ -9,7 +10,6 @@ import (
 	"github.com/tjhop/mango/pkg/utils"
 
 	"github.com/prometheus/client_golang/prometheus"
-	log "github.com/sirupsen/logrus"
 )
 
 // Host contains fields that represent a given host in the inventory.
@@ -31,19 +31,28 @@ func (h Host) String() string { return h.id }
 // folders within this directory, and then parses each directory into a Host struct.
 // Each host folder is expected to contain files for `apply`, `variables`, and `test`,
 // which get set to the corresponding fields in the Host struct for the host.
-func (i *Inventory) ParseHosts(ctx context.Context) error {
+func (i *Inventory) ParseHosts(ctx context.Context, logger *slog.Logger) error {
 	commonLabels := prometheus.Labels{
 		"inventory": i.inventoryPath,
 		"component": "hosts",
 	}
+	logger = logger.With(
+		slog.Group(
+			"inventory",
+			slog.String("component", "hosts"),
+		),
+	)
 
 	path := filepath.Join(i.inventoryPath, "hosts")
 	hostDirs, err := utils.GetFilesInDirectory(path)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"path":  path,
-			"error": err,
-		}).Error("Failed to get files in directory")
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to get files in directory",
+			slog.String("err", err.Error()),
+			slog.String("path", path),
+		)
 
 		// inventory counts haven't been altered, no need to update here
 		metricInventoryReloadFailedTotal.With(commonLabels).Inc()
@@ -58,10 +67,13 @@ func (i *Inventory) ParseHosts(ctx context.Context) error {
 			hostPath := filepath.Join(path, hostDir.Name())
 			hostFiles, err := utils.GetFilesInDirectory(hostPath)
 			if err != nil {
-				log.WithFields(log.Fields{
-					"path":  hostPath,
-					"error": err,
-				}).Error("Failed to parse host files")
+				logger.LogAttrs(
+					ctx,
+					slog.LevelError,
+					"Failed to parse host files",
+					slog.String("err", err.Error()),
+					slog.String("path", hostPath),
+				)
 
 				// inventory counts haven't been altered, no need to update here
 				metricInventoryReloadFailedTotal.With(commonLabels).Inc()
@@ -82,10 +94,13 @@ func (i *Inventory) ParseHosts(ctx context.Context) error {
 
 						for line := range lines {
 							if line.Err != nil {
-								log.WithFields(log.Fields{
-									"path":  rolePath,
-									"error": line.Err,
-								}).Error("Failed to read roles for host")
+								logger.LogAttrs(
+									ctx,
+									slog.LevelError,
+									"Failed to read roles for host",
+									slog.String("err", line.Err.Error()),
+									slog.String("path", rolePath),
+								)
 							} else {
 								roles = append(roles, line.Text)
 							}
@@ -99,10 +114,13 @@ func (i *Inventory) ParseHosts(ctx context.Context) error {
 
 						for line := range lines {
 							if line.Err != nil {
-								log.WithFields(log.Fields{
-									"path":  modPath,
-									"error": line.Err,
-								}).Error("Failed to read modules for host")
+								logger.LogAttrs(
+									ctx,
+									slog.LevelError,
+									"Failed to read modules for host",
+									slog.String("err", line.Err.Error()),
+									slog.String("path", modPath),
+								)
 							} else {
 								mods = append(mods, line.Text)
 							}
@@ -112,9 +130,12 @@ func (i *Inventory) ParseHosts(ctx context.Context) error {
 					case "variables":
 						host.variables = filepath.Join(hostPath, "variables")
 					default:
-						log.WithFields(log.Fields{
-							"file": fileName,
-						}).Debug("Not sure what to do with this file, so skipping it.")
+						logger.LogAttrs(
+							ctx,
+							slog.LevelWarn,
+							"Skipping file while parsing inventory",
+							slog.String("path", filepath.Join(hostPath, fileName)),
+						)
 					}
 				}
 			}

@@ -2,11 +2,11 @@ package inventory
 
 import (
 	"context"
+	"log/slog"
 	"path/filepath"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -87,7 +87,7 @@ func (i *Inventory) GetHostname() string { return i.hostname }
 // features are introduced.
 type Store interface {
 	// Inventory management functions
-	Reload(ctx context.Context)
+	Reload(ctx context.Context, logger *slog.Logger)
 
 	// Enrollment and runtime/metadata checks
 	IsEnrolled() bool
@@ -141,42 +141,57 @@ func NewInventory(path, name string) *Inventory {
 // - Roles
 // - Modules
 // - Directives
-func (i *Inventory) Reload(ctx context.Context) {
+func (i *Inventory) Reload(ctx context.Context, logger *slog.Logger) {
 	// populate the inventory
 
 	// parse groups
-	if err := i.ParseGroups(ctx); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to reload groups")
+	if err := i.ParseGroups(ctx, logger); err != nil {
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to reload groups",
+			slog.String("err", err.Error()),
+		)
 	}
 
 	// parse hosts
-	if err := i.ParseHosts(ctx); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to reload hosts")
+	if err := i.ParseHosts(ctx, logger); err != nil {
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to reload hosts",
+			slog.String("err", err.Error()),
+		)
 	}
 
 	// parse roles
-	if err := i.ParseRoles(ctx); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to reload roles")
+	if err := i.ParseRoles(ctx, logger); err != nil {
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to reload roles",
+			slog.String("err", err.Error()),
+		)
 	}
 
 	// parse modules
-	if err := i.ParseModules(ctx); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to reload modules")
+	if err := i.ParseModules(ctx, logger); err != nil {
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to reload modules",
+			slog.String("err", err.Error()),
+		)
 	}
 
 	// parse directives
-	if err := i.ParseDirectives(ctx); err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to reload directives")
+	if err := i.ParseDirectives(ctx, logger); err != nil {
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to reload directives",
+			slog.String("err", err.Error()),
+		)
 	}
 }
 

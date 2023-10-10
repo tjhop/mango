@@ -2,6 +2,7 @@ package inventory
 
 import (
 	"context"
+	"log/slog"
 	"path/filepath"
 	"strings"
 	"time"
@@ -9,7 +10,6 @@ import (
 	"github.com/tjhop/mango/pkg/utils"
 
 	"github.com/prometheus/client_golang/prometheus"
-	log "github.com/sirupsen/logrus"
 )
 
 // Role contains fields that represent a single role in the inventory.
@@ -26,19 +26,28 @@ func (r Role) String() string { return r.id }
 // ParseRoles searches for directories in the provided path. Each directory is
 // treated as a role -- each role is checked for the appropriate `modules` file to
 // parse for the list of modules for the role.
-func (i *Inventory) ParseRoles(ctx context.Context) error {
+func (i *Inventory) ParseRoles(ctx context.Context, logger *slog.Logger) error {
 	commonLabels := prometheus.Labels{
 		"inventory": i.inventoryPath,
 		"component": "roles",
 	}
+	logger = logger.With(
+		slog.Group(
+			"inventory",
+			slog.String("component", "roles"),
+		),
+	)
 
 	path := filepath.Join(i.inventoryPath, "roles")
 	roleDirs, err := utils.GetFilesInDirectory(path)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"path":  path,
-			"error": err,
-		}).Error("Failed to parse roles")
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to parse roles",
+			slog.String("err", err.Error()),
+			slog.String("path", path),
+		)
 
 		// inventory counts haven't been altered, no need to update here
 		metricInventoryReloadFailedTotal.With(commonLabels).Inc()
@@ -53,10 +62,13 @@ func (i *Inventory) ParseRoles(ctx context.Context) error {
 			rolePath := filepath.Join(path, roleDir.Name())
 			roleFiles, err := utils.GetFilesInDirectory(rolePath)
 			if err != nil {
-				log.WithFields(log.Fields{
-					"path":  rolePath,
-					"error": err,
-				}).Error("Failed to parse module files")
+				logger.LogAttrs(
+					ctx,
+					slog.LevelError,
+					"Failed to parse role files",
+					slog.String("err", err.Error()),
+					slog.String("path", rolePath),
+				)
 
 				// inventory counts haven't been altered, no need to update here
 				metricInventoryReloadFailedTotal.With(commonLabels).Inc()
@@ -77,11 +89,13 @@ func (i *Inventory) ParseRoles(ctx context.Context) error {
 
 						for line := range lines {
 							if line.Err != nil {
-								log.WithFields(log.Fields{
-									"path":  modPath,
-									"error": line.Err,
-								}).Error("Failed to read modules in role")
-
+								logger.LogAttrs(
+									ctx,
+									slog.LevelError,
+									"Failed to read modules in role",
+									slog.String("err", line.Err.Error()),
+									slog.String("path", modPath),
+								)
 								// inventory counts haven't been altered, no need to update here
 								metricInventoryReloadFailedTotal.With(commonLabels).Inc()
 
@@ -93,9 +107,12 @@ func (i *Inventory) ParseRoles(ctx context.Context) error {
 						role.modules = mods
 
 					default:
-						log.WithFields(log.Fields{
-							"file": fileName,
-						}).Debug("Not sure what to do with this file, so skipping it.")
+						logger.LogAttrs(
+							ctx,
+							slog.LevelWarn,
+							"Skipping file while parsing inventory",
+							slog.String("path", filepath.Join(rolePath, fileName)),
+						)
 					}
 				}
 			}
@@ -108,13 +125,7 @@ func (i *Inventory) ParseRoles(ctx context.Context) error {
 	metricInventory.With(commonLabels).Set(float64(len(i.roles)))
 	numMyRoles := 0
 	if i.IsEnrolled() {
-		roles := i.GetRolesForSelf()
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-			}).Error("Failed to get Roles for self")
-		}
-		numMyRoles = len(roles)
+		numMyRoles = len(i.GetRolesForSelf())
 	}
 	metricInventoryApplicable.With(commonLabels).Set(float64(numMyRoles))
 	metricInventoryReloadSeconds.With(commonLabels).Set(float64(time.Now().Unix()))

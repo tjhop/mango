@@ -2,6 +2,7 @@ package inventory
 
 import (
 	"context"
+	"log/slog"
 	"path/filepath"
 	"strings"
 	"time"
@@ -9,7 +10,6 @@ import (
 	"github.com/tjhop/mango/pkg/utils"
 
 	"github.com/prometheus/client_golang/prometheus"
-	log "github.com/sirupsen/logrus"
 )
 
 // Module contains fields that represent a single module in the inventory.
@@ -33,19 +33,28 @@ func (m Module) String() string { return m.ID }
 // folders within this directory, and then parses each directory into a Module struct.
 // Each module folder is expected to contain files for `apply`, `variables`, and `test`,
 // which get set to the corresponding fields in the Module struct for the module.
-func (i *Inventory) ParseModules(ctx context.Context) error {
+func (i *Inventory) ParseModules(ctx context.Context, logger *slog.Logger) error {
 	commonLabels := prometheus.Labels{
 		"inventory": i.inventoryPath,
 		"component": "modules",
 	}
+	logger = logger.With(
+		slog.Group(
+			"inventory",
+			slog.String("component", "modules"),
+		),
+	)
 
 	path := filepath.Join(i.inventoryPath, "modules")
 	modDirs, err := utils.GetFilesInDirectory(path)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"path":  path,
-			"error": err,
-		}).Error("Failed to get files in directory")
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to get files in directory",
+			slog.String("err", err.Error()),
+			slog.String("path", path),
+		)
 
 		// inventory counts haven't been altered, no need to update here
 		metricInventoryReloadFailedTotal.With(commonLabels).Inc()
@@ -60,10 +69,13 @@ func (i *Inventory) ParseModules(ctx context.Context) error {
 			modPath := filepath.Join(path, modDir.Name())
 			modFiles, err := utils.GetFilesInDirectory(modPath)
 			if err != nil {
-				log.WithFields(log.Fields{
-					"path":  modPath,
-					"error": err,
-				}).Error("Failed to parse module files")
+				logger.LogAttrs(
+					ctx,
+					slog.LevelError,
+					"Failed to parse module files",
+					slog.String("err", err.Error()),
+					slog.String("path", modPath),
+				)
 
 				// inventory counts haven't been altered, no need to update here
 				metricInventoryReloadFailedTotal.With(commonLabels).Inc()
@@ -78,17 +90,20 @@ func (i *Inventory) ParseModules(ctx context.Context) error {
 					fileName := modFile.Name()
 					switch fileName {
 					case "apply":
-						mod.Apply = filepath.Join(mod.ID, "apply")
+						mod.Apply = filepath.Join(modPath, "apply")
 					case "test":
-						mod.Test = filepath.Join(mod.ID, "test")
+						mod.Test = filepath.Join(modPath, "test")
 					case "variables":
-						mod.Variables = filepath.Join(mod.ID, "variables")
+						mod.Variables = filepath.Join(modPath, "variables")
 					case "requires":
-						mod.Requires = filepath.Join(mod.ID, "requires")
+						mod.Requires = filepath.Join(modPath, "requires")
 					default:
-						log.WithFields(log.Fields{
-							"file": fileName,
-						}).Debug("Not sure what to do with this file, so skipping it.")
+						logger.LogAttrs(
+							ctx,
+							slog.LevelWarn,
+							"Skipping file while parsing inventory",
+							slog.String("path", filepath.Join(modPath, fileName)),
+						)
 					}
 				}
 			}
@@ -101,13 +116,7 @@ func (i *Inventory) ParseModules(ctx context.Context) error {
 	metricInventory.With(commonLabels).Set(float64(len(i.modules)))
 	numMyMods := 0
 	if i.IsEnrolled() {
-		mods := i.GetModulesForSelf()
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-			}).Error("Failed to get Modules for self")
-		}
-		numMyMods = len(mods)
+		numMyMods = len(i.GetModulesForSelf())
 	}
 	metricInventoryApplicable.With(commonLabels).Set(float64(numMyMods))
 	metricInventoryReloadSeconds.With(commonLabels).Set(float64(time.Now().Unix()))

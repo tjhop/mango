@@ -2,6 +2,7 @@ package inventory
 
 import (
 	"context"
+	"log/slog"
 	"path/filepath"
 	"strings"
 	"time"
@@ -9,7 +10,6 @@ import (
 	"github.com/tjhop/mango/pkg/utils"
 
 	"github.com/prometheus/client_golang/prometheus"
-	log "github.com/sirupsen/logrus"
 )
 
 // Directive contains fields that are relevant specifically to directive scripts, which
@@ -26,19 +26,28 @@ type Directive struct {
 func (d Directive) String() string { return d.ID }
 
 // ParseDirectives looks for scripts in the inventory's `directives/` folder and adds them
-func (i *Inventory) ParseDirectives(ctx context.Context) error {
+func (i *Inventory) ParseDirectives(ctx context.Context, logger *slog.Logger) error {
 	commonLabels := prometheus.Labels{
 		"inventory": i.inventoryPath,
 		"component": "directives",
 	}
+	logger = logger.With(
+		slog.Group(
+			"inventory",
+			slog.String("component", "directives"),
+		),
+	)
 
 	path := filepath.Join(i.inventoryPath, "directives")
 	files, err := utils.GetFilesInDirectory(path)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"path":  path,
-			"error": err,
-		}).Error("Failed to parse directives")
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to parse directives",
+			slog.String("err", err.Error()),
+			slog.String("path", path),
+		)
 
 		// inventory counts haven't been altered, no need to update here
 		metricInventoryReloadFailedTotal.With(commonLabels).Inc()
