@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // GetFilesInDirectory is a convenience function to DRY out some of the
@@ -76,4 +77,8 @@ func ReadFileLines(path string) chan FileLine {
 func GetHostname() string {
 	h, _ := os.Hostname()
 	return h
+}
+
+func IsHidden(path string) bool {
+	return strings.HasPrefix(path, ".")
 }
