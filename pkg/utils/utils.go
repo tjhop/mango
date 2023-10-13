@@ -2,11 +2,10 @@ package utils
 
 import (
 	"bufio"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // GetFilesInDirectory is a convenience function to DRY out some of the
@@ -15,22 +14,12 @@ import (
 func GetFilesInDirectory(path string) ([]fs.DirEntry, error) {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"path":  path,
-			"error": err,
-		}).Error("Failed to retrieve absolute path")
-
-		return nil, err
+		return nil, fmt.Errorf("Failed to retrieve absolute path for '%s': %v", path, err)
 	}
 
 	files, err := os.ReadDir(absPath)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"path":  absPath,
-			"error": err,
-		}).Error("Failed to read files in directory")
-
-		return nil, err
+		return nil, fmt.Errorf("Failed to read files in directory '%s': %v", absPath, err)
 	}
 
 	return files, nil
@@ -55,20 +44,17 @@ func ReadFileLines(path string) chan FileLine {
 	lines := make(chan FileLine)
 
 	go func() {
+		defer close(lines)
 		absPath, err := filepath.Abs(path)
 		if err != nil {
-			log.WithFields(log.Fields{
-				"path":  path,
-				"error": err,
-			}).Error("Failed to retrieve absolute path")
+			lines <- FileLine{Err: fmt.Errorf("Failed to retrieve absolute path for '%s': %v", path, err)}
+			return
 		}
 
 		file, err := os.Open(absPath)
 		if err != nil {
-			log.WithFields(log.Fields{
-				"path":  absPath,
-				"error": err,
-			}).Error("Failed to open file")
+			lines <- FileLine{Err: fmt.Errorf("Failed to open file '%s': %v", path, err)}
+			return
 		}
 		defer file.Close()
 
@@ -81,8 +67,6 @@ func ReadFileLines(path string) chan FileLine {
 		if err := scanner.Err(); err != nil {
 			lines <- FileLine{Err: scanner.Err()}
 		}
-
-		close(lines)
 	}()
 
 	return lines
