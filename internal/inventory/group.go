@@ -70,7 +70,7 @@ func (i *Inventory) ParseGroups(ctx context.Context, logger *slog.Logger) error 
 	var groups []Group
 
 	for _, groupDir := range groupDirs {
-		if groupDir.IsDir() {
+		if groupDir.IsDir() && !utils.IsHidden(groupDir.Name()) {
 			groupPath := filepath.Join(path, groupDir.Name())
 			groupFiles, err := utils.GetFilesInDirectory(groupPath)
 			if err != nil {
@@ -91,7 +91,7 @@ func (i *Inventory) ParseGroups(ctx context.Context, logger *slog.Logger) error 
 			group := Group{id: groupDir.Name()}
 
 			for _, groupFile := range groupFiles {
-				if !groupFile.IsDir() && !strings.HasPrefix(groupFile.Name(), ".") {
+				if !groupFile.IsDir() && !utils.IsHidden(groupFile.Name()) {
 					fileName := groupFile.Name()
 					switch fileName {
 					case "glob":

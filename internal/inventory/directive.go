@@ -58,7 +58,7 @@ func (i *Inventory) ParseDirectives(ctx context.Context, logger *slog.Logger) er
 	var dirScripts []Directive
 
 	for _, file := range files {
-		if !file.IsDir() && !strings.HasPrefix(file.Name(), ".") {
+		if !file.IsDir() && !utils.IsHidden(file.Name()) {
 			scriptPath := filepath.Join(path, file.Name())
 
 			dirScripts = append(dirScripts, Directive{

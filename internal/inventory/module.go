@@ -65,7 +65,7 @@ func (i *Inventory) ParseModules(ctx context.Context, logger *slog.Logger) error
 	var modules []Module
 
 	for _, modDir := range modDirs {
-		if modDir.IsDir() {
+		if modDir.IsDir() && !utils.IsHidden(modDir.Name()) {
 			modPath := filepath.Join(path, modDir.Name())
 			modFiles, err := utils.GetFilesInDirectory(modPath)
 			if err != nil {
@@ -86,7 +86,7 @@ func (i *Inventory) ParseModules(ctx context.Context, logger *slog.Logger) error
 			mod := Module{ID: modPath}
 
 			for _, modFile := range modFiles {
-				if !modFile.IsDir() && !strings.HasPrefix(modFile.Name(), ".") {
+				if !modFile.IsDir() && !utils.IsHidden(modFile.Name()) {
 					fileName := modFile.Name()
 					switch fileName {
 					case "apply":

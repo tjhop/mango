@@ -58,7 +58,7 @@ func (i *Inventory) ParseRoles(ctx context.Context, logger *slog.Logger) error {
 	var roles []Role
 
 	for _, roleDir := range roleDirs {
-		if roleDir.IsDir() {
+		if roleDir.IsDir() && !utils.IsHidden(roleDir.Name()) {
 			rolePath := filepath.Join(path, roleDir.Name())
 			roleFiles, err := utils.GetFilesInDirectory(rolePath)
 			if err != nil {
@@ -79,7 +79,7 @@ func (i *Inventory) ParseRoles(ctx context.Context, logger *slog.Logger) error {
 			role := Role{id: rolePath}
 
 			for _, roleFile := range roleFiles {
-				if !roleFile.IsDir() && !strings.HasPrefix(roleFile.Name(), ".") {
+				if !roleFile.IsDir() && !utils.IsHidden(roleFile.Name()) {
 					fileName := roleFile.Name()
 					switch fileName {
 					case "modules":

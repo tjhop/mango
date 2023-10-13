@@ -63,7 +63,7 @@ func (i *Inventory) ParseHosts(ctx context.Context, logger *slog.Logger) error {
 	var hosts []Host
 
 	for _, hostDir := range hostDirs {
-		if hostDir.IsDir() {
+		if hostDir.IsDir() && !utils.IsHidden(hostDir.Name()) {
 			hostPath := filepath.Join(path, hostDir.Name())
 			hostFiles, err := utils.GetFilesInDirectory(hostPath)
 			if err != nil {
@@ -84,7 +84,7 @@ func (i *Inventory) ParseHosts(ctx context.Context, logger *slog.Logger) error {
 			host := Host{id: hostDir.Name()}
 
 			for _, hostFile := range hostFiles {
-				if !hostFile.IsDir() && !strings.HasPrefix(hostFile.Name(), ".") {
+				if !hostFile.IsDir() && !utils.IsHidden(hostFile.Name()) {
 					fileName := hostFile.Name()
 					switch fileName {
 					case "roles":
