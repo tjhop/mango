@@ -3,11 +3,11 @@ package manager
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/tjhop/mango/internal/inventory"
 	"github.com/tjhop/mango/internal/shell"
@@ -75,29 +75,34 @@ func (mgr *Manager) RunDirective(ctx context.Context, ds Directive) error {
 }
 
 // RunDirectives runs all of the directive scripts being managed by the Manager
-func (mgr *Manager) RunDirectives(ctx context.Context) {
-	ctx, runID := getOrSetRunID(ctx)
-	logger := mgr.logger.WithFields(log.Fields{
-		"run_id": runID.String(),
-	})
+func (mgr *Manager) RunDirectives(ctx context.Context, logger *slog.Logger) {
+	ctx, _ = getOrSetRunID(ctx)
 
 	if len(mgr.directives) <= 0 {
-		logger.Info("No Directives to run")
+		logger.InfoContext(ctx, "No Directives to run")
 		return
 	}
 
-	logger.Info("Directive run started")
-	defer logger.Info("Directive run finished")
+	logger.InfoContext(ctx, "Directive run started")
+	defer logger.InfoContext(ctx, "Directive run finished")
 	for _, d := range mgr.directives {
-		logger.WithFields(log.Fields{
-			"directive": d.String(),
-		}).Info("Running directive")
+		logger = logger.With(
+			slog.Group(
+				"directive",
+				slog.String("id", d.String()),
+			),
+		)
+
+		logger.InfoContext(ctx, "Directive started")
+		defer logger.InfoContext(ctx, "Directive finished")
 
 		if err := mgr.RunDirective(ctx, d); err != nil {
-			logger.WithFields(log.Fields{
-				"directive": d.String(),
-				"error":     err,
-			}).Error("Directive failed")
+			logger.LogAttrs(
+				ctx,
+				slog.LevelError,
+				"Directive failed",
+				slog.String("err", err.Error()),
+			)
 		}
 	}
 }

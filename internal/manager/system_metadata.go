@@ -3,6 +3,7 @@ package manager
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -14,7 +15,6 @@ import (
 	"github.com/prometheus/procfs"
 	"github.com/prometheus/procfs/blockdevice"
 	distro "github.com/quay/claircore/osrelease"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/tjhop/mango/pkg/utils"
 )
@@ -32,21 +32,31 @@ type osMetadata struct {
 	OSRelease map[string]string
 }
 
-func getOSMetadata() osMetadata {
+func getOSMetadata(ctx context.Context, logger *slog.Logger) osMetadata {
 	// os metadata for templates
+	logger = logger.With(
+		slog.String("metadata_collector", "os"),
+	)
+
 	osReleaseFile, err := os.Open(distro.Path)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"path":  distro.Path,
-		}).Error("Failed to open os-release file")
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to open os-release file",
+			slog.String("err", err.Error()),
+			slog.String("path", distro.Path),
+		)
 	}
-	osRelease, err := distro.Parse(context.Background(), osReleaseFile)
+	osRelease, err := distro.Parse(ctx, osReleaseFile)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"path":  distro.Path,
-		}).Error("Failed to parse os-release file")
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to parse os-release file",
+			slog.String("err", err.Error()),
+			slog.String("path", distro.Path),
+		)
 	}
 	osData := osMetadata{
 		OSRelease: osRelease,
@@ -70,13 +80,20 @@ type kernelMetadata struct {
 	Full                 string
 }
 
-func getKernelMetadata() kernelMetadata {
+func getKernelMetadata(ctx context.Context, logger *slog.Logger) kernelMetadata {
+	logger = logger.With(
+		slog.String("metadata_collector", "kernel"),
+	)
+
 	// kernel metadata for templates
 	kernelInfo, err := kernelParser.GetKernelVersion()
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to parse kernel info")
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to parse kernel info",
+			slog.String("err", err.Error()),
+		)
 	}
 	kernelData := kernelMetadata{
 		Kernel: kernelInfo.Kernel,
@@ -94,19 +111,30 @@ type cpuMetadata struct {
 	Cores []procfs.CPUInfo
 }
 
-func getCPUMetadata() cpuMetadata {
+func getCPUMetadata(ctx context.Context, logger *slog.Logger) cpuMetadata {
+	logger = logger.With(
+		slog.String("metadata_collector", "cpu"),
+	)
+
 	fs, err := procfs.NewFS(procDir)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to create procfs for cpu metadata")
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to create procfs for cpu metadata",
+			slog.String("err", err.Error()),
+			slog.String("path", procDir),
+		)
 	}
 
 	cpuInfo, err := fs.CPUInfo()
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to read cpu info")
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to read cpu info",
+			slog.String("err", err.Error()),
+		)
 	}
 
 	return cpuMetadata{Cores: cpuInfo}
@@ -132,7 +160,11 @@ var (
 
 type memoryMetadata map[string]uint64
 
-func getMemoryMetadata() memoryMetadata {
+func getMemoryMetadata(ctx context.Context, logger *slog.Logger) memoryMetadata {
+	logger = logger.With(
+		slog.String("metadata_collector", "memory"),
+	)
+
 	var memoryMD = make(memoryMetadata)
 	lines := utils.ReadFileLines(meminfoFile)
 	for line := range lines {
@@ -154,20 +186,26 @@ func getMemoryMetadata() memoryMetadata {
 			// no unit provided, parse directly as bytes
 			fv, err := strconv.ParseUint(fields[1], 10, 64)
 			if err != nil {
-				log.WithFields(log.Fields{
-					"error": err,
-					"entry": line.Text,
-				}).Error("Failed to create meminfo, invalid value")
+				logger.LogAttrs(
+					ctx,
+					slog.LevelError,
+					"Failed to create meminfo, invalid value",
+					slog.String("err", err.Error()),
+					slog.String("entry", line.Text),
+				)
 			}
 			val = fv
 		case 3:
 			// unit provided, parse into bytes via humanize
 			parsedBytes, err := humanize.ParseBytes(fmt.Sprintf("%s %s", fields[1], fields[2]))
 			if err != nil {
-				log.WithFields(log.Fields{
-					"error": err,
-					"entry": line.Text,
-				}).Error("Failed to parse unit in meminfo")
+				logger.LogAttrs(
+					ctx,
+					slog.LevelError,
+					"Failed to parse unit in meminfo",
+					slog.String("err", err.Error()),
+					slog.String("entry", line.Text),
+				)
 
 				continue
 			}
@@ -176,9 +214,12 @@ func getMemoryMetadata() memoryMetadata {
 		default:
 			// malformed line, wrong number of fields (ie, a single field returned or a 4+ returned)
 			// log and continue
-			log.WithFields(log.Fields{
-				"entry": line.Text,
-			}).Warn("Failed to parse meminfo entry, possibly malformed")
+			logger.LogAttrs(
+				ctx,
+				slog.LevelWarn,
+				"Failed to parse meminfo entry, possibly malformed",
+				slog.String("entry", line.Text),
+			)
 
 			continue
 		}
@@ -207,22 +248,32 @@ type storageMetadata struct {
 	Disks  []disk
 }
 
-func getStorageMetadata() storageMetadata {
+func getStorageMetadata(ctx context.Context, logger *slog.Logger) storageMetadata {
+	logger = logger.With(
+		slog.String("metadata_collector", "storage"),
+	)
+
 	storageMD := storageMetadata{}
 
 	fs, err := blockdevice.NewFS(procDir, sysDir)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to create blockdevice FS")
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to create blockdevice FS",
+			slog.String("err", err.Error()),
+		)
 	}
 
 	blockDevs, err := fs.SysBlockDevices()
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"path":  blockDevDir,
-		}).Error("Failed to list block devices")
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to list block devices",
+			slog.String("err", err.Error()),
+			slog.String("path", blockDevDir),
+		)
 	}
 
 	var disks []disk
@@ -230,10 +281,13 @@ func getStorageMetadata() storageMetadata {
 		blockDevPath := filepath.Join(blockDevDir, blockDev)
 
 		qStats, err := fs.SysBlockDeviceQueueStats(blockDevPath)
-		log.WithFields(log.Fields{
-			"error":  err,
-			"device": blockDev,
-		}).Error("Failed to get queue stats for block device")
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to get queue stats for block device",
+			slog.String("err", err.Error()),
+			slog.String("device", blockDev),
+		)
 
 		ssd := false
 		if qStats.Rotational == 0 {
@@ -242,16 +296,16 @@ func getStorageMetadata() storageMetadata {
 
 		blockDevLink, err := os.Readlink(blockDevPath)
 		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-				"path":  blockDevPath,
-			}).Error("Failed to get device link")
+			logger.LogAttrs(
+				ctx,
+				slog.LevelError,
+				"Failed to get device link",
+				slog.String("err", err.Error()),
+				slog.String("path", blockDevPath),
+			)
 		}
 
-		virtual := false
-		if strings.Contains(blockDevLink, "virtual") {
-			virtual = true
-		}
+		virtual := strings.Contains(blockDevLink, "virtual")
 
 		disks = append(disks, disk{
 			Name:    blockDevPath,
@@ -264,10 +318,13 @@ func getStorageMetadata() storageMetadata {
 
 	mounts, err := procfs.GetMounts()
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"path":  mountInfoFile,
-		}).Error("Failed to get mounts")
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to get mounts",
+			slog.String("err", err.Error()),
+			slog.String("path", mountInfoFile),
+		)
 	}
 	storageMD.Mounts = mounts
 

@@ -128,11 +128,18 @@ func mango(ctx context.Context, logger *slog.Logger, inventoryPath, hostname str
 	// enrolled := inv.IsEnrolled()
 
 	// start manager, reload it with data from inventory, and then start a run of everything for the system
-	logger.LogAttrs(
+	managerLogger := logger.With(
+		slog.String("worker", "manager"),
+		slog.Group(
+			"manager",
+			slog.String("inventory", inventoryPath),
+			slog.String("hostname", hostname),
+		),
+	)
+	managerLogger.LogAttrs(
 		ctx,
 		slog.LevelInfo,
 		"Initializing mango manager",
-		slog.String("manager", hostname),
 	)
 	mgr := manager.NewManager(hostname)
 
@@ -155,12 +162,12 @@ func mango(ctx context.Context, logger *slog.Logger, inventoryPath, hostname str
 	// 	"Host enrollment check",
 	// )
 
-	logger.LogAttrs(
+	managerLogger.LogAttrs(
 		ctx,
 		slog.LevelInfo,
 		"Starting initial run of all modules",
 	)
-	mgr.ReloadAndRunAll(ctx, inv)
+	mgr.ReloadAndRunAll(ctx, managerLogger, inv)
 
 	reloadCh := make(chan struct{})
 	var g run.Group
@@ -253,7 +260,7 @@ func mango(ctx context.Context, logger *slog.Logger, inventoryPath, hostname str
 						// when a signal is received on the
 						// reload channel, trigger a new run
 						// for all modules.
-						mgr.ReloadAndRunAll(ctx, inv)
+						mgr.ReloadAndRunAll(ctx, managerLogger, inv)
 					case <-cancel:
 						return nil
 					}
@@ -309,7 +316,7 @@ func mango(ctx context.Context, logger *slog.Logger, inventoryPath, hostname str
 								slog.LevelInfo,
 								"Inventory auto-reload signal received, reloading inventory and rerunning modules",
 							)
-							mgr.ReloadAndRunAll(ctx, inv)
+							mgr.ReloadAndRunAll(ctx, managerLogger, inv)
 						case <-cancel:
 							return nil
 						}

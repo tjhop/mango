@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+	"log/slog"
 	"strings"
 	"sync"
 	"text/template"
@@ -9,7 +10,6 @@ import (
 	"github.com/dominikbraun/graph"
 	"github.com/oklog/ulid/v2"
 	"github.com/prometheus/client_golang/prometheus"
-	log "github.com/sirupsen/logrus"
 	"mvdan.cc/sh/v3/syntax"
 
 	"github.com/tjhop/mango/internal/inventory"
@@ -26,8 +26,8 @@ var (
 	// context keys for metadata that manager uses for feeding mango metadata in templates
 	contextKeyRunID         = contextKey("runID")
 	contextKeyEnrolled      = contextKey("enrolled")
-	contextKeyManagerName   = contextKey("manager name")
-	contextKeyInventoryPath = contextKey("inventory path")
+	contextKeyManagerName   = contextKey("manager_name")
+	contextKeyInventoryPath = contextKey("inventory_path")
 	contextKeyHostname      = contextKey("hostname")
 )
 
@@ -35,7 +35,6 @@ var (
 type Manager struct {
 	id            string
 	inv           inventory.Store // TODO: move this interface to be defined consumer-side in manager vs in inventory
-	logger        *log.Entry
 	modules       graph.Graph[string, Module]
 	directives    []Directive
 	hostVariables VariableSlice
@@ -56,10 +55,7 @@ func NewManager(id string) *Manager {
 	}
 
 	return &Manager{
-		id: id,
-		logger: log.WithFields(log.Fields{
-			"manager": id,
-		}),
+		id:      id,
 		funcMap: funcs,
 		modules: graph.New(moduleHash, graph.Directed(), graph.Acyclic()),
 	}
@@ -79,36 +75,47 @@ func getOrSetRunID(ctx context.Context) (context.Context, ulid.ULID) {
 // ReloadAndRunAll is a wrapper function to reload from the specified
 // inventory, populate some run specific context, and initiate a run of all
 // managed modules
-func (mgr *Manager) ReloadAndRunAll(ctx context.Context, inv inventory.Store) {
+func (mgr *Manager) ReloadAndRunAll(ctx context.Context, logger *slog.Logger, inv inventory.Store) {
 	// add context data relevant to this run, for use with templating and things
-	ctx, _ = getOrSetRunID(ctx)
-	ctx = context.WithValue(ctx, contextKeyEnrolled, inv.IsEnrolled())
+	ctx, runID := getOrSetRunID(ctx)
+
+	enrolled := inv.IsEnrolled()
+	ctx = context.WithValue(ctx, contextKeyEnrolled, enrolled)
 	ctx = context.WithValue(ctx, contextKeyManagerName, mgr.String())
 	ctx = context.WithValue(ctx, contextKeyInventoryPath, inv.GetInventoryPath())
 	ctx = context.WithValue(ctx, contextKeyHostname, inv.GetHostname())
 
-	mgr.Reload(ctx, inv)
-	mgr.RunAll(ctx)
+	logger = logger.With(
+		slog.Group(
+			"manager",
+			// TODO: verify these log keys don't include contextKey prefix
+			slog.Bool(string(contextKeyEnrolled), enrolled),
+			slog.String(string(contextKeyRunID), runID.String()),
+		),
+	)
+
+	mgr.Reload(ctx, logger, inv)
+	mgr.RunAll(ctx, logger)
 }
 
 // Reload accepts a struct that fulfills the inventory.Store interface and
 // reloads the hosts modules/directives from the inventory
-func (mgr *Manager) Reload(ctx context.Context, inv inventory.Store) {
+func (mgr *Manager) Reload(ctx context.Context, logger *slog.Logger, inv inventory.Store) {
 	ctx, _ = getOrSetRunID(ctx)
 
 	// reload manager's knowledge of system info
-	mgr.tmplData.OS = getOSMetadata()
-	mgr.tmplData.Kernel = getKernelMetadata()
-	mgr.tmplData.CPU = getCPUMetadata()
-	mgr.tmplData.Memory = getMemoryMetadata()
-	mgr.tmplData.Storage = getStorageMetadata()
+	mgr.tmplData.OS = getOSMetadata(ctx, logger)
+	mgr.tmplData.Kernel = getKernelMetadata(ctx, logger)
+	mgr.tmplData.CPU = getCPUMetadata(ctx, logger)
+	mgr.tmplData.Memory = getMemoryMetadata(ctx, logger)
+	mgr.tmplData.Storage = getStorageMetadata(ctx, logger)
 
 	// reload manager's copy of inventory from provided inventory
-	mgr.logger.Info("Reloading items from inventory")
+	logger.InfoContext(ctx, "Reloading items from inventory")
 
 	mgr.inv = inv
 	// reload modules
-	mgr.ReloadModules(ctx)
+	mgr.ReloadModules(ctx, logger)
 
 	// reload directives
 	mgr.ReloadDirectives(ctx)
@@ -118,42 +125,51 @@ func (mgr *Manager) Reload(ctx context.Context, inv inventory.Store) {
 	// triggered directly after a reload of data from inventory)
 	hostVarsPaths := inv.GetVariablesForSelf()
 	if len(hostVarsPaths) > 0 {
-		mgr.hostVariables = mgr.ReloadVariables(ctx, hostVarsPaths, nil)
+		mgr.hostVariables = mgr.ReloadVariables(ctx, logger, hostVarsPaths, nil)
 	} else {
-		mgr.logger.Debug("No host variables")
+		logger.DebugContext(ctx, "No host variables")
 	}
 }
 
-func (mgr *Manager) ReloadVariables(ctx context.Context, paths []string, hostVars VariableMap) VariableSlice {
+func (mgr *Manager) ReloadVariables(ctx context.Context, logger *slog.Logger, paths []string, hostVars VariableMap) VariableSlice {
 	var varMaps []VariableMap
 
 	for _, path := range paths {
 		allTemplateData := mgr.getTemplateData(ctx, path, hostVars, nil, hostVars)
 		renderedVars, err := templateScript(ctx, path, allTemplateData, mgr.funcMap)
 		if err != nil {
-			mgr.logger.WithFields(log.Fields{
-				"path":  path,
-				"error": err,
-			}).Error("Failed to template variables")
+			logger.LogAttrs(
+				ctx,
+				slog.LevelError,
+				"Failed to template variables",
+				slog.String("err", err.Error()),
+				slog.String("path", path),
+			)
 			return nil
 		}
 
 		// source variables from the templated variables file
 		file, err := syntax.NewParser().Parse(strings.NewReader(renderedVars), "")
 		if err != nil {
-			mgr.logger.WithFields(log.Fields{
-				"path":  path,
-				"error": err,
-			}).Error("Failed to parse variables")
+			logger.LogAttrs(
+				ctx,
+				slog.LevelError,
+				"Failed to parse variables",
+				slog.String("err", err.Error()),
+				slog.String("path", path),
+			)
 			return nil
 		}
 
 		vars, err := shell.SourceNode(ctx, file)
 		if err != nil {
-			mgr.logger.WithFields(log.Fields{
-				"path":  path,
-				"error": err,
-			}).Error("Failed to reload variables")
+			logger.LogAttrs(
+				ctx,
+				slog.LevelError,
+				"Failed to reload variables",
+				slog.String("err", err.Error()),
+				slog.String("path", path),
+			)
 			return nil
 		}
 
@@ -165,27 +181,31 @@ func (mgr *Manager) ReloadVariables(ctx context.Context, paths []string, hostVar
 
 // RunAll runs all of the Directives being managed by the Manager, followed by
 // all of the Modules being managed by the Manager.
-func (mgr *Manager) RunAll(ctx context.Context) {
+func (mgr *Manager) RunAll(ctx context.Context, logger *slog.Logger) {
 	ctx, _ = getOrSetRunID(ctx)
 
 	go func() {
-		logger := mgr.logger.WithFields(log.Fields{
-			"run_id": ctx.Value(contextKeyRunID).(ulid.ULID).String(),
-		})
+		logger.InfoContext(ctx, "Run started")
 		metricManagerRunInProgress.With(prometheus.Labels{"manager": mgr.String()}).Set(1)
 
 		defer func() {
 			metricManagerRunInProgress.With(prometheus.Labels{"manager": mgr.String()}).Set(0)
-			logger.Info("Finished run")
+			logger.InfoContext(ctx, "Run rinished")
 		}()
 
 		if !mgr.runLock.TryLock() {
-			logger.Warn("Manager run already in progress, aborting")
+			logger.WarnContext(ctx, "Manager run already in progress, aborting")
 			return
 		}
 		defer mgr.runLock.Unlock()
 
-		mgr.RunDirectives(ctx)
-		mgr.RunModules(ctx)
+		directiveLogger := logger.With(
+			slog.String("runner", "directives"),
+		)
+		mgr.RunDirectives(ctx, directiveLogger)
+		moduleLogger := logger.With(
+			slog.String("runner", "modules"),
+		)
+		mgr.RunModules(ctx, moduleLogger)
 	}()
 }

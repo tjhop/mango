@@ -3,12 +3,12 @@ package manager
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"path/filepath"
 	"time"
 
 	"github.com/dominikbraun/graph"
 	"github.com/prometheus/client_golang/prometheus"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/tjhop/mango/internal/inventory"
 	"github.com/tjhop/mango/internal/shell"
@@ -32,54 +32,72 @@ var moduleHash = func(m Module) string {
 }
 
 // ReloadModules reloads the manager's modules from the specified inventory.
-func (mgr *Manager) ReloadModules(ctx context.Context) {
+func (mgr *Manager) ReloadModules(ctx context.Context, logger *slog.Logger) {
 	ctx, _ = getOrSetRunID(ctx)
 
 	// get all modules from inventory applicable to this system
 	rawMods := mgr.inv.GetModulesForSelf()
+
+	// add all modules as vertices in DAG. this must be done first before
+	// attempting to set any edges for requirements, so that we're sure the
+	// vertices already exist
 	modGraph := graph.New(moduleHash, graph.Directed(), graph.PreventCycles())
 	for _, mod := range rawMods {
 		newMod := Module{m: mod}
+		logger = logger.With(
+			slog.Group(
+				"module",
+				slog.String("id", mod.String()),
+			),
+		)
 
 		// if the module has a variables file set, source it and store
 		// the expanded variables
 		if mod.Variables != "" {
-			newMod.Variables = mgr.ReloadVariables(ctx, []string{mod.Variables}, shell.MakeVariableMap(mgr.hostVariables))
+			newMod.Variables = mgr.ReloadVariables(ctx, logger, []string{mod.Variables}, shell.MakeVariableMap(mgr.hostVariables))
 		} else {
-			mgr.logger.Debug("No module variables")
+			logger.DebugContext(ctx, "No module variables")
 		}
 
 		err := modGraph.AddVertex(newMod)
 		if err != nil {
-			mgr.logger.WithFields(log.Fields{
-				"module": mod.String(),
-				"error":  err,
-			}).Error("Failed to add module to DAG")
+			logger.LogAttrs(
+				ctx,
+				slog.LevelError,
+				"Failed to add module to DAG",
+				slog.String("err", err.Error()),
+			)
 		}
 	}
 
+	// add any module requirement files as edges between the vertices(modules) in the DAG
 	for _, mod := range rawMods {
 		// if the module has a requirements file set, parse it line by
 		// line and add edges to the graph for ordering
 		if mod.Requires == "" {
-			mgr.logger.Debug("No module variables")
+			logger.DebugContext(ctx, "No module variables")
 			continue
 		}
 
 		lines := utils.ReadFileLines(mod.Requires)
 		for line := range lines {
 			if line.Err != nil {
-				log.WithFields(log.Fields{
-					"path":  mod.Requires,
-					"error": line.Err,
-				}).Error("Failed to read requirements for this module")
+				logger.LogAttrs(
+					ctx,
+					slog.LevelError,
+					"Failed to read requirements for this module",
+					slog.String("err", line.Err.Error()),
+					slog.String("path", mod.Requires),
+				)
 			} else {
 				err := modGraph.AddEdge(filepath.Join(mgr.inv.GetInventoryPath(), "modules", line.Text), mod.ID)
 				if err != nil {
-					mgr.logger.WithFields(log.Fields{
-						"module": mod.String(),
-						"error":  err,
-					}).Error("Failed to add module to DAG")
+					logger.LogAttrs(
+						ctx,
+						slog.LevelError,
+						"Failed to add module to DAG",
+						slog.String("err", err.Error()),
+					)
 				}
 			}
 		}
@@ -90,11 +108,8 @@ func (mgr *Manager) ReloadModules(ctx context.Context) {
 
 // RunModule is responsible for actually executing a module, using the `shell`
 // package.
-func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
+func (mgr *Manager) RunModule(ctx context.Context, logger *slog.Logger, mod Module) error {
 	ctx, runID := getOrSetRunID(ctx)
-	logger := mgr.logger.WithFields(log.Fields{
-		"run_id": runID.String(),
-	})
 
 	if mod.m.Apply == "" {
 		return fmt.Errorf("Module has no apply script")
@@ -111,9 +126,12 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 	allTemplateData := mgr.getTemplateData(ctx, mod.String(), hostVarsMap, modVarsMap, allVarsMap)
 
 	if mod.m.Test == "" {
-		logger.WithFields(log.Fields{
-			"module": mod.String(),
-		}).Warn("Module has no test script, proceeding to apply")
+		logger.LogAttrs(
+			ctx,
+			slog.LevelWarn,
+			"Module has no test script, proceeding to apply",
+			slog.String("module", mod.String()),
+		)
 	} else {
 		testStart := time.Now()
 		labels["script"] = "test"
@@ -127,9 +145,7 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 		if err := shell.Run(ctx, runID, mod.m.Test, renderedTest, allVars); err != nil {
 			// if test script for a module fails, log a warning for user and continue with apply
 			metricManagerModuleRunFailedTotal.With(labels).Inc()
-			logger.WithFields(log.Fields{
-				"module": mod.m.Test,
-			}).Warn("Failed module test, running apply to get system to desired state")
+			logger.WarnContext(ctx, "Failed module test, running apply to get system to desired state")
 		} else {
 			metricManagerModuleRunTotal.With(labels).Inc()
 			metricManagerModuleRunSuccessTimestamp.With(labels).Set(float64(testStart.Unix()))
@@ -165,45 +181,55 @@ func (mgr *Manager) RunModule(ctx context.Context, mod Module) error {
 }
 
 // RunModules runs all of the modules being managed by the Manager
-func (mgr *Manager) RunModules(ctx context.Context) {
-	ctx, runID := getOrSetRunID(ctx)
-	logger := mgr.logger.WithFields(log.Fields{
-		"run_id": runID.String(),
-	})
+func (mgr *Manager) RunModules(ctx context.Context, logger *slog.Logger) {
+	ctx, _ = getOrSetRunID(ctx)
 
-	logger.Info("Module run started")
-	defer logger.Info("Module run finished")
+	logger.InfoContext(ctx, "Module run started")
+	defer logger.InfoContext(ctx, "Module run finished")
 
 	order, err := graph.TopologicalSort(mgr.modules)
 	if err != nil {
-		mgr.logger.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to sort DAG")
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to sort DAG",
+			slog.String("err", err.Error()),
+		)
 	}
 
 	if len(order) <= 0 {
-		logger.Info("No Modules to run")
+		logger.InfoContext(ctx, "No Modules to run")
 		return
 	}
 
 	for _, v := range order {
+		logger = logger.With(
+			slog.Group(
+				"module",
+				slog.String("id", v),
+			),
+		)
+
 		mod, err := mgr.modules.Vertex(v)
 		if err != nil {
-			logger.WithFields(log.Fields{
-				"module": mod.String(),
-				"error":  err,
-			}).Error("Module failed")
+			logger.LogAttrs(
+				ctx,
+				slog.LevelError,
+				"Failed to retreive module from DAG vertex",
+				slog.String("err", err.Error()),
+			)
 		}
 
-		logger.WithFields(log.Fields{
-			"module": mod.String(),
-		}).Info("Running Module")
+		logger.InfoContext(ctx, "Module started")
+		defer logger.InfoContext(ctx, "Module finished")
 
-		if err := mgr.RunModule(ctx, mod); err != nil {
-			logger.WithFields(log.Fields{
-				"module": mod.String(),
-				"error":  err,
-			}).Error("Module failed")
+		if err := mgr.RunModule(ctx, logger, mod); err != nil {
+			logger.LogAttrs(
+				ctx,
+				slog.LevelError,
+				"Module failed",
+				slog.String("err", err.Error()),
+			)
 		}
 	}
 }
