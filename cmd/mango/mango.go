@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
+	"net/http"
+	_ "net/http/pprof" // for profiling
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -14,6 +17,7 @@ import (
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
@@ -22,11 +26,11 @@ import (
 	"github.com/tjhop/mango/internal/config"
 	"github.com/tjhop/mango/internal/inventory"
 	"github.com/tjhop/mango/internal/manager"
-	"github.com/tjhop/mango/internal/metrics"
 )
 
 const (
-	programName = "mango"
+	programName           = "mango"
+	defaultPrometheusPort = 9555
 )
 
 var (
@@ -40,14 +44,31 @@ var (
 	// TODO: @tjhop move `enrolled` to an inventory pkg metric
 	// TODO: @tjhop move `manager` to a manager pkg metric
 	// TODO: @tjhop add labels for: [auto_reload: true|false]
-	metricMangoRuntimeInfo = promauto.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "mango_runtime_info",
-			Help: "A metric with a constant '1' value with labels for information about the mango runtime, such as system hostname.",
-		},
-		[]string{"hostname", "enrolled", "manager"},
-	)
+	// metricMangoRuntimeInfo = promauto.NewGaugeVec(
+	// prometheus.GaugeOpts{
+	// Name: "mango_runtime_info",
+	// Help: "A metric with a constant '1' value with labels for information about the mango runtime, such as system hostname.",
+	// },
+	// []string{"hostname", "enrolled", "manager"},
+	// )
 )
+
+func init() {
+	// expose build info metric
+	promauto.NewGaugeFunc(
+		prometheus.GaugeOpts{
+			Name: "mango_build_info",
+			Help: "A metric with a constant '1' value with labels for version, commit and build_date from which mango was built.",
+			ConstLabels: prometheus.Labels{
+				"version":    config.Version,
+				"commit":     config.Commit,
+				"build_date": config.BuildDate,
+				"goversion":  runtime.Version(),
+			},
+		},
+		func() float64 { return 1 },
+	)
+}
 
 func mango(ctx context.Context, logger *slog.Logger, inventoryPath, hostname string) {
 	mangoStart := time.Now()
@@ -105,9 +126,6 @@ func mango(ctx context.Context, logger *slog.Logger, inventoryPath, hostname str
 		os.Exit(1)
 	}
 	viper.Set("mango.temp-dir", dir)
-
-	// serve metrics
-	go metrics.ExportPrometheusMetrics()
 
 	// load inventory
 	inventoryLogger := logger.With(
@@ -326,6 +344,55 @@ func mango(ctx context.Context, logger *slog.Logger, inventoryPath, hostname str
 				return nil
 			},
 			func(error) {
+				close(cancel)
+			},
+		)
+	}
+	{
+		// web server for metrics/pprof
+		cancel := make(chan struct{})
+
+		viper.SetDefault("metrics.port", defaultPrometheusPort)
+		iface := viper.GetString("metrics.interface")
+		port := viper.GetInt("metrics.port")
+		address := fmt.Sprintf("%s:%d", iface, port)
+
+		metricsServer := &http.Server{
+			Addr:         address,
+			Handler:      nil,
+			ReadTimeout:  5 * time.Second,
+			WriteTimeout: 5 * time.Second,
+			IdleTimeout:  5 * time.Second,
+		}
+		http.Handle("/metrics", promhttp.Handler())
+
+		g.Add(
+			func() error {
+				if err := metricsServer.ListenAndServe(); err != http.ErrServerClosed {
+					logger.LogAttrs(
+						ctx,
+						slog.LevelError,
+						"Mango failed to open HTTP server for metrics",
+						slog.String("err", err.Error()),
+						slog.String("address", address),
+					)
+					return err
+				}
+
+				<-cancel
+
+				return nil
+			},
+			func(error) {
+				if err := metricsServer.Shutdown(ctx); err != nil {
+					// Error from closing listeners, or context timeout:
+					logger.LogAttrs(
+						ctx,
+						slog.LevelError,
+						"Failed to close HTTP server",
+						slog.String("err", err.Error()),
+					)
+				}
 				close(cancel)
 			},
 		)
