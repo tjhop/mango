@@ -88,7 +88,6 @@ func (mgr *Manager) ReloadAndRunAll(ctx context.Context, logger *slog.Logger, in
 	logger = logger.With(
 		slog.Group(
 			"manager",
-			// TODO: verify these log keys don't include contextKey prefix
 			slog.Bool(string(contextKeyEnrolled), enrolled),
 			slog.String(string(contextKeyRunID), runID.String()),
 		),
