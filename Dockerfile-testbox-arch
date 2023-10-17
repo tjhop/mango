@@ -1,5 +1,7 @@
 FROM archlinux:latest
 
+ENV TERM='screen-256color'
+
 RUN pacman -Syu --needed --noconfirm && \
     pacman -S --needed --noconfirm \
         wget \
