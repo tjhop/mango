@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"path/filepath"
+	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -13,6 +14,21 @@ var (
 	commonMetricLabels = []string{"inventory", "component"}
 
 	// prometheus metrics
+	metricMangoInventoryInfoLabels = prometheus.Labels{
+		"hostname":       "unknown",
+		"enrolled":       "false",
+		"inventory_path": "unknown",
+	}
+
+	metricMangoInventoryInfo = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "mango_inventory_info",
+			Help: "A metric with a constant '1' value with labels for information about the mango inventory",
+		},
+		[]string{"hostname", "enrolled", "inventory_path"},
+	)
+
+	// TODO(@tjhop): move to `_suffix` name?
 	metricInventory = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "mango_inventory",
@@ -21,6 +37,7 @@ var (
 		commonMetricLabels,
 	)
 
+	// TODO(@tjhop): move to `_suffix` name?
 	metricInventoryApplicable = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "mango_inventory_applicable",
@@ -132,6 +149,9 @@ func NewInventory(path, name string) *Inventory {
 		roles:         []Role{},
 		directives:    []Directive{},
 	}
+	metricMangoInventoryInfoLabels["hostname"] = name
+	metricMangoInventoryInfoLabels["inventory_path"] = path
+	metricMangoInventoryInfo.With(metricMangoInventoryInfoLabels).Set(1)
 
 	return &i
 }
@@ -193,6 +213,10 @@ func (i *Inventory) Reload(ctx context.Context, logger *slog.Logger) {
 			slog.String("err", err.Error()),
 		)
 	}
+
+	// update inventory metrics
+	metricMangoInventoryInfoLabels["enrolled"] = strconv.FormatBool(i.IsEnrolled())
+	metricMangoInventoryInfo.With(metricMangoInventoryInfoLabels).Set(1)
 }
 
 // IsEnrolled returns if the hostname of the system is defined in the

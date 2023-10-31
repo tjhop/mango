@@ -34,23 +34,25 @@ const (
 )
 
 var (
+	metricMangoRuntimeInfoLabels = prometheus.Labels{
+		"auto_reload": "disabled",
+		"log_level":   "info",
+	}
+
+	metricMangoRuntimeInfo = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "mango_runtime_info",
+			Help: "A metric with a constant '1' value with labels for inventory auto-reload status, logging level, etc.",
+		},
+		[]string{"auto_reload", "log_level"},
+	)
+
 	metricServiceStartSeconds = promauto.NewGauge(
 		prometheus.GaugeOpts{
 			Name: "mango_service_start_seconds",
 			Help: "Unix timestamp of when mango started",
 		},
 	)
-
-	// TODO: @tjhop move `enrolled` to an inventory pkg metric
-	// TODO: @tjhop move `manager` to a manager pkg metric
-	// TODO: @tjhop add labels for: [auto_reload: true|false]
-	// metricMangoRuntimeInfo = promauto.NewGaugeVec(
-	// prometheus.GaugeOpts{
-	// Name: "mango_runtime_info",
-	// Help: "A metric with a constant '1' value with labels for information about the mango runtime, such as system hostname.",
-	// },
-	// []string{"hostname", "enrolled", "manager"},
-	// )
 )
 
 func init() {
@@ -73,6 +75,7 @@ func init() {
 func mango(ctx context.Context, logger *slog.Logger, inventoryPath, hostname string) {
 	mangoStart := time.Now()
 	metricServiceStartSeconds.Set(float64(mangoStart.Unix()))
+	metricMangoRuntimeInfo.With(metricMangoRuntimeInfoLabels).Set(1)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer func() {
@@ -164,7 +167,6 @@ func mango(ctx context.Context, logger *slog.Logger, inventoryPath, hostname str
 	// // TODO(@tjhop): consider reworking this runtime var to be inventory
 	// // runtime info and move it to inventory pkg?
 	// metricMangoRuntimeInfo.With(prometheus.Labels{
-	// 	// TODO(@tjhop): include system/given hostname, similar to log on l384
 	// 	"hostname": hostname,
 	// 	"enrolled": strconv.FormatBool(enrolled),
 	// }).Set(1)
@@ -324,6 +326,10 @@ func mango(ctx context.Context, logger *slog.Logger, inventoryPath, hostname str
 						slog.String("interval", dur.String()),
 					)
 
+					// update runtime info metric
+					metricMangoRuntimeInfoLabels["auto_reload"] = dur.String()
+					metricMangoRuntimeInfo.With(metricMangoRuntimeInfoLabels).Set(1)
+
 					ticker := time.NewTicker(dur)
 
 					for {
@@ -478,10 +484,14 @@ func main() {
 			slog.LevelError,
 			"Failed to parse log level from flag",
 			slog.String("err", "Unsupported log level"),
-			slog.String("level", logLevelFlagVal),
+			slog.String("log_level", logLevelFlagVal),
 		)
 		os.Exit(1)
 	}
+
+	// update runtime info metric
+	metricMangoRuntimeInfoLabels["log_level"] = strings.ToLower(logLevel.Level().String())
+	metricMangoRuntimeInfo.With(metricMangoRuntimeInfoLabels).Set(1)
 
 	// parse log output format from flag
 	logOutputFormat := strings.TrimSpace(strings.ToLower(viper.GetString("logging.output")))
