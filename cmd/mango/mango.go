@@ -29,7 +29,13 @@ import (
 )
 
 const (
-	programName           = "mango"
+	programName = "mango"
+	// we have fun around here.
+	programNameAsciiArt = " _ __ ___    __ _  _ __    __ _   ___\n" +
+		"| '_ ` _ \\  / _` || '_ \\  / _` | / _ \\\n" +
+		"| | | | | || (_| || | | || (_| || (_) |\n" +
+		"|_| |_| |_| \\__,_||_| |_| \\__, | \\___/\n" +
+		"                          |___/\n"
 	defaultPrometheusPort = 9555
 )
 
@@ -456,6 +462,11 @@ func main() {
 	logHandler := slog.NewTextHandler(os.Stdout, logHandlerOpts) // use logfmt handler by default
 	logger := slog.New(logHandler)
 	rootCtx := context.Background()
+
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "%s\nUsage of %s:\n", programNameAsciiArt, os.Args[0])
+		flag.PrintDefaults()
+	}
 
 	flag.Parse()
 	if err := viper.BindPFlags(flag.CommandLine); err != nil {
