@@ -37,6 +37,7 @@ const (
 		"|_| |_| |_| \\__,_||_| |_| \\__, | \\___/\n" +
 		"                          |___/\n"
 	defaultPrometheusPort = 9555
+	charitywareMsg        = "\nMango is charityware, in honor of Bram Moolenaar and out of respect for Vim. You can use and copy it as much as you like, but you are encouraged to make a donation for needy children in Uganda.  Please visit the ICCF web site, available at these URLs:\n\nhttps://iccf-holland.org/\nhttps://www.vim.org/iccf/\nhttps://www.iccf.nl/\n"
 )
 
 var (
@@ -447,13 +448,6 @@ func cleanup(ctx context.Context, logger *slog.Logger) {
 }
 
 func main() {
-	// prep and parse flags
-	flag.StringP("inventory.path", "i", "", "Path to mango configuration inventory")
-	flag.String("inventory.reload-interval", "", "Time duration for how frequently mango will auto reload and apply the inventory [default disabled]")
-	flag.StringP("logging.level", "l", "", "Logging level may be one of: [trace, debug, info, warning, error, fatal and panic]")
-	flag.String("logging.output", "logfmt", "Logging format may be one of: [logfmt, json]")
-	flag.String("hostname", "", "(Requires root) Custom hostname to use [default is system hostname]")
-
 	// create root logger with default configs, parse out updated configs from flags
 	logLevel := new(slog.LevelVar) // default to info level logging
 	logHandlerOpts := &slog.HandlerOptions{
@@ -462,6 +456,14 @@ func main() {
 	logHandler := slog.NewTextHandler(os.Stdout, logHandlerOpts) // use logfmt handler by default
 	logger := slog.New(logHandler)
 	rootCtx := context.Background()
+
+	// prep and parse flags
+	flag.StringP("inventory.path", "i", "", "Path to mango configuration inventory")
+	flag.String("inventory.reload-interval", "", "Time duration for how frequently mango will auto reload and apply the inventory [default disabled]")
+	flag.StringP("logging.level", "l", "", "Logging level may be one of: [trace, debug, info, warning, error, fatal and panic]")
+	flag.String("logging.output", "logfmt", "Logging format may be one of: [logfmt, json]")
+	flag.String("hostname", "", "(Requires root) Custom hostname to use [default is system hostname]")
+	flag.BoolP("help", "h", false, "Prints help and usage information")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "%s\nUsage of %s:\n", programNameAsciiArt, os.Args[0])
@@ -477,6 +479,12 @@ func main() {
 			slog.String("err", err.Error()),
 		)
 		os.Exit(1)
+	}
+
+	if viper.GetBool("help") {
+		flag.Usage()
+		fmt.Fprintf(os.Stderr, charitywareMsg)
+		os.Exit(0)
 	}
 
 	// parse log level from flag

@@ -37,13 +37,25 @@ All options:
 
 ```bash
 ~/go/src/github.com/tjhop/mango (main [  ]) -> ./mango -h
+ _ __ ___    __ _  _ __    __ _   ___
+| '_ ` _ \  / _` || '_ \  / _` | / _ \
+| | | | | || (_| || | | || (_| || (_) |
+|_| |_| |_| \__,_||_| |_| \__, | \___/
+                          |___/
+
 Usage of ./mango:
-      --hostname string                    Custom hostname to use (default's to system hostname if unset)
+  -h, --help                               Prints help and usage information
+      --hostname string                    (Requires root) Custom hostname to use [default is system hostname]
   -i, --inventory.path string              Path to mango configuration inventory
       --inventory.reload-interval string   Time duration for how frequently mango will auto reload and apply the inventory [default disabled]
   -l, --logging.level string               Logging level may be one of: [trace, debug, info, warning, error, fatal and panic]
       --logging.output string              Logging format may be one of: [logfmt, json] (default "logfmt")
-pflag: help requested
+
+Mango is charityware, in honor of Bram Moolenaar and out of respect for Vim. You can use and copy it as much as you like, but you are encouraged to make a donation for needy children in Uganda.  Please visit the ICCF web site, available at these URLs:
+
+https://iccf-holland.org/
+https://www.vim.org/iccf/
+https://www.iccf.nl/
 ```
 
 ### Container Usage
