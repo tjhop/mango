@@ -6,17 +6,12 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"regexp"
-	"strconv"
 	"strings"
 
-	"github.com/dustin/go-humanize"
 	kernelParser "github.com/moby/moby/pkg/parsers/kernel"
 	"github.com/prometheus/procfs"
 	"github.com/prometheus/procfs/blockdevice"
 	distro "github.com/quay/claircore/osrelease"
-
-	"github.com/tjhop/mango/pkg/utils"
 )
 
 // general
@@ -140,94 +135,37 @@ func getCPUMetadata(ctx context.Context, logger *slog.Logger) cpuMetadata {
 	return cpuMetadata{Cores: cpuInfo}
 }
 
-// memory metadata
-var (
-	meminfoFile = procDir + "/meminfo"
-	reParens    = regexp.MustCompile(`\((.*)\)`)
-)
-
-// meminfo collection heavily inspired by meminfo collector in prometheus node exporter
-// https://github.com/prometheus/node_exporter/blob/f34aaa61092fe7e3c6618fdb0b0d16a68a291ff7/collector/meminfo_linux.go
-//
-// was going to use prometheus/procfs's `Meminfo` struct and the `fs.Meminfo()`
-// method to get meminfo, but it explicitly calls out in the code that it
-// desregards the unit field, which could lead to inaccurate results
-//
-// https://pkg.go.dev/github.com/prometheus/procfs#Meminfo
-// https://pkg.go.dev/github.com/prometheus/procfs#FS.Meminfo
-// https://github.com/prometheus/procfs/blob/113c5013dda3c600bda241d86c64258ec7117c7b/meminfo.go#L165
-// https://github.com/prometheus/procfs/issues/565
-
-type memoryMetadata map[string]uint64
+type memoryMetadata struct {
+	procfs.Meminfo
+}
 
 func getMemoryMetadata(ctx context.Context, logger *slog.Logger) memoryMetadata {
 	logger = logger.With(
 		slog.String("metadata_collector", "memory"),
 	)
 
-	var memoryMD = make(memoryMetadata)
-	lines := utils.ReadFileLines(meminfoFile)
-	for line := range lines {
-		fields := strings.Fields(line.Text)
-
-		// ignore empty lines
-		if len(fields) == 0 {
-			continue
-		}
-
-		// normalize field names, they need to be easily usable in a template
-		// Active(anon) -> Active_anon, etc
-		key := strings.TrimSuffix(fields[0], ":")
-		key = reParens.ReplaceAllString(key, "_${1}")
-		var val uint64
-
-		switch len(fields) {
-		case 2:
-			// no unit provided, parse directly as bytes
-			fv, err := strconv.ParseUint(fields[1], 10, 64)
-			if err != nil {
-				logger.LogAttrs(
-					ctx,
-					slog.LevelError,
-					"Failed to create meminfo, invalid value",
-					slog.String("err", err.Error()),
-					slog.String("entry", line.Text),
-				)
-			}
-			val = fv
-		case 3:
-			// unit provided, parse into bytes via humanize
-			parsedBytes, err := humanize.ParseBytes(fmt.Sprintf("%s %s", fields[1], fields[2]))
-			if err != nil {
-				logger.LogAttrs(
-					ctx,
-					slog.LevelError,
-					"Failed to parse unit in meminfo",
-					slog.String("err", err.Error()),
-					slog.String("entry", line.Text),
-				)
-
-				continue
-			}
-
-			val = parsedBytes
-		default:
-			// malformed line, wrong number of fields (ie, a single field returned or a 4+ returned)
-			// log and continue
-			logger.LogAttrs(
-				ctx,
-				slog.LevelWarn,
-				"Failed to parse meminfo entry, possibly malformed",
-				slog.String("entry", line.Text),
-			)
-
-			continue
-		}
-
-		memoryMD[key] = val
+	fs, err := procfs.NewFS(procDir)
+	if err != nil {
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to create procfs for memory metadata",
+			slog.String("err", err.Error()),
+			slog.String("path", procDir),
+		)
 	}
 
-	return memoryMD
+	memInfo, err := fs.Meminfo()
+	if err != nil {
+		logger.LogAttrs(
+			ctx,
+			slog.LevelError,
+			"Failed to read memory info",
+			slog.String("err", err.Error()),
+		)
+	}
+
+	return memoryMetadata{memInfo}
 }
 
 // storage metadata
