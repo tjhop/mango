@@ -37,7 +37,7 @@ const (
 		"|_| |_| |_| \\__,_||_| |_| \\__, | \\___/\n" +
 		"                          |___/\n"
 	defaultPrometheusPort = 9555
-	charitywareMsg        = "\nMango is charityware, in honor of Bram Moolenaar and out of respect for Vim. You can use and copy it as much as you like, but you are encouraged to make a donation for needy children in Uganda.  Please visit the ICCF web site, available at these URLs:\n\nhttps://iccf-holland.org/\nhttps://www.vim.org/iccf/\nhttps://www.iccf.nl/\n"
+	charitywareMsg        = "\nMango is charityware, in honor of Bram Moolenaar and out of respect for Vim. You can use and copy it as much as you like, but you are encouraged to make a donation for needy children in Uganda.  Please visit the ICCF web site, available at these URLs:\n\nhttps://iccf-holland.org/\nhttps://www.vim.org/iccf/\nhttps://www.iccf.nl/"
 )
 
 var (
@@ -483,7 +483,7 @@ func main() {
 
 	if viper.GetBool("help") {
 		flag.Usage()
-		fmt.Fprintf(os.Stderr, charitywareMsg)
+		fmt.Fprintln(os.Stderr, charitywareMsg)
 		os.Exit(0)
 	}
 
