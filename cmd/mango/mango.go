@@ -498,14 +498,14 @@ func main() {
 	case "error":
 		logLevel.Set(slog.LevelError)
 	default:
+		logLevel.Set(slog.LevelInfo)
 		logger.LogAttrs(
 			rootCtx,
-			slog.LevelError,
-			"Failed to parse log level from flag",
+			slog.LevelWarn,
+			"Failed to parse log level from flag, defaulting to <info> level",
 			slog.String("err", "Unsupported log level"),
 			slog.String("log_level", logLevelFlagVal),
 		)
-		os.Exit(1)
 	}
 
 	// update runtime info metric
