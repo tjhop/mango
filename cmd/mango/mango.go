@@ -53,13 +53,6 @@ var (
 		},
 		[]string{"auto_reload", "log_level"},
 	)
-
-	metricServiceStartSeconds = promauto.NewGauge(
-		prometheus.GaugeOpts{
-			Name: "mango_service_start_seconds",
-			Help: "Unix timestamp of when mango started",
-		},
-	)
 )
 
 func init() {
@@ -80,8 +73,6 @@ func init() {
 }
 
 func mango(ctx context.Context, logger *slog.Logger, inventoryPath, hostname string) {
-	mangoStart := time.Now()
-	metricServiceStartSeconds.Set(float64(mangoStart.Unix()))
 	metricMangoRuntimeInfo.With(metricMangoRuntimeInfoLabels).Set(1)
 
 	ctx, cancel := context.WithCancel(ctx)
