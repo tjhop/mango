@@ -61,9 +61,7 @@ changelog:
   filters:
     exclude:
       - '^Merge pull request'
-      - '^ci(?:\(\w+\))?\!?:'
       - '^docs(?:\(\w+\))?\!?:'
-      - '^test(?:\(\w+\))?\!?:'
       - '^style(?:\(\w+\))?\!?:'
   groups:
     - title: "New Features And Chnages"
