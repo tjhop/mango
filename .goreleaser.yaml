@@ -43,6 +43,9 @@ nfpms:
     contents:
       - src: ./README.md
         dst: /usr/share/doc/tjhop/mango/README.md
+      # TODO: @tjhop -- alpine uses openRC, not systemd. not sure what the
+      # failure mode would is, but this won't work on alpine. should probably
+      # come up with something more elegant.
       - src: ./packaging/systemd/mango.service
         dst: /lib/systemd/system/mango.service
         type: config
