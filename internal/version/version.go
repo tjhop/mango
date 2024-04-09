@@ -1,4 +1,4 @@
-package config
+package version
 
 var (
 	Version   string // will be populated by linker during `go build`

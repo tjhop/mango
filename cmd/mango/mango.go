@@ -23,9 +23,9 @@ import (
 
 	"github.com/tjhop/mango/pkg/utils"
 
-	"github.com/tjhop/mango/internal/config"
 	"github.com/tjhop/mango/internal/inventory"
 	"github.com/tjhop/mango/internal/manager"
+	"github.com/tjhop/mango/internal/version"
 )
 
 const (
@@ -62,9 +62,9 @@ func init() {
 			Name: "mango_build_info",
 			Help: "A metric with a constant '1' value with labels for version, commit and build_date from which mango was built.",
 			ConstLabels: prometheus.Labels{
-				"version":    config.Version,
-				"commit":     config.Commit,
-				"build_date": config.BuildDate,
+				"version":    version.Version,
+				"commit":     version.Commit,
+				"build_date": version.BuildDate,
 				"goversion":  runtime.Version(),
 			},
 		},
@@ -549,9 +549,9 @@ func main() {
 		slog.LevelInfo,
 		"Mango build information",
 		slog.Group("build",
-			slog.String("version", config.Version),
-			slog.String("build_date", config.BuildDate),
-			slog.String("commit", config.Commit),
+			slog.String("version", version.Version),
+			slog.String("build_date", version.BuildDate),
+			slog.String("commit", version.Commit),
 			slog.String("go_version", runtime.Version()),
 		),
 	)
