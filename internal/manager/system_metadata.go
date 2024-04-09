@@ -29,13 +29,13 @@ type osMetadata struct {
 
 func getOSMetadata(ctx context.Context, logger *slog.Logger) osMetadata {
 	// os metadata for templates
-	logger = logger.With(
+	mdLogger := logger.With(
 		slog.String("metadata_collector", "os"),
 	)
 
 	osReleaseFile, err := os.Open(distro.Path)
 	if err != nil {
-		logger.LogAttrs(
+		mdLogger.LogAttrs(
 			ctx,
 			slog.LevelError,
 			"Failed to open os-release file",
@@ -45,7 +45,7 @@ func getOSMetadata(ctx context.Context, logger *slog.Logger) osMetadata {
 	}
 	osRelease, err := distro.Parse(ctx, osReleaseFile)
 	if err != nil {
-		logger.LogAttrs(
+		mdLogger.LogAttrs(
 			ctx,
 			slog.LevelError,
 			"Failed to parse os-release file",
@@ -76,14 +76,14 @@ type kernelMetadata struct {
 }
 
 func getKernelMetadata(ctx context.Context, logger *slog.Logger) kernelMetadata {
-	logger = logger.With(
+	mdLogger := logger.With(
 		slog.String("metadata_collector", "kernel"),
 	)
 
 	// kernel metadata for templates
 	kernelInfo, err := kernelParser.GetKernelVersion()
 	if err != nil {
-		logger.LogAttrs(
+		mdLogger.LogAttrs(
 			ctx,
 			slog.LevelError,
 			"Failed to parse kernel info",
@@ -107,13 +107,13 @@ type cpuMetadata struct {
 }
 
 func getCPUMetadata(ctx context.Context, logger *slog.Logger) cpuMetadata {
-	logger = logger.With(
+	mdLogger := logger.With(
 		slog.String("metadata_collector", "cpu"),
 	)
 
 	fs, err := procfs.NewFS(procDir)
 	if err != nil {
-		logger.LogAttrs(
+		mdLogger.LogAttrs(
 			ctx,
 			slog.LevelError,
 			"Failed to create procfs for cpu metadata",
@@ -124,7 +124,7 @@ func getCPUMetadata(ctx context.Context, logger *slog.Logger) cpuMetadata {
 
 	cpuInfo, err := fs.CPUInfo()
 	if err != nil {
-		logger.LogAttrs(
+		mdLogger.LogAttrs(
 			ctx,
 			slog.LevelError,
 			"Failed to read cpu info",
@@ -140,13 +140,13 @@ type memoryMetadata struct {
 }
 
 func getMemoryMetadata(ctx context.Context, logger *slog.Logger) memoryMetadata {
-	logger = logger.With(
+	mdLogger := logger.With(
 		slog.String("metadata_collector", "memory"),
 	)
 
 	fs, err := procfs.NewFS(procDir)
 	if err != nil {
-		logger.LogAttrs(
+		mdLogger.LogAttrs(
 			ctx,
 			slog.LevelError,
 			"Failed to create procfs for memory metadata",
@@ -157,7 +157,7 @@ func getMemoryMetadata(ctx context.Context, logger *slog.Logger) memoryMetadata 
 
 	memInfo, err := fs.Meminfo()
 	if err != nil {
-		logger.LogAttrs(
+		mdLogger.LogAttrs(
 			ctx,
 			slog.LevelError,
 			"Failed to read memory info",
@@ -187,7 +187,7 @@ type storageMetadata struct {
 }
 
 func getStorageMetadata(ctx context.Context, logger *slog.Logger) storageMetadata {
-	logger = logger.With(
+	mdLogger := logger.With(
 		slog.String("metadata_collector", "storage"),
 	)
 
@@ -195,7 +195,7 @@ func getStorageMetadata(ctx context.Context, logger *slog.Logger) storageMetadat
 
 	fs, err := blockdevice.NewFS(procDir, sysDir)
 	if err != nil {
-		logger.LogAttrs(
+		mdLogger.LogAttrs(
 			ctx,
 			slog.LevelError,
 			"Failed to create blockdevice FS",
@@ -219,7 +219,7 @@ func getStorageMetadata(ctx context.Context, logger *slog.Logger) storageMetadat
 		blockDevPath := filepath.Join(blockDevDir, blockDev)
 
 		qStats, err := fs.SysBlockDeviceQueueStats(blockDevPath)
-		logger.LogAttrs(
+		mdLogger.LogAttrs(
 			ctx,
 			slog.LevelError,
 			"Failed to get queue stats for block device",
@@ -234,7 +234,7 @@ func getStorageMetadata(ctx context.Context, logger *slog.Logger) storageMetadat
 
 		blockDevLink, err := os.Readlink(blockDevPath)
 		if err != nil {
-			logger.LogAttrs(
+			mdLogger.LogAttrs(
 				ctx,
 				slog.LevelError,
 				"Failed to get device link",
@@ -256,7 +256,7 @@ func getStorageMetadata(ctx context.Context, logger *slog.Logger) storageMetadat
 
 	mounts, err := procfs.GetMounts()
 	if err != nil {
-		logger.LogAttrs(
+		mdLogger.LogAttrs(
 			ctx,
 			slog.LevelError,
 			"Failed to get mounts",

@@ -37,7 +37,7 @@ func (i *Inventory) ParseModules(ctx context.Context, logger *slog.Logger) error
 		"inventory": i.inventoryPath,
 		"component": "modules",
 	}
-	logger = logger.With(
+	iLogger := logger.With(
 		slog.Group(
 			"inventory",
 			slog.String("component", "modules"),
@@ -47,7 +47,7 @@ func (i *Inventory) ParseModules(ctx context.Context, logger *slog.Logger) error
 	path := filepath.Join(i.inventoryPath, "modules")
 	modDirs, err := utils.GetFilesInDirectory(path)
 	if err != nil {
-		logger.LogAttrs(
+		iLogger.LogAttrs(
 			ctx,
 			slog.LevelError,
 			"Failed to get files in directory",
@@ -68,7 +68,7 @@ func (i *Inventory) ParseModules(ctx context.Context, logger *slog.Logger) error
 			modPath := filepath.Join(path, modDir.Name())
 			modFiles, err := utils.GetFilesInDirectory(modPath)
 			if err != nil {
-				logger.LogAttrs(
+				iLogger.LogAttrs(
 					ctx,
 					slog.LevelError,
 					"Failed to parse module files",
@@ -97,7 +97,7 @@ func (i *Inventory) ParseModules(ctx context.Context, logger *slog.Logger) error
 					case "requires":
 						mod.Requires = filepath.Join(modPath, "requires")
 					default:
-						logger.LogAttrs(
+						iLogger.LogAttrs(
 							ctx,
 							slog.LevelWarn,
 							"Skipping file while parsing inventory",

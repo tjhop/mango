@@ -86,18 +86,18 @@ func (mgr *Manager) RunDirectives(ctx context.Context, logger *slog.Logger) {
 	logger.InfoContext(ctx, "Directive run started")
 	defer logger.InfoContext(ctx, "Directive run finished")
 	for _, d := range mgr.directives {
-		logger = logger.With(
+		dLogger := logger.With(
 			slog.Group(
 				"directive",
 				slog.String("id", d.String()),
 			),
 		)
 
-		logger.InfoContext(ctx, "Directive started")
-		defer logger.InfoContext(ctx, "Directive finished")
+		dLogger.InfoContext(ctx, "Directive started")
+		defer dLogger.InfoContext(ctx, "Directive finished")
 
 		if err := mgr.RunDirective(ctx, d); err != nil {
-			logger.LogAttrs(
+			dLogger.LogAttrs(
 				ctx,
 				slog.LevelError,
 				"Directive failed",

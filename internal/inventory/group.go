@@ -42,7 +42,7 @@ func (i *Inventory) ParseGroups(ctx context.Context, logger *slog.Logger) error 
 		"inventory": i.inventoryPath,
 		"component": "groups",
 	}
-	logger = logger.With(
+	iLogger := logger.With(
 		slog.Group(
 			"inventory",
 			slog.String("component", "groups"),
@@ -52,7 +52,7 @@ func (i *Inventory) ParseGroups(ctx context.Context, logger *slog.Logger) error 
 	path := filepath.Join(i.inventoryPath, "groups")
 	groupDirs, err := utils.GetFilesInDirectory(path)
 	if err != nil {
-		logger.LogAttrs(
+		iLogger.LogAttrs(
 			ctx,
 			slog.LevelError,
 			"Failed to get files in directory",
@@ -73,7 +73,7 @@ func (i *Inventory) ParseGroups(ctx context.Context, logger *slog.Logger) error 
 			groupPath := filepath.Join(path, groupDir.Name())
 			groupFiles, err := utils.GetFilesInDirectory(groupPath)
 			if err != nil {
-				logger.LogAttrs(
+				iLogger.LogAttrs(
 					ctx,
 					slog.LevelError,
 					"Failed to parse group files",
@@ -100,7 +100,7 @@ func (i *Inventory) ParseGroups(ctx context.Context, logger *slog.Logger) error 
 
 						for line := range lines {
 							if line.Err != nil {
-								logger.LogAttrs(
+								iLogger.LogAttrs(
 									ctx,
 									slog.LevelError,
 									"Failed to read globs for group",
@@ -120,7 +120,7 @@ func (i *Inventory) ParseGroups(ctx context.Context, logger *slog.Logger) error 
 
 						for line := range lines {
 							if line.Err != nil {
-								logger.LogAttrs(
+								iLogger.LogAttrs(
 									ctx,
 									slog.LevelError,
 									"Failed to read regexs for group",
@@ -140,7 +140,7 @@ func (i *Inventory) ParseGroups(ctx context.Context, logger *slog.Logger) error 
 
 						for line := range lines {
 							if line.Err != nil {
-								logger.LogAttrs(
+								iLogger.LogAttrs(
 									ctx,
 									slog.LevelError,
 									"Failed to read roles for group",
@@ -160,7 +160,7 @@ func (i *Inventory) ParseGroups(ctx context.Context, logger *slog.Logger) error 
 
 						for line := range lines {
 							if line.Err != nil {
-								logger.LogAttrs(
+								iLogger.LogAttrs(
 									ctx,
 									slog.LevelError,
 									"Failed to read modules for group",
@@ -176,7 +176,7 @@ func (i *Inventory) ParseGroups(ctx context.Context, logger *slog.Logger) error 
 					case "variables":
 						group.variables = filepath.Join(groupPath, "variables")
 					default:
-						logger.LogAttrs(
+						iLogger.LogAttrs(
 							ctx,
 							slog.LevelWarn,
 							"Skipping file while parsing inventory",

@@ -30,7 +30,7 @@ func (i *Inventory) ParseRoles(ctx context.Context, logger *slog.Logger) error {
 		"inventory": i.inventoryPath,
 		"component": "roles",
 	}
-	logger = logger.With(
+	iLogger := logger.With(
 		slog.Group(
 			"inventory",
 			slog.String("component", "roles"),
@@ -40,7 +40,7 @@ func (i *Inventory) ParseRoles(ctx context.Context, logger *slog.Logger) error {
 	path := filepath.Join(i.inventoryPath, "roles")
 	roleDirs, err := utils.GetFilesInDirectory(path)
 	if err != nil {
-		logger.LogAttrs(
+		iLogger.LogAttrs(
 			ctx,
 			slog.LevelError,
 			"Failed to parse roles",
@@ -61,7 +61,7 @@ func (i *Inventory) ParseRoles(ctx context.Context, logger *slog.Logger) error {
 			rolePath := filepath.Join(path, roleDir.Name())
 			roleFiles, err := utils.GetFilesInDirectory(rolePath)
 			if err != nil {
-				logger.LogAttrs(
+				iLogger.LogAttrs(
 					ctx,
 					slog.LevelError,
 					"Failed to parse role files",
@@ -88,7 +88,7 @@ func (i *Inventory) ParseRoles(ctx context.Context, logger *slog.Logger) error {
 
 						for line := range lines {
 							if line.Err != nil {
-								logger.LogAttrs(
+								iLogger.LogAttrs(
 									ctx,
 									slog.LevelError,
 									"Failed to read modules in role",
@@ -106,7 +106,7 @@ func (i *Inventory) ParseRoles(ctx context.Context, logger *slog.Logger) error {
 						role.modules = mods
 
 					default:
-						logger.LogAttrs(
+						iLogger.LogAttrs(
 							ctx,
 							slog.LevelWarn,
 							"Skipping file while parsing inventory",

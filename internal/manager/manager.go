@@ -85,7 +85,7 @@ func (mgr *Manager) ReloadAndRunAll(ctx context.Context, logger *slog.Logger, in
 	ctx = context.WithValue(ctx, contextKeyInventoryPath, inv.GetInventoryPath())
 	ctx = context.WithValue(ctx, contextKeyHostname, inv.GetHostname())
 
-	logger = logger.With(
+	mLogger := logger.With(
 		slog.Group(
 			"manager",
 			slog.Bool(string(contextKeyEnrolled), enrolled),
@@ -93,8 +93,8 @@ func (mgr *Manager) ReloadAndRunAll(ctx context.Context, logger *slog.Logger, in
 		),
 	)
 
-	mgr.Reload(ctx, logger, inv)
-	mgr.RunAll(ctx, logger)
+	mgr.Reload(ctx, mLogger, inv)
+	mgr.RunAll(ctx, mLogger)
 }
 
 // Reload accepts a struct that fulfills the inventory.Store interface and

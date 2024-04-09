@@ -44,7 +44,7 @@ func (mgr *Manager) ReloadModules(ctx context.Context, logger *slog.Logger) {
 	modGraph := graph.New(moduleHash, graph.Directed(), graph.PreventCycles())
 	for _, mod := range rawMods {
 		newMod := Module{m: mod}
-		logger = logger.With(
+		modLogger := logger.With(
 			slog.Group(
 				"module",
 				slog.String("id", mod.String()),
@@ -54,14 +54,14 @@ func (mgr *Manager) ReloadModules(ctx context.Context, logger *slog.Logger) {
 		// if the module has a variables file set, source it and store
 		// the expanded variables
 		if mod.Variables != "" {
-			newMod.Variables = mgr.ReloadVariables(ctx, logger, []string{mod.Variables}, shell.MakeVariableMap(mgr.hostVariables))
+			newMod.Variables = mgr.ReloadVariables(ctx, modLogger, []string{mod.Variables}, shell.MakeVariableMap(mgr.hostVariables))
 		} else {
-			logger.DebugContext(ctx, "No module variables")
+			modLogger.DebugContext(ctx, "No module variables")
 		}
 
 		err := modGraph.AddVertex(newMod)
 		if err != nil {
-			logger.LogAttrs(
+			modLogger.LogAttrs(
 				ctx,
 				slog.LevelError,
 				"Failed to add module to DAG",
@@ -203,7 +203,7 @@ func (mgr *Manager) RunModules(ctx context.Context, logger *slog.Logger) {
 	}
 
 	for _, v := range order {
-		logger = logger.With(
+		vLogger := logger.With(
 			slog.Group(
 				"module",
 				slog.String("id", v),
@@ -212,7 +212,7 @@ func (mgr *Manager) RunModules(ctx context.Context, logger *slog.Logger) {
 
 		mod, err := mgr.modules.Vertex(v)
 		if err != nil {
-			logger.LogAttrs(
+			vLogger.LogAttrs(
 				ctx,
 				slog.LevelError,
 				"Failed to retreive module from DAG vertex",
@@ -220,11 +220,11 @@ func (mgr *Manager) RunModules(ctx context.Context, logger *slog.Logger) {
 			)
 		}
 
-		logger.InfoContext(ctx, "Module started")
-		defer logger.InfoContext(ctx, "Module finished")
+		vLogger.InfoContext(ctx, "Module started")
+		defer vLogger.InfoContext(ctx, "Module finished")
 
-		if err := mgr.RunModule(ctx, logger, mod); err != nil {
-			logger.LogAttrs(
+		if err := mgr.RunModule(ctx, vLogger, mod); err != nil {
+			vLogger.LogAttrs(
 				ctx,
 				slog.LevelError,
 				"Module failed",

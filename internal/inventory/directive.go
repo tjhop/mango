@@ -30,7 +30,7 @@ func (i *Inventory) ParseDirectives(ctx context.Context, logger *slog.Logger) er
 		"inventory": i.inventoryPath,
 		"component": "directives",
 	}
-	logger = logger.With(
+	iLogger := logger.With(
 		slog.Group(
 			"inventory",
 			slog.String("component", "directives"),
@@ -40,7 +40,7 @@ func (i *Inventory) ParseDirectives(ctx context.Context, logger *slog.Logger) er
 	path := filepath.Join(i.inventoryPath, "directives")
 	files, err := utils.GetFilesInDirectory(path)
 	if err != nil {
-		logger.LogAttrs(
+		iLogger.LogAttrs(
 			ctx,
 			slog.LevelError,
 			"Failed to parse directives",

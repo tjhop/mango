@@ -35,7 +35,7 @@ func (i *Inventory) ParseHosts(ctx context.Context, logger *slog.Logger) error {
 		"inventory": i.inventoryPath,
 		"component": "hosts",
 	}
-	logger = logger.With(
+	iLogger := logger.With(
 		slog.Group(
 			"inventory",
 			slog.String("component", "hosts"),
@@ -45,7 +45,7 @@ func (i *Inventory) ParseHosts(ctx context.Context, logger *slog.Logger) error {
 	path := filepath.Join(i.inventoryPath, "hosts")
 	hostDirs, err := utils.GetFilesInDirectory(path)
 	if err != nil {
-		logger.LogAttrs(
+		iLogger.LogAttrs(
 			ctx,
 			slog.LevelError,
 			"Failed to get files in directory",
@@ -66,7 +66,7 @@ func (i *Inventory) ParseHosts(ctx context.Context, logger *slog.Logger) error {
 			hostPath := filepath.Join(path, hostDir.Name())
 			hostFiles, err := utils.GetFilesInDirectory(hostPath)
 			if err != nil {
-				logger.LogAttrs(
+				iLogger.LogAttrs(
 					ctx,
 					slog.LevelError,
 					"Failed to parse host files",
@@ -93,7 +93,7 @@ func (i *Inventory) ParseHosts(ctx context.Context, logger *slog.Logger) error {
 
 						for line := range lines {
 							if line.Err != nil {
-								logger.LogAttrs(
+								iLogger.LogAttrs(
 									ctx,
 									slog.LevelError,
 									"Failed to read roles for host",
@@ -113,7 +113,7 @@ func (i *Inventory) ParseHosts(ctx context.Context, logger *slog.Logger) error {
 
 						for line := range lines {
 							if line.Err != nil {
-								logger.LogAttrs(
+								iLogger.LogAttrs(
 									ctx,
 									slog.LevelError,
 									"Failed to read modules for host",
@@ -129,7 +129,7 @@ func (i *Inventory) ParseHosts(ctx context.Context, logger *slog.Logger) error {
 					case "variables":
 						host.variables = filepath.Join(hostPath, "variables")
 					default:
-						logger.LogAttrs(
+						iLogger.LogAttrs(
 							ctx,
 							slog.LevelWarn,
 							"Skipping file while parsing inventory",

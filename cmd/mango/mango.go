@@ -537,14 +537,14 @@ func main() {
 		}
 	}
 
-	logger = logger.With(
+	mainLogger := logger.With(
 		slog.Group("hostname",
 			slog.String("system", utils.GetHostname()),
 			slog.String("inventory", me),
 		),
 	)
 
-	logger.LogAttrs(
+	mainLogger.LogAttrs(
 		rootCtx,
 		slog.LevelInfo,
 		"Mango build information",
@@ -556,9 +556,9 @@ func main() {
 		),
 	)
 
-	// set logger as default
-	slog.SetDefault(logger)
+	// set mainLogger as default
+	slog.SetDefault(mainLogger)
 
 	// run mango daemon
-	mango(rootCtx, logger, inventoryPath, me)
+	mango(rootCtx, mainLogger, inventoryPath, me)
 }
