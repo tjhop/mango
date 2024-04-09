@@ -455,6 +455,7 @@ func main() {
 	flag.String("logging.output", "logfmt", "Logging format may be one of: [logfmt, json]")
 	flag.String("hostname", "", "(Requires root) Custom hostname to use [default is system hostname]")
 	flag.BoolP("help", "h", false, "Prints help and usage information")
+	flag.BoolP("version", "v", false, "Prints version and build info")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "%s\nUsage of %s:\n", programNameAsciiArt, os.Args[0])
@@ -475,6 +476,11 @@ func main() {
 	if viper.GetBool("help") {
 		flag.Usage()
 		fmt.Fprintln(os.Stderr, charitywareMsg)
+		os.Exit(0)
+	}
+
+	if viper.GetBool("version") {
+		fmt.Println(version.Print(programName))
 		os.Exit(0)
 	}
 
