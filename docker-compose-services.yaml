@@ -42,7 +42,7 @@ services:
     networks:
       - mango
     ports:
-      - "9090"
+      - "9090:9090"
 
   grafana:
     environment:
