@@ -117,6 +117,7 @@ func (mgr *Manager) RunModule(ctx context.Context, logger *slog.Logger, mod Modu
 
 	labels := prometheus.Labels{
 		"module": mod.String(),
+		"script": "",
 	}
 
 	hostVarsMap := shell.MakeVariableMap(mgr.hostVariables)
@@ -152,7 +153,7 @@ func (mgr *Manager) RunModule(ctx context.Context, logger *slog.Logger, mod Modu
 		}
 
 		testEnd := time.Since(testStart)
-		metricManagerModuleRunDuration.With(labels).Set(float64(testEnd))
+		metricManagerModuleRunDuration.With(labels).Observe(float64(testEnd))
 	}
 
 	applyStart := time.Now()
@@ -169,7 +170,7 @@ func (mgr *Manager) RunModule(ctx context.Context, logger *slog.Logger, mod Modu
 	// update metrics regardless of error, so do them before handling error
 	applyEnd := time.Since(applyStart)
 	metricManagerModuleRunSuccessTimestamp.With(labels).Set(float64(applyStart.Unix()))
-	metricManagerModuleRunDuration.With(labels).Set(float64(applyEnd))
+	metricManagerModuleRunDuration.With(labels).Observe(float64(applyEnd))
 	metricManagerModuleRunTotal.With(labels).Inc()
 
 	if err != nil {

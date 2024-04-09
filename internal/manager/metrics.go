@@ -25,10 +25,11 @@ var (
 		[]string{"module", "script"},
 	)
 
-	metricManagerModuleRunDuration = promauto.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "mango_manager_module_run_duration_seconds",
-			Help: "Approximately how long it took for the module to run, in seconds",
+	metricManagerModuleRunDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "mango_manager_module_run_duration_seconds",
+			Help:    "Histogram of durations of how long it took a given module to run, in seconds",
+			Buckets: prometheus.ExponentialBuckets(1, 2, 8),
 		},
 		[]string{"module", "script"},
 	)
