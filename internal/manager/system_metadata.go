@@ -89,6 +89,7 @@ func getKernelMetadata(ctx context.Context, logger *slog.Logger) kernelMetadata 
 			"Failed to parse kernel info",
 			slog.String("err", err.Error()),
 		)
+		return kernelMetadata{}
 	}
 	kernelData := kernelMetadata{
 		Kernel: kernelInfo.Kernel,
