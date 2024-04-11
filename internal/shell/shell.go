@@ -64,7 +64,10 @@ func SourceFile(ctx context.Context, path string) (VariableSlice, error) {
 // code. Untrusted shell programs shoudn't be sourced outside of a sandbox
 // environment.
 func SourceNode(ctx context.Context, node syntax.Node) (VariableSlice, error) {
-	r, _ := interp.New()
+	r, err := interp.New()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create shell interpreter: %v", err)
+	}
 
 	// take initial copy of environment variables
 	oldVars := os.Environ()
