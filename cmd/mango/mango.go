@@ -162,24 +162,6 @@ func mango(ctx context.Context, logger *slog.Logger, inventoryPath, hostname str
 	)
 	mgr := manager.NewManager(hostname)
 
-	// // TODO(@tjhop): consider reworking this runtime var to be inventory
-	// // runtime info and move it to inventory pkg?
-	// metricMangoRuntimeInfo.With(prometheus.Labels{
-	// 	"hostname": hostname,
-	// 	"enrolled": strconv.FormatBool(enrolled),
-	// }).Set(1)
-	// logger = logger.With(
-	// 	slog.Group("hostname",
-	// 	slog.String("hostname", hostname),
-	// 	slog.Bool("enrolled", enrolled),
-	// 	),
-	// )
-	// logger.LogAttrs(
-	// 	ctx,
-	// 	slog.LevelInfo,
-	// 	"Host enrollment check",
-	// )
-
 	managerLogger.LogAttrs(
 		ctx,
 		slog.LevelInfo,
