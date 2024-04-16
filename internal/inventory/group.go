@@ -209,7 +209,18 @@ func (g Group) MatchGlobs(hostname string) int {
 	matched := 0
 
 	for _, globPattern := range g.globs {
-		glob := glob_util.MustCompile(globPattern)
+		glob, err := glob_util.Compile(globPattern)
+		if err != nil {
+			slog.LogAttrs(
+				context.Background(),
+				slog.LevelWarn,
+				"Failed to compile glob pattern for matching",
+				slog.String("err", err.Error()),
+				slog.String("glob", globPattern),
+			)
+			continue
+		}
+
 		if glob.Match(hostname) {
 			matched++
 			continue
@@ -223,7 +234,18 @@ func (g Group) MatchPatterns(hostname string) int {
 	matched := 0
 
 	for _, pattern := range g.patterns {
-		validPattern := regexp.MustCompile(pattern)
+		validPattern, err := regexp.Compile(pattern)
+		if err != nil {
+			slog.LogAttrs(
+				context.Background(),
+				slog.LevelWarn,
+				"Failed to compile regex pattern for matching",
+				slog.String("err", err.Error()),
+				slog.String("regex", pattern),
+			)
+			continue
+		}
+
 		if validPattern.MatchString(hostname) {
 			matched++
 			continue
