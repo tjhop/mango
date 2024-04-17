@@ -60,7 +60,7 @@ changelog:
       - '^docs(?:\(\w+\))?\!?:'
       - '^style(?:\(\w+\))?\!?:'
   groups:
-    - title: "New Features And Chnages"
+    - title: "New Features And Changes"
       regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
       order: 0
     - title: "Fixes"
