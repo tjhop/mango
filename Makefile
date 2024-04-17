@@ -2,7 +2,7 @@ GOCMD := go
 GOFMT := ${GOCMD} fmt
 GOMOD := ${GOCMD} mod
 COMMIT := $(shell git rev-parse HEAD)
-RELEASE_CONTAINER_NAME := "mango"
+RELEASE_CONTAINER_NAME := mango
 GOLANGCILINT_CACHE := ${CURDIR}/.golangci-lint/build/cache
 
 ## help:			print this help message
@@ -33,7 +33,7 @@ build: binary
 
 ## container: 		build container image with binary
 container: binary
-	podman image build -t "${RELEASE_CONTAINER_NAME}:latest" .
+	podman image build -t ${RELEASE_CONTAINER_NAME}:latest .
 
 ## image:			alias for `container`
 image: container
