@@ -28,7 +28,6 @@ var (
 		[]string{"hostname", "enrolled", "inventory_path"},
 	)
 
-	// TODO(@tjhop): move to `_suffix` name?
 	metricInventory = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "mango_inventory",
@@ -37,7 +36,6 @@ var (
 		commonMetricLabels,
 	)
 
-	// TODO(@tjhop): move to `_suffix` name?
 	metricInventoryApplicable = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "mango_inventory_applicable",
