@@ -86,8 +86,8 @@ Please see [aviary.sh's documentation on inventory setup](https://github.com/fra
 ```
 mkdir inventory
 cd inventory
-mkdir {hosts,modules,roles,directives}
-touch {hosts,modules,roles,directives}/.gitkeep
+mkdir {groups,hosts,modules,roles,directives}
+touch {groups,hosts,modules,roles,directives}/.gitkeep
 git init
 git add .
 git commit -m "initial commit"
