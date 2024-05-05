@@ -64,7 +64,7 @@ func (mgr *Manager) ReloadModules(ctx context.Context, logger *slog.Logger) {
 			modLogger.LogAttrs(
 				ctx,
 				slog.LevelError,
-				"Failed to add module to DAG",
+				"Failed to add module to directed acyclic graph",
 				slog.String("err", err.Error()),
 			)
 		}
@@ -95,7 +95,7 @@ func (mgr *Manager) ReloadModules(ctx context.Context, logger *slog.Logger) {
 					logger.LogAttrs(
 						ctx,
 						slog.LevelError,
-						"Failed to add module to DAG",
+						"Failed to add module dependency as edge to directed acyclic graph",
 						slog.String("err", err.Error()),
 					)
 				}
@@ -193,7 +193,7 @@ func (mgr *Manager) RunModules(ctx context.Context, logger *slog.Logger) {
 		logger.LogAttrs(
 			ctx,
 			slog.LevelError,
-			"Failed to sort DAG",
+			"Failed to sort directed acyclic graph",
 			slog.String("err", err.Error()),
 		)
 	}
@@ -216,7 +216,7 @@ func (mgr *Manager) RunModules(ctx context.Context, logger *slog.Logger) {
 			vLogger.LogAttrs(
 				ctx,
 				slog.LevelError,
-				"Failed to retreive module from DAG vertex",
+				"Failed to retreive module from directed acyclic graph vertex",
 				slog.String("err", err.Error()),
 			)
 		}
