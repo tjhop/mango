@@ -33,14 +33,15 @@ var (
 
 // Manager contains fields related to track and execute runnable modules and statistics.
 type Manager struct {
-	id            string
-	inv           inventory.Store // TODO: move this interface to be defined consumer-side in manager vs in inventory
-	modules       graph.Graph[string, Module]
-	directives    []Directive
-	hostVariables VariableSlice
-	runLock       sync.Mutex
-	funcMap       template.FuncMap
-	tmplData      templateData
+	id                 string
+	inv                inventory.Store // TODO: move this interface to be defined consumer-side in manager vs in inventory
+	modules            graph.Graph[string, Module]
+	directives         []Directive
+	executedDirectives map[string]struct{} // stores the ID of the directive as key
+	hostVariables      VariableSlice
+	runLock            sync.Mutex
+	funcMap            template.FuncMap
+	tmplData           templateData
 }
 
 func (mgr *Manager) String() string { return mgr.id }

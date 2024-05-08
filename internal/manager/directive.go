@@ -29,7 +29,19 @@ func (mgr *Manager) ReloadDirectives(ctx context.Context) {
 		dirScripts[i] = Directive{d: ds}
 	}
 
-	mgr.directives = dirScripts
+	// check newly loaded directives against the already executed
+	// directives. if a directive has already been executed, we do not want
+	// to add it to the directives list, as this is the feed that
+	// `RunDirectives()` works off of; rather we only want to add it to the
+	// manager's list of directives if it has _not_ been executed
+	var dirScriptsToExecute []Directive
+	for _, d := range dirScripts {
+		if _, found := mgr.executedDirectives[d.String()]; !found {
+			dirScriptsToExecute = append(dirScriptsToExecute, d)
+		}
+	}
+
+	mgr.directives = dirScriptsToExecute
 }
 
 // RunDirective is responsible for actually executing a directive, using the `shell`
@@ -58,6 +70,7 @@ func (mgr *Manager) RunDirective(ctx context.Context, ds Directive) error {
 		}
 
 		err = shell.Run(ctx, runID, ds.String(), renderedScript, nil)
+		mgr.executedDirectives[ds.String()] = struct{}{} // mark directive as executed
 
 		// update metrics regardless of error, so do them before handling error
 		applyEnd := time.Since(applyStart)
