@@ -163,11 +163,16 @@ Most development work can be done with the included Makefile:
 
 ### Testing
 
+#### Inventory Testing
 A [skeleton inventory ](./test/mockup/inventory/) is included for use with testing:
 
 ```bash
 make run-test-inventory
 ```
+
+#### Code Testing
+
+Doesn't exist yet :')
 
 ### Contributions
 Commits *must* follow [Conventional Commit format](https://www.conventionalcommits.org/en/v1.0.0/). This repository uses [GoReleaser](https://goreleaser.com/) and semver git tags that are determined by the type of commit.
