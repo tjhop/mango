@@ -109,6 +109,25 @@ whatever other idempotent scripts/configs written in other languages.
 | Inventory updated during config management runs | Inventory updated via scheduled service (`cron`, `systemd-timer`, etc) |
 | Inventory scripts executed directly by shell | Inventory scripts executed by [Go shell interpreter library](https://github.com/mvdan/sh). Bash is supported [with some caveats](https://github.com/mvdan/sh#caveats) |
 
+#### Inventory files per component and what they do
+
+| Inventory Component | File Name | File Type | Description | Required | Allows templating |
+| --- | --- | --- | --- | --- | --- |
+| `directives` | _any allowed_ | Bash script | "one-off" commands that get run only a single time and only if the file has been modified within the last 24 hours | No | Yes |
+| `modules` | `apply` | Bash script | idempotent bash script to get the system to the desired state | Yes | Yes |
+| `modules` | `test` | Bash script | test script to validate if system is in the desired state | No | Yes |
+| `modules` | `variables` | Bash script | script containing variables to set for the module's execution context for `apply` and `test` scripts | No | Yes |
+| `modules` | `requires` | Newline delimited list | List of other modules that are required to apply before this module can apply (dependency ordering) | No | No |
+| `roles` | `modules` | Newline delimited list | List of modules that are included in/executed as part of this role | No | No |
+| `hosts` | `modules` | Newline delimited list | List of modules that are included in/executed as part of the defined host | No | No |
+| `hosts` | `roles` | Newline delimited list | List of roles that are included in/executed as part of the defined host | No | No |
+| `hosts` | `variables` | Bash script | script containing variables to set for the host's execution context for `apply` and `test` scripts | No | Yes |
+| `groups` | `glob` | Newline delimited list | List of glob patterns that are members of this group. Glob patterns are matched against the hostname of the system | No | No |
+| `groups` | `regex` | Newline delimited list | List of regular expression patterns that are members of this group. Regular expression patterns are matched against the hostname of the system | No | No |
+| `groups` | `roles` | Newline delimited list | List of roles assigned to members of this group | No | No |
+| `groups` | `modules` | Newline delimited list | List of modules assigned to members of this group | No | No |
+| `groups` | `variables` | Bash script | script containing variables to set for the host's execution context for `apply` and `test` scripts | No | Yes |
+
 ## Monitoring and Alerting
 
 ### Metrics
