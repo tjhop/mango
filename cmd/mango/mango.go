@@ -144,7 +144,6 @@ func mango(ctx context.Context, logger *slog.Logger, inventoryPath, hostname str
 	inv := inventory.NewInventory(inventoryPath, hostname)
 	// reload inventory
 	inv.Reload(ctx, inventoryLogger)
-	// enrolled := inv.IsEnrolled()
 
 	// start manager, reload it with data from inventory, and then start a run of everything for the system
 	managerLogger := logger.With(

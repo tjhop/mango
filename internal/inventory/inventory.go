@@ -394,8 +394,6 @@ func (i *Inventory) GetRolesForHost(host string) []Role {
 // GetRolesForSelf returns a slice of Roles, containing all of the
 // Roles for the running system from the inventory.
 func (i *Inventory) GetRolesForSelf() []Role {
-	// return i.GetRolesForHost(i.hostname)
-
 	var roles []Role
 
 	roles = append(roles, i.GetRolesForHost(i.hostname)...)
