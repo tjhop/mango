@@ -14,9 +14,11 @@ import (
 // Role contains fields that represent a single role in the inventory.
 // - ID: string idenitfying the role (generally the file path to the role)
 // - Modules: a []string of module names that satisfy this role
+// - variables: path to the variables file for this role, if present
 type Role struct {
-	id      string
-	modules []string
+	id        string
+	modules   []string
+	variables string
 }
 
 // String is a stringer to return the role ID
@@ -104,7 +106,8 @@ func (i *Inventory) ParseRoles(ctx context.Context, logger *slog.Logger) error {
 						}
 
 						role.modules = mods
-
+					case "variables":
+						role.variables = filepath.Join(rolePath, "variables")
 					default:
 						iLogger.LogAttrs(
 							ctx,
