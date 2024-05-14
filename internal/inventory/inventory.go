@@ -442,7 +442,9 @@ func (i *Inventory) GetVariablesForSelf() []string {
 	var tmp, varFiles []string
 
 	for _, group := range i.groups {
-		tmp = append(tmp, i.GetVariablesForGroup(group.String()))
+		if group.IsHostEnrolled(i.hostname) {
+			tmp = append(tmp, group.variables)
+		}
 	}
 
 	tmp = append(tmp, i.GetVariablesForHost(i.hostname))
