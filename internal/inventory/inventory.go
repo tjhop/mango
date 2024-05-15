@@ -299,6 +299,10 @@ func (i *Inventory) GetModulesForHost(host string) []Module {
 			mods = append(mods, i.GetModulesForRole(r.String())...)
 		}
 
+		for _, g := range i.GetGroupsForHost(host) {
+			mods = append(mods, i.GetModulesForGroup(g.String())...)
+		}
+
 		// get raw host modules
 		for _, m := range h.modules {
 			if mod, found := i.GetModule(m); found {
@@ -348,14 +352,7 @@ func (i *Inventory) GetRolesForGroup(group string) []Role {
 // GetModulesForSelf returns a slice of Modules, containing all of the
 // Modules for the running system from the inventory.
 func (i *Inventory) GetModulesForSelf() []Module {
-	var mods []Module
-
-	mods = append(mods, i.GetModulesForHost(i.hostname)...)
-	for _, group := range i.groups {
-		mods = append(mods, i.GetModulesForGroup(group.String())...)
-	}
-
-	return filterDuplicateModules(mods)
+	return i.GetModulesForHost(i.hostname)
 }
 
 // GetRole returns a copy of the Role struct for a role identified
