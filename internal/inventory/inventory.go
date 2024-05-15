@@ -127,12 +127,14 @@ type Store interface {
 	GetModulesForRole(role string) []Module
 	GetModulesForHost(host string) []Module
 	GetRolesForHost(host string) []Role
+	GetGroupsForHost(host string) []Group
 	GetVariablesForHost(host string) string
 
 	// Self checks
 	GetDirectivesForSelf() []Directive
 	GetModulesForSelf() []Module
 	GetRolesForSelf() []Role
+	GetGroupsForSelf() []Group
 	GetVariablesForSelf() []string
 }
 
@@ -505,6 +507,25 @@ func (i *Inventory) GetGroup(group string) (Group, bool) {
 	}
 
 	return Group{}, false
+}
+
+// GetGroupsForHost returns a slice of Groups, containing all of the
+// Groups for the specified host system.
+func (i *Inventory) GetGroupsForHost(host string) []Group {
+	var groups []Group
+	for _, group := range i.groups {
+		if group.IsHostEnrolled(host) {
+			groups = append(groups, group)
+		}
+	}
+
+	return groups
+}
+
+// GetGroupsForSelf returns a slice of Groups, containing all of the
+// Groups for the running system from the inventory.
+func (i *Inventory) GetGroupsForSelf() []Group {
+	return i.GetGroupsForHost(i.hostname)
 }
 
 // GetVariablesForGroup returns the path of the group's variables file, or the
