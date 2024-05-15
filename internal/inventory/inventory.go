@@ -421,37 +421,38 @@ func (i *Inventory) GetHost(host string) (Host, bool) {
 	return Host{}, false
 }
 
-// GetVariablesForHost returns the path of the host's variables file, or the
-// empty string if no host/variables file found
-func (i *Inventory) GetVariablesForHost(host string) string {
-	if h, found := i.GetHost(host); found {
-		return h.variables
-	}
+// GetVariablesForHost returns slice of strings, containing the paths of any
+// variables files found for this host. All role variables are provided first,
+// then group variables second, with host-specific variables provided last (to
+// allow for overriding default group variable data).
+func (i *Inventory) GetVariablesForHost(host string) []string {
+	var varFiles []string
 
-	return ""
-}
-
-// GetVariablesForSelf returns slice of strings, containing the paths of any
-// variables files found for this host. All group variables a provided first,
-// with host-specific variables provided last (to allow for overriding default
-// group variable data).
-func (i *Inventory) GetVariablesForSelf() []string {
-	var tmp, varFiles []string
-
-	for _, group := range i.groups {
-		if group.IsHostEnrolled(i.hostname) {
-			tmp = append(tmp, group.variables)
+	for _, role := range i.GetRolesForHost(host) {
+		if role.variables != "" {
+			varFiles = append(varFiles, role.variables)
 		}
 	}
 
-	tmp = append(tmp, i.GetVariablesForHost(i.hostname))
-	for _, file := range tmp {
-		if file != "" {
-			varFiles = append(varFiles, file)
+	for _, group := range i.GetGroupsForHost(host) {
+		if group.variables != "" {
+			varFiles = append(varFiles, group.variables)
 		}
+	}
+
+	if h, found := i.GetHost(host); found && h.variables != "" {
+		varFiles = append(varFiles, h.variables)
 	}
 
 	return varFiles
+}
+
+// GetVariablesForSelf returns slice of strings, containing the paths of any
+// variables files found for the running host. All role variables are provided
+// first, then group variables second, with host-specific variables provided
+// last (to allow for overriding default group variable data).
+func (i *Inventory) GetVariablesForSelf() []string {
+	return i.GetVariablesForHost(i.hostname)
 }
 
 func filterDuplicateModules(input []Module) []Module {
