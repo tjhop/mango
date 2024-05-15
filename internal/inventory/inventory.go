@@ -295,8 +295,8 @@ func (i *Inventory) GetModulesForHost(host string) []Module {
 
 	if h, found := i.GetHost(host); found {
 		// get modules from all roles host is assigned
-		for _, r := range h.roles {
-			mods = append(mods, i.GetModulesForRole(r)...)
+		for _, r := range i.GetRolesForHost(host) {
+			mods = append(mods, i.GetModulesForRole(r.String())...)
 		}
 
 		// get raw host modules
