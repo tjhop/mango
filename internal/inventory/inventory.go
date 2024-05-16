@@ -128,7 +128,7 @@ type Store interface {
 	GetModulesForHost(host string) []Module
 	GetRolesForHost(host string) []Role
 	GetGroupsForHost(host string) []Group
-	GetVariablesForHost(host string) string
+	GetVariablesForHost(host string) []string
 
 	// Self checks
 	GetDirectivesForSelf() []Directive
