@@ -374,7 +374,7 @@ func (i *Inventory) GetRoles() []Role {
 }
 
 // GetRolesForHost returns a slice of Roles, containing all of the
-// Roles for the specified host system.
+// Roles applicable to the specified host system.
 func (i *Inventory) GetRolesForHost(host string) []Role {
 	if h, found := i.GetHost(host); found {
 		roles := []Role{}
@@ -384,23 +384,24 @@ func (i *Inventory) GetRolesForHost(host string) []Role {
 			}
 		}
 
-		return roles
+		for _, g := range i.GetGroupsForHost(host) {
+			for _, r := range g.roles {
+				if role, found := i.GetRole(r); found {
+					roles = append(roles, role)
+				}
+			}
+		}
+
+		return filterDuplicateRoles(roles)
 	}
 
 	return nil
 }
 
 // GetRolesForSelf returns a slice of Roles, containing all of the
-// Roles for the running system from the inventory.
+// Roles applicable to the running system from the inventory.
 func (i *Inventory) GetRolesForSelf() []Role {
-	var roles []Role
-
-	roles = append(roles, i.GetRolesForHost(i.hostname)...)
-	for _, group := range i.groups {
-		roles = append(roles, i.GetRolesForGroup(group.String())...)
-	}
-
-	return filterDuplicateRoles(roles)
+	return i.GetRolesForHost(i.hostname)
 }
 
 // GetHosts returns a copy of the inventory's Hosts.
