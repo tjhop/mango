@@ -106,6 +106,7 @@ type Store interface {
 
 	// Enrollment and runtime/metadata checks
 	IsEnrolled() bool
+	IsHostEnrolled(host string) bool
 	GetInventoryPath() string
 	GetHostname() string
 
@@ -219,21 +220,22 @@ func (i *Inventory) Reload(ctx context.Context, logger *slog.Logger) {
 	metricMangoInventoryInfo.With(metricMangoInventoryInfoLabels).Set(1)
 }
 
+// IsHostEnrolled returns if the provided hostname of the system is defined in
+// the inventory, or if the provided hostname of the system matches any group
+// match parameters
+func (i *Inventory) IsHostEnrolled(host string) bool {
+	if _, found := i.GetHost(host); found {
+		return true
+	}
+
+	return len(i.GetGroupsForHost(host)) > 0
+}
+
 // IsEnrolled returns if the hostname of the system is defined in the
 // inventory, or if the hostname of the system matches any group match
 // parameters
 func (i *Inventory) IsEnrolled() bool {
-	if _, found := i.GetHost(i.hostname); found {
-		return true
-	}
-
-	for _, group := range i.groups {
-		if group.IsHostEnrolled(i.hostname) {
-			return true
-		}
-	}
-
-	return false
+	return i.IsHostEnrolled(i.hostname)
 }
 
 // GetDirectives returns a copy of the inventory's slice of Directive
