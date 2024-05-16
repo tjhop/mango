@@ -295,7 +295,7 @@ func (i *Inventory) GetModulesForRole(role string) []Module {
 func (i *Inventory) GetModulesForHost(host string) []Module {
 	mods := []Module{}
 
-	if h, found := i.GetHost(host); found {
+	if i.IsHostEnrolled(host) {
 		// get modules from all roles host is assigned
 		for _, r := range i.GetRolesForHost(host) {
 			mods = append(mods, i.GetModulesForRole(r.String())...)
@@ -306,9 +306,11 @@ func (i *Inventory) GetModulesForHost(host string) []Module {
 		}
 
 		// get raw host modules
-		for _, m := range h.modules {
-			if mod, found := i.GetModule(m); found {
-				mods = append(mods, mod)
+		if h, found := i.GetHost(host); found {
+			for _, m := range h.modules {
+				if mod, found := i.GetModule(m); found {
+					mods = append(mods, mod)
+				}
 			}
 		}
 	}
@@ -378,11 +380,13 @@ func (i *Inventory) GetRoles() []Role {
 // GetRolesForHost returns a slice of Roles, containing all of the
 // Roles applicable to the specified host system.
 func (i *Inventory) GetRolesForHost(host string) []Role {
-	if h, found := i.GetHost(host); found {
+	if i.IsHostEnrolled(host) {
 		roles := []Role{}
-		for _, r := range h.roles {
-			if role, found := i.GetRole(r); found {
-				roles = append(roles, role)
+		if h, found := i.GetHost(host); found {
+			for _, r := range h.roles {
+				if role, found := i.GetRole(r); found {
+					roles = append(roles, role)
+				}
 			}
 		}
 
