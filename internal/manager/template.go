@@ -6,13 +6,21 @@ import (
 	"fmt"
 	"net"
 	"path/filepath"
+	"sync"
 	"text/template"
 
+	"github.com/Masterminds/sprig/v3"
 	"github.com/dustin/go-humanize"
 	socktmpl "github.com/hashicorp/go-sockaddr/template"
 	"github.com/oklog/ulid/v2"
 
 	"github.com/tjhop/mango/internal/shell"
+)
+
+var (
+	once               sync.Once
+	sprigFuncMap       template.FuncMap
+	sprigDisabledFuncs = []string{"env", "expandenv"}
 )
 
 type VariableSlice = shell.VariableSlice
@@ -43,6 +51,15 @@ type templateData struct {
 	Storage    storageMetadata
 }
 
+func init() {
+	once.Do(func() {
+		sprigFuncMap = sprig.TxtFuncMap()
+		for _, f := range sprigDisabledFuncs {
+			delete(sprigFuncMap, f)
+		}
+	})
+}
+
 // namespaceTemplateFuncs prefixes all function.
 // ie, `GetPublicIP` from the sockaddr template custom functions is made
 // available as `sockaddr_GetPublicIP`, etc
@@ -63,6 +80,7 @@ func templateScript(ctx context.Context, path string, view templateView, funcMap
 		Funcs(namespaceTemplateFuncs("sockaddr", socktmpl.SortFuncs)).
 		Funcs(namespaceTemplateFuncs("sockaddr", socktmpl.FilterFuncs)).
 		Funcs(namespaceTemplateFuncs("sockaddr", socktmpl.HelperFuncs)).
+		Funcs(namespaceTemplateFuncs("sprig", sprigFuncMap)).
 		ParseFiles(path)
 	if err != nil {
 		return "", fmt.Errorf("Failed to parse template %s: %s", path, err)

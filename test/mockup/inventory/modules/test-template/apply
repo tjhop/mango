@@ -70,6 +70,8 @@ Mount info:
 {{- end }}
 -------------------
 Testing template functions:
+String replacement (input 'foo foo foo', expected output 'bar foo foo'): {{ "foo foo foo" | sprig_replace "foo" "bar" }}
+Contrived regex replacement (input 'a   bc   d', expected output: 'abcd'): {{ sprig_mustRegexReplaceAll "([A-Za-z]+).+([A-Za-z]+).+([A-Za-z]+)" "a   bc   d" "$1$2$3" }}
 Private IP: {{ sockaddr_GetPrivateIP }}
 Public IP: {{ sockaddr_GetPublicIP }}
 Interfaces: {{ sockaddr_GetAllInterfaces }}
