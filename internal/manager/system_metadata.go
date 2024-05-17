@@ -218,15 +218,16 @@ func getStorageMetadata(ctx context.Context, logger *slog.Logger) storageMetadat
 	var disks []disk
 	for _, blockDev := range blockDevs {
 		blockDevPath := filepath.Join(blockDevDir, blockDev)
-
-		qStats, err := fs.SysBlockDeviceQueueStats(blockDevPath)
-		mdLogger.LogAttrs(
-			ctx,
-			slog.LevelError,
-			"Failed to get queue stats for block device",
-			slog.String("err", err.Error()),
-			slog.String("device", blockDev),
-		)
+		qStats, err := fs.SysBlockDeviceQueueStats(blockDev)
+		if err != nil {
+			mdLogger.LogAttrs(
+				ctx,
+				slog.LevelError,
+				"Failed to get queue stats for block device",
+				slog.String("err", err.Error()),
+				slog.String("device", blockDev),
+			)
+		}
 
 		ssd := false
 		if qStats.Rotational == 0 {
