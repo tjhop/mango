@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-FILE="/tmp/$(basename ${0%/*})-$$"
+FILE="/tmp/$(basename {{ .Mango.Metadata.ModuleName }})-{{.Mango.Metadata.RunID }}"
 # capture ordering info
 echo "{{ .Mango.Metadata.ModuleName }}" >> /tmp/mango-dependency-testing
 
