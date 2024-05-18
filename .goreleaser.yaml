@@ -41,6 +41,7 @@ nfpms:
     formats:
       - deb
       - rpm
+      - archlinux
     bindir: /usr/bin
     contents:
       - src: ./README.md
