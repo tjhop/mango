@@ -9,6 +9,9 @@ builds:
       - -X github.com/tjhop/mango/internal/version.Commit={{ .Commit }}
     binary: mango
     main: './cmd/mango'
+gomod:
+  proxy: true
+  mod: mod
 dockers:
   # build latest and specific tag version images
   - image_templates:
