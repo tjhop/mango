@@ -2,8 +2,6 @@ module github.com/tjhop/mango
 
 go 1.22.3
 
-toolchain go1.22.3
-
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/dominikbraun/graph v0.23.0
