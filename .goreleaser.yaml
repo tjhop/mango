@@ -57,11 +57,11 @@ nfpms:
       preinstall: ./packaging/scripts/preinstall.sh
       postinstall: ./packaging/scripts/postinstall.sh
 archives:
-  files:
+  - files:
     - LICENSE*
     - README*
     - docs/*
-    - packaging/systemd/mango.service
+    - ./packaging/systemd/mango.service
 changelog:
   sort: asc
   filters:
