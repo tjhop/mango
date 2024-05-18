@@ -131,7 +131,6 @@ func (mgr *Manager) RunModule(ctx context.Context, logger *slog.Logger, mod Modu
 			ctx,
 			slog.LevelWarn,
 			"Module has no test script, proceeding to apply",
-			slog.String("module", mod.String()),
 		)
 	} else {
 		testStart := time.Now()
