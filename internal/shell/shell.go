@@ -232,6 +232,11 @@ func Run(ctx context.Context, runID ulid.ULID, path, content string, allVars []s
 	}
 	defer stderrLog.Close()
 
+	// log script content itself for testing template rendering
+	if err := os.WriteFile(filepath.Join(logDir, "script.mango-rendered"), []byte(content), 0644); err != nil {
+		return fmt.Errorf("Failed to write rendered script to log file: %v", err)
+	}
+
 	// runtime dir prep
 	workDir := filepath.Join(viper.GetString("mango.temp-dir"), runID.String())
 	if err := os.MkdirAll(workDir, 0750); err != nil && !os.IsExist(err) {
