@@ -60,27 +60,15 @@ func init() {
 	})
 }
 
-// namespaceTemplateFuncs prefixes all function.
-// ie, `GetPublicIP` from the sockaddr template custom functions is made
-// available as `sockaddr_GetPublicIP`, etc
-func namespaceTemplateFuncs(namespace string, in template.FuncMap) template.FuncMap {
-	out := make(template.FuncMap)
-	for k, v := range in {
-		out[fmt.Sprintf("%s_%s", namespace, k)] = v
-	}
-
-	return out
-}
-
 func templateScript(ctx context.Context, path string, view templateView, funcMap template.FuncMap) (string, error) {
 	var buf bytes.Buffer
 	t, err := template.New(filepath.Base(path)).
 		Funcs(funcMap).
-		Funcs(namespaceTemplateFuncs("sockaddr", socktmpl.SourceFuncs)).
-		Funcs(namespaceTemplateFuncs("sockaddr", socktmpl.SortFuncs)).
-		Funcs(namespaceTemplateFuncs("sockaddr", socktmpl.FilterFuncs)).
-		Funcs(namespaceTemplateFuncs("sockaddr", socktmpl.HelperFuncs)).
-		Funcs(namespaceTemplateFuncs("sprout", sproutFuncMap)).
+		Funcs(socktmpl.SourceFuncs).
+		Funcs(socktmpl.SortFuncs).
+		Funcs(socktmpl.FilterFuncs).
+		Funcs(socktmpl.HelperFuncs).
+		Funcs(sproutFuncMap).
 		ParseFiles(path)
 	if err != nil {
 		return "", fmt.Errorf("Failed to parse template %s: %s", path, err)

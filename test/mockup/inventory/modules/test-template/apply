@@ -70,22 +70,22 @@ Mount info:
 {{- end }}
 -------------------
 Testing template functions:
-String replacement (input 'foo foo foo', expected output 'bar foo foo'): {{ "foo foo foo" | sprout_replace "foo" "bar" }}
-Contrived regex replacement (input 'a   bc   d', expected output: 'abcd'): {{ sprout_mustRegexReplaceAll "([A-Za-z]+).+([A-Za-z]+).+([A-Za-z]+)" "a   bc   d" "$1$2$3" }}
-Private IP: {{ sockaddr_GetPrivateIP }}
-Public IP: {{ sockaddr_GetPublicIP }}
-Interfaces: {{ sockaddr_GetAllInterfaces }}
+String replacement (input 'foo foo foo', expected output 'bar foo foo'): {{ "foo foo foo" | replace "foo" "bar" }}
+Contrived regex replacement (input 'a   bc   d', expected output: 'abcd'): {{ mustRegexReplaceAll "([A-Za-z]+).+([A-Za-z]+).+([A-Za-z]+)" "a   bc   d" "$1$2$3" }}
+Private IP: {{ GetPrivateIP }}
+Public IP: {{ GetPublicIP }}
+Interfaces: {{ GetAllInterfaces }}
 More complex sockaddr template:
-{{ with $ifAddrs := sockaddr_GetAllInterfaces | sockaddr_include "type" "ipv6" | sockaddr_include "flags" "forwardable" | sockaddr_exclude "flags" "loopback" | sockaddr_sort "+address" -}}
+{{ with $ifAddrs := GetAllInterfaces | include "type" "ipv6" | include "flags" "forwardable" | exclude "flags" "loopback" | sort "+address" -}}
   {{- range $ifAddrs }}
-    {{ sockaddr_attr "address" . }}
+    {{ attr "address" . }}
   {{- end -}}
 {{- end }}
 Checking IPv4 Validation:
     Google DNS 8.8.8.8: {{ isIPv4 "8.8.8.8" }}
-    My IP {{ sockaddr_GetPrivateIP }}: {{ sockaddr_GetPrivateIP | isIPv4 }}
+    My IP {{ GetPrivateIP }}: {{ GetPrivateIP | isIPv4 }}
     Bad IP '1.2.j': {{ isIPv4 "1.2.j" }}
-{{- with $myipv6 := sockaddr_GetAllInterfaces | sockaddr_include "type" "IPv6" | sockaddr_include "flags" "global unicast" | sockaddr_attr "address" }}
+{{- with $myipv6 := GetAllInterfaces | include "type" "IPv6" | include "flags" "global unicast" | attr "address" }}
 Checking IPv6 Validation:
     Google DNS 2001:4860:4860::8888: {{ isIPv6 "2001:4860:4860::8888" }}
     My IP {{ $myipv6 }}: {{ $myipv6 | isIPv6 }}
