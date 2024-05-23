@@ -9,8 +9,8 @@ import (
 	"sync"
 	"text/template"
 
-	"github.com/Masterminds/sprig/v3"
 	"github.com/dustin/go-humanize"
+	"github.com/go-sprout/sprout"
 	socktmpl "github.com/hashicorp/go-sockaddr/template"
 	"github.com/oklog/ulid/v2"
 
@@ -18,9 +18,9 @@ import (
 )
 
 var (
-	once               sync.Once
-	sprigFuncMap       template.FuncMap
-	sprigDisabledFuncs = []string{"env", "expandenv"}
+	once                sync.Once
+	sproutFuncMap       template.FuncMap
+	sproutDisabledFuncs = []string{"env", "expandenv"}
 )
 
 type VariableSlice = shell.VariableSlice
@@ -53,9 +53,9 @@ type templateData struct {
 
 func init() {
 	once.Do(func() {
-		sprigFuncMap = sprig.TxtFuncMap()
-		for _, f := range sprigDisabledFuncs {
-			delete(sprigFuncMap, f)
+		sproutFuncMap = sprout.TxtFuncMap()
+		for _, f := range sproutDisabledFuncs {
+			delete(sproutFuncMap, f)
 		}
 	})
 }
@@ -80,7 +80,7 @@ func templateScript(ctx context.Context, path string, view templateView, funcMap
 		Funcs(namespaceTemplateFuncs("sockaddr", socktmpl.SortFuncs)).
 		Funcs(namespaceTemplateFuncs("sockaddr", socktmpl.FilterFuncs)).
 		Funcs(namespaceTemplateFuncs("sockaddr", socktmpl.HelperFuncs)).
-		Funcs(namespaceTemplateFuncs("sprig", sprigFuncMap)).
+		Funcs(namespaceTemplateFuncs("sprout", sproutFuncMap)).
 		ParseFiles(path)
 	if err != nil {
 		return "", fmt.Errorf("Failed to parse template %s: %s", path, err)
