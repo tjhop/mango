@@ -60,16 +60,28 @@ func init() {
 	})
 }
 
-func templateScript(ctx context.Context, path string, view templateView, funcMap template.FuncMap) (string, error) {
-	var buf bytes.Buffer
-	t, err := template.New(filepath.Base(path)).
+func templateScript(ctx context.Context, path string, view templateView, funcMap template.FuncMap, invDefinedTemplates ...string) (string, error) {
+	var (
+		buf bytes.Buffer
+		err error
+	)
+
+	// init template and funcs
+	t := template.New(filepath.Base(path)).
 		Funcs(funcMap).
 		Funcs(socktmpl.SourceFuncs).
 		Funcs(socktmpl.SortFuncs).
 		Funcs(socktmpl.FilterFuncs).
 		Funcs(socktmpl.HelperFuncs).
-		Funcs(sproutFuncMap).
-		ParseFiles(path)
+		Funcs(sproutFuncMap)
+
+	if len(invDefinedTemplates) > 0 {
+		if t, err = t.ParseFiles(invDefinedTemplates...); err != nil {
+			return "", fmt.Errorf("Failed to parse common templates in %#v: %s", invDefinedTemplates, err)
+		}
+	}
+
+	t, err = t.ParseFiles(path)
 	if err != nil {
 		return "", fmt.Errorf("Failed to parse template %s: %s", path, err)
 	}

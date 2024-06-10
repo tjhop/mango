@@ -92,4 +92,7 @@ Checking IPv6 Validation:
     Bad IP '1.2.j': {{ isIPv6 "1.2.j" }}
 {{- end }}
 Done.
+-------------------
+Testing template definitions and included files:
+{{ template "foo" . }}
 EOF

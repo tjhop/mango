@@ -17,12 +17,14 @@ import (
 // - Variables: path to variables file for the module, if present
 // - Requires: path to requirements file for the module, if present
 // - Test: path to test script to check module's application status
+// - TemplateFiles: slice of paths of user defined template files
 type Module struct {
-	ID        string
-	Apply     string
-	Variables string
-	Test      string
-	Requires  string
+	ID            string
+	Apply         string
+	Variables     string
+	Test          string
+	Requires      string
+	TemplateFiles []string
 }
 
 // String is a stringer to return the module ID
@@ -85,6 +87,20 @@ func (i *Inventory) ParseModules(ctx context.Context, logger *slog.Logger) error
 			mod := Module{ID: modPath}
 
 			for _, modFile := range modFiles {
+				if modFile.IsDir() && modFile.Name() == "templates" {
+					templatedir := filepath.Join(modPath, "templates")
+
+					// From docs:
+					// > Glob ignores file system errors such
+					// > as I/O errors reading directories.
+					// > The only possible returned error is
+					// > ErrBadPattern, when pattern is
+					// > malformed.
+					// ...I'm making the pattern. I know it's not malformed.
+					matchedTpls, _ := filepath.Glob(filepath.Join(templatedir, "*.tpl"))
+					mod.TemplateFiles = matchedTpls
+				}
+
 				if !modFile.IsDir() && !utils.IsHidden(modFile.Name()) {
 					fileName := modFile.Name()
 					switch fileName {

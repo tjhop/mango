@@ -137,7 +137,7 @@ func (mgr *Manager) RunModule(ctx context.Context, logger *slog.Logger, mod Modu
 		labels["script"] = "test"
 		metricManagerModuleRunTimestamp.With(labels).Set(float64(testStart.Unix()))
 
-		renderedTest, err := templateScript(ctx, mod.m.Test, allTemplateData, mgr.funcMap)
+		renderedTest, err := templateScript(ctx, mod.m.Test, allTemplateData, mgr.funcMap, mod.m.TemplateFiles...)
 		if err != nil {
 			return fmt.Errorf("Failed to template script: %s", err)
 		}
@@ -159,7 +159,7 @@ func (mgr *Manager) RunModule(ctx context.Context, logger *slog.Logger, mod Modu
 	labels["script"] = "apply"
 	metricManagerModuleRunTimestamp.With(labels).Set(float64(applyStart.Unix()))
 
-	renderedApply, err := templateScript(ctx, mod.m.Apply, allTemplateData, mgr.funcMap)
+	renderedApply, err := templateScript(ctx, mod.m.Apply, allTemplateData, mgr.funcMap, mod.m.TemplateFiles...)
 	if err != nil {
 		return fmt.Errorf("Failed to template script: %s", err)
 	}

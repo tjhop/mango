@@ -111,13 +111,14 @@ whatever other idempotent scripts/configs written in other languages.
 
 #### Inventory files per component and what they do
 
-| Inventory Component | File Name | File Type | Description | Required | Allows templating |
+| Inventory Component | File/Directory Name | File Type | Description | Required | Allows templating |
 | --- | --- | --- | --- | --- | --- |
 | `directives` | _any allowed_ | Bash script | "one-off" commands that get run only a single time and only if the file has been modified within the last 24 hours | No | Yes |
 | `modules` | `apply` | Bash script | idempotent bash script to get the system to the desired state | Yes | Yes |
 | `modules` | `test` | Bash script | test script to validate if system is in the desired state | No | Yes |
 | `modules` | `variables` | Bash script | script containing variables to set for the module's execution context for `apply` and `test` scripts | No | Yes |
 | `modules` | `requires` | Newline delimited list | List of other modules that are required to apply before this module can apply (dependency ordering) | No | No |
+| `modules` | `templates/` | Directory | Contains Go text templates as `.tpl` files  | No | No |
 | `roles` | `modules` | Newline delimited list | List of modules that are included in/executed as part of this role | No | No |
 | `hosts` | `modules` | Newline delimited list | List of modules that are included in/executed as part of the defined host | No | No |
 | `hosts` | `roles` | Newline delimited list | List of roles that are included in/executed as part of the defined host | No | No |
