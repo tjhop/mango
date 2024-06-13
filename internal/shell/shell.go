@@ -218,6 +218,8 @@ func Run(ctx context.Context, runID ulid.ULID, path, content string, allVars []s
 	if err := os.MkdirAll(logDir, 0750); err != nil && !os.IsExist(err) {
 		return fmt.Errorf("Failed to create directory for script logs: %v", err)
 	}
+
+	// log stdout from script
 	stdoutLog, err := os.OpenFile(filepath.Join(logDir, "stdout"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("Failed to open script log for stdout: %v", err)
@@ -225,12 +227,18 @@ func Run(ctx context.Context, runID ulid.ULID, path, content string, allVars []s
 	defer stdoutLog.Close()
 
 	// log stderr from script
-	// `mango_$scriptID_timestamp_stderr.log
 	stderrLog, err := os.OpenFile(filepath.Join(logDir, "stderr"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("Failed to open script log for stderr: %v", err)
 	}
 	defer stderrLog.Close()
+
+	// log exit status from script
+	exitStatusLog, err := os.OpenFile(filepath.Join(logDir, "exit_status"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("Failed to open script log for exit status: %v", err)
+	}
+	defer exitStatusLog.Close()
 
 	// log script content itself for testing template rendering
 	if err := os.WriteFile(filepath.Join(logDir, "script.mango-rendered"), []byte(content), 0644); err != nil {
@@ -260,8 +268,20 @@ func Run(ctx context.Context, runID ulid.ULID, path, content string, allVars []s
 	}
 
 	// run it!
-	if err = runner.Run(ctx, file); err != nil {
-		return fmt.Errorf("Failed to run script %s: %v", path, err)
+	var exitStatus uint8
+	err = runner.Run(ctx, file)
+	if err != nil {
+		status, ok := interp.IsExitStatus(err)
+		if !ok {
+			// Not an exit code, something else went wrong
+			return fmt.Errorf("Failed to run script %s: %v", path, err)
+		}
+
+		exitStatus = status
+	}
+
+	if _, err := exitStatusLog.WriteString(fmt.Sprintf("%d\n", exitStatus)); err != nil {
+		return fmt.Errorf("Failed to write exit status log for status code '%d': %v", exitStatus, err)
 	}
 
 	return nil
