@@ -69,7 +69,7 @@ func (mgr *Manager) RunDirective(ctx context.Context, ds Directive) error {
 			return fmt.Errorf("Failed to template script: %s", err)
 		}
 
-		err = shell.Run(ctx, runID, ds.String(), renderedScript, nil)
+		rc, err := shell.Run(ctx, runID, ds.String(), renderedScript, nil)
 		mgr.executedDirectives[ds.String()] = struct{}{} // mark directive as executed
 
 		// update metrics regardless of error, so do them before handling error
@@ -80,7 +80,12 @@ func (mgr *Manager) RunDirective(ctx context.Context, ds Directive) error {
 
 		if err != nil {
 			metricManagerDirectiveRunFailedTotal.With(labels).Inc()
-			return fmt.Errorf("Failed to apply directive: %v", err)
+			return fmt.Errorf("Failed to apply directive, error: %v", err)
+		}
+
+		if rc != 0 {
+			metricManagerDirectiveRunFailedTotal.With(labels).Inc()
+			return fmt.Errorf("Failed to apply directive, non-zero exit code returned: %d", rc)
 		}
 	}
 

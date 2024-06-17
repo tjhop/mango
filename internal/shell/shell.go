@@ -204,9 +204,10 @@ func MergeVariables(maps ...VariableMap) VariableSlice {
 //   - string containing the contents of the templated script
 //   - a slice of strings in `key=value` pair containing the merged variables to
 //     be provided to the script as environment variables
-func Run(ctx context.Context, runID ulid.ULID, path, content string, allVars []string) error {
+//
+func Run(ctx context.Context, runID ulid.ULID, path, content string, allVars []string) (uint8, error) {
 	if content == "" {
-		return fmt.Errorf("No script data provided")
+		return 1, fmt.Errorf("No script data provided")
 	}
 
 	// setup log files for script output
@@ -216,39 +217,39 @@ func Run(ctx context.Context, runID ulid.ULID, path, content string, allVars []s
 	//	/var/log/mango/manager/run/01GZF2QSPGTCKHFSECPBQ6H8FQ/test/mockup/inventory/modules/test-env-vars/apply/stdout
 	logDir := filepath.Join(viper.GetString("mango.log-dir"), "manager/run", runID.String(), path)
 	if err := os.MkdirAll(logDir, 0750); err != nil && !os.IsExist(err) {
-		return fmt.Errorf("Failed to create directory for script logs: %v", err)
+		return 1, fmt.Errorf("Failed to create directory for script logs: %v", err)
 	}
 
 	// log stdout from script
 	stdoutLog, err := os.OpenFile(filepath.Join(logDir, "stdout"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		return fmt.Errorf("Failed to open script log for stdout: %v", err)
+		return 1, fmt.Errorf("Failed to open script log for stdout: %v", err)
 	}
 	defer stdoutLog.Close()
 
 	// log stderr from script
 	stderrLog, err := os.OpenFile(filepath.Join(logDir, "stderr"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		return fmt.Errorf("Failed to open script log for stderr: %v", err)
+		return 1, fmt.Errorf("Failed to open script log for stderr: %v", err)
 	}
 	defer stderrLog.Close()
 
 	// log exit status from script
 	exitStatusLog, err := os.OpenFile(filepath.Join(logDir, "exit_status"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		return fmt.Errorf("Failed to open script log for exit status: %v", err)
+		return 1, fmt.Errorf("Failed to open script log for exit status: %v", err)
 	}
 	defer exitStatusLog.Close()
 
 	// log script content itself for testing template rendering
 	if err := os.WriteFile(filepath.Join(logDir, "script.mango-rendered"), []byte(content), 0644); err != nil {
-		return fmt.Errorf("Failed to write rendered script to log file: %v", err)
+		return 1, fmt.Errorf("Failed to write rendered script to log file: %v", err)
 	}
 
 	// runtime dir prep
 	workDir := filepath.Join(viper.GetString("mango.temp-dir"), runID.String())
 	if err := os.MkdirAll(workDir, 0750); err != nil && !os.IsExist(err) {
-		return fmt.Errorf("Failed to create working directory for script: %v", err)
+		return 1, fmt.Errorf("Failed to create working directory for script: %v", err)
 	}
 
 	// create shell interpreter
@@ -258,13 +259,13 @@ func Run(ctx context.Context, runID ulid.ULID, path, content string, allVars []s
 		interp.Dir(workDir),
 	)
 	if err != nil {
-		return fmt.Errorf("Failed to create shell interpreter: %s", err)
+		return 1, fmt.Errorf("Failed to create shell interpreter: %s", err)
 	}
 
 	// create shell parser based on rendered template script
 	file, err := syntax.NewParser().Parse(strings.NewReader(content), path)
 	if err != nil {
-		return fmt.Errorf("Failed to parse: %v", err)
+		return 1, fmt.Errorf("Failed to parse: %v", err)
 	}
 
 	// run it!
@@ -274,15 +275,15 @@ func Run(ctx context.Context, runID ulid.ULID, path, content string, allVars []s
 		status, ok := interp.IsExitStatus(err)
 		if !ok {
 			// Not an exit code, something else went wrong
-			return fmt.Errorf("Failed to run script %s: %v", path, err)
+			return 1, fmt.Errorf("Failed to run script %s: %v", path, err)
 		}
 
 		exitStatus = status
 	}
 
 	if _, err := exitStatusLog.WriteString(fmt.Sprintf("%d\n", exitStatus)); err != nil {
-		return fmt.Errorf("Failed to write exit status log for status code '%d': %v", exitStatus, err)
+		return 1, fmt.Errorf("Failed to write exit status log for status code '%d': %v", exitStatus, err)
 	}
 
-	return nil
+	return exitStatus, nil
 }

@@ -142,11 +142,27 @@ func (mgr *Manager) RunModule(ctx context.Context, logger *slog.Logger, mod Modu
 			return fmt.Errorf("Failed to template script: %s", err)
 		}
 
-		if err := shell.Run(ctx, runID, mod.m.Test, renderedTest, allVars); err != nil {
+		rc, err := shell.Run(ctx, runID, mod.m.Test, renderedTest, allVars)
+		switch {
+		case err != nil:
 			// if test script for a module fails, log a warning for user and continue with apply
 			metricManagerModuleRunFailedTotal.With(labels).Inc()
-			logger.WarnContext(ctx, "Failed module test, running apply to get system to desired state")
-		} else {
+			logger.LogAttrs(
+				ctx,
+				slog.LevelWarn,
+				"Failed to run module test",
+				slog.String("err", err.Error()),
+			)
+		case rc != 0:
+			// if test script for a module fails, log a warning for user and continue with apply
+			metricManagerModuleRunFailedTotal.With(labels).Inc()
+			logger.LogAttrs(
+				ctx,
+				slog.LevelWarn,
+				"Failed to run module test, received non-zero exit code",
+				slog.Any("exit_code", rc),
+			)
+		default:
 			metricManagerModuleRunTotal.With(labels).Inc()
 			metricManagerModuleRunSuccessTimestamp.With(labels).Set(float64(testStart.Unix()))
 		}
@@ -164,7 +180,7 @@ func (mgr *Manager) RunModule(ctx context.Context, logger *slog.Logger, mod Modu
 		return fmt.Errorf("Failed to template script: %s", err)
 	}
 
-	err = shell.Run(ctx, runID, mod.m.Apply, renderedApply, allVars)
+	rc, err := shell.Run(ctx, runID, mod.m.Apply, renderedApply, allVars)
 
 	// update metrics regardless of error, so do them before handling error
 	applyEnd := time.Since(applyStart)
@@ -174,7 +190,12 @@ func (mgr *Manager) RunModule(ctx context.Context, logger *slog.Logger, mod Modu
 
 	if err != nil {
 		metricManagerModuleRunFailedTotal.With(labels).Inc()
-		return fmt.Errorf("Failed to apply module: %v", err)
+		return fmt.Errorf("Failed to run module apply: %v", err)
+	}
+
+	if rc != 0 {
+		metricManagerModuleRunFailedTotal.With(labels).Inc()
+		return fmt.Errorf("Failed to run module apply, non-zero exit code returned: %d", rc)
 	}
 
 	return nil
