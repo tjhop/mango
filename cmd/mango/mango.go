@@ -435,6 +435,7 @@ func main() {
 	flag.StringP("logging.level", "l", "", "Logging level may be one of: [trace, debug, info, warning, error, fatal and panic]")
 	flag.String("logging.output", "logfmt", "Logging format may be one of: [logfmt, json]")
 	flag.String("hostname", "", "(Requires root) Custom hostname to use [default is system hostname]")
+	flag.Bool("manager.skip-apply-on-test-success", false, "If enabled, this will allow mango to skip running the module's idempotent `apply` script if the `test` script passes without issues")
 	flag.BoolP("help", "h", false, "Prints help and usage information")
 	flag.BoolP("version", "v", false, "Prints version and build info")
 

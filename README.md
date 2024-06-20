@@ -44,12 +44,14 @@ All options:
                           |___/
 
 Usage of ./mango:
-  -h, --help                               Prints help and usage information
-      --hostname string                    (Requires root) Custom hostname to use [default is system hostname]
-  -i, --inventory.path string              Path to mango configuration inventory
-      --inventory.reload-interval string   Time duration for how frequently mango will auto reload and apply the inventory [default disabled]
-  -l, --logging.level string               Logging level may be one of: [trace, debug, info, warning, error, fatal and panic]
-      --logging.output string              Logging format may be one of: [logfmt, json] (default "logfmt")
+  -h, --help                                       Prints help and usage information
+      --hostname string                            (Requires root) Custom hostname to use [default is system hostname]
+  -i, --inventory.path string                      Path to mango configuration inventory
+      --inventory.reload-interval string           Time duration for how frequently mango will auto reload and apply the inventory [default disabled]
+  -l, --logging.level string                       Logging level may be one of: [trace, debug, info, warning, error, fatal and panic]
+      --logging.output string                      Logging format may be one of: [logfmt, json] (default "logfmt")
+      --manager.skip-apply-on-test-success apply   If enabled, this will allow mango to skip running the module's idempotent apply script if the `test` script passes without issues
+  -v, --version                                    Prints version and build info
 
 Mango is charityware, in honor of Bram Moolenaar and out of respect for Vim. You can use and copy it as much as you like, but you are encouraged to make a donation for needy children in Uganda.  Please visit the ICCF web site, available at these URLs:
 

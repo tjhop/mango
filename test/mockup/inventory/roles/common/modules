@@ -1,3 +1,4 @@
+skip-apply-on-test-success
 test-env-vars
 test-template
 test-requires-1

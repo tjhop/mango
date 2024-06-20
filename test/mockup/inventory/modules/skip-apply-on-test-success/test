@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+[ -f "/tmp/$(basename {{ .Mango.Metadata.ModuleName }}).skip-please" ] || exit 1
+
+echo "{{ .Mango.Metadata.ModuleName }} test" >> "/tmp/$(basename {{ .Mango.Metadata.ModuleName }}).script-execs"
