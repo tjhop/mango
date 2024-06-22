@@ -144,7 +144,7 @@ func (mgr *Manager) RunModule(ctx context.Context, logger *slog.Logger, mod Modu
 			return fmt.Errorf("Failed to template script: %s", err)
 		}
 
-		testRC, err := shell.Run(ctx, runID, mod.m.Test, renderedTest, allVars)
+		testRC, err = shell.Run(ctx, runID, mod.m.Test, renderedTest, allVars)
 		switch {
 		case err != nil:
 			// if test script for a module fails, log a warning for user and continue with apply
