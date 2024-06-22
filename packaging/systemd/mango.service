@@ -4,7 +4,8 @@ Wants=network.target
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/mango --inventory.path /opt/mango/inventory --inventory.reload-interval '5m'
+Environment="ARGS=--inventory.path /opt/mango/inventory --inventory.reload-interval '5m'"
+ExecStart=/usr/bin/mango ${ARGS}
 ExecReload=/bin/kill -SIGHUP $MAINPID
 Restart=on-failure
 KillSignal=SIGINT
