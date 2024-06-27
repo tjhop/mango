@@ -101,7 +101,7 @@ func getUpdatedVars(oldVars, newVars VariableSlice) VariableSlice {
 
 	// compare envs before and after and only return the new/updated variables
 	for _, newKV := range newVars {
-		newTokens := strings.Split(newKV, "=")
+		newTokens := strings.SplitN(newKV, "=", 2)
 		if len(newTokens) != 2 {
 			continue
 		}
@@ -110,7 +110,7 @@ func getUpdatedVars(oldVars, newVars VariableSlice) VariableSlice {
 		found := false
 
 		for _, oldKV := range oldVars {
-			oldTokens := strings.Split(oldKV, "=")
+			oldTokens := strings.SplitN(oldKV, "=", 2)
 			if len(oldTokens) != 2 {
 				continue
 			}
@@ -168,7 +168,7 @@ func flattenEnvVarMap(varMap map[string]expand.Variable) VariableSlice {
 func MakeVariableMap(varSlice VariableSlice) VariableMap {
 	varMap := make(VariableMap)
 	for _, v := range varSlice {
-		tokens := strings.Split(v, "=")
+		tokens := strings.SplitN(v, "=", 2)
 		if len(tokens) != 2 {
 			continue
 		}
