@@ -13,20 +13,22 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// Group contains fields that represent a given group of groups in the inventory.
+// Group contains fields that represent a given group of hosts in the inventory.
 // - id: string idenitfying the group
 // - globs: a slice of glob patterns to match against the instance's hostname
 // - patterns: a slice of regex patterns to match against the instance's hostname
 // - roles: a slice of roles that are applied to this host
 // - modules: a slice of ad-hoc module names applied to this host
 // - variables: path to the variables file for this group, if present
+// - templateFiles: slice of paths of user defined template files
 type Group struct {
-	id        string
-	globs     []string
-	patterns  []string
-	modules   []string
-	roles     []string
-	variables string
+	id            string
+	globs         []string
+	patterns      []string
+	modules       []string
+	roles         []string
+	variables     string
+	templateFiles []string
 }
 
 // String is a stringer to return the group ID
@@ -90,6 +92,20 @@ func (i *Inventory) ParseGroups(ctx context.Context, logger *slog.Logger) error 
 			group := Group{id: groupDir.Name()}
 
 			for _, groupFile := range groupFiles {
+				if groupFile.IsDir() && groupFile.Name() == "templates" {
+					templatedir := filepath.Join(groupPath, "templates")
+
+					// From docs:
+					// > Glob ignores file system errors such
+					// > as I/O errors reading directories.
+					// > The only possible returned error is
+					// > ErrBadPattern, when pattern is
+					// > malformed.
+					// ...I'm making the pattern. I know it's not malformed.
+					matchedTpls, _ := filepath.Glob(filepath.Join(templatedir, "*.tpl"))
+					group.templateFiles = matchedTpls
+				}
+
 				if !groupFile.IsDir() && !utils.IsHidden(groupFile.Name()) {
 					fileName := groupFile.Name()
 					switch fileName {

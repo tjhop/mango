@@ -15,10 +15,12 @@ import (
 // - ID: string idenitfying the role (generally the file path to the role)
 // - Modules: a []string of module names that satisfy this role
 // - variables: path to the variables file for this role, if present
+// - templateFiles: slice of paths of user defined template files
 type Role struct {
-	id        string
-	modules   []string
-	variables string
+	id            string
+	modules       []string
+	variables     string
+	templateFiles []string
 }
 
 // String is a stringer to return the role ID
@@ -80,6 +82,20 @@ func (i *Inventory) ParseRoles(ctx context.Context, logger *slog.Logger) error {
 			role := Role{id: rolePath}
 
 			for _, roleFile := range roleFiles {
+				if roleFile.IsDir() && roleFile.Name() == "templates" {
+					templatedir := filepath.Join(rolePath, "templates")
+
+					// From docs:
+					// > Glob ignores file system errors such
+					// > as I/O errors reading directories.
+					// > The only possible returned error is
+					// > ErrBadPattern, when pattern is
+					// > malformed.
+					// ...I'm making the pattern. I know it's not malformed.
+					matchedTpls, _ := filepath.Glob(filepath.Join(templatedir, "*.tpl"))
+					role.templateFiles = matchedTpls
+				}
+
 				if !roleFile.IsDir() && !utils.IsHidden(roleFile.Name()) {
 					fileName := roleFile.Name()
 					switch fileName {

@@ -16,11 +16,13 @@ import (
 // - roles: a slice of roles that are applied to this host
 // - modules: a slice of ad-hoc module names applied to this host
 // - variables: path to the variables file for this host, if present
+// - templateFiles: slice of paths of user defined template files
 type Host struct {
-	id        string
-	modules   []string
-	roles     []string
-	variables string
+	id            string
+	modules       []string
+	roles         []string
+	variables     string
+	templateFiles []string
 }
 
 // String is a stringer to return the host ID
@@ -83,6 +85,20 @@ func (i *Inventory) ParseHosts(ctx context.Context, logger *slog.Logger) error {
 			host := Host{id: hostDir.Name()}
 
 			for _, hostFile := range hostFiles {
+				if hostFile.IsDir() && hostFile.Name() == "templates" {
+					templatedir := filepath.Join(hostPath, "templates")
+
+					// From docs:
+					// > Glob ignores file system errors such
+					// > as I/O errors reading directories.
+					// > The only possible returned error is
+					// > ErrBadPattern, when pattern is
+					// > malformed.
+					// ...I'm making the pattern. I know it's not malformed.
+					matchedTpls, _ := filepath.Glob(filepath.Join(templatedir, "*.tpl"))
+					host.templateFiles = matchedTpls
+				}
+
 				if !hostFile.IsDir() && !utils.IsHidden(hostFile.Name()) {
 					fileName := hostFile.Name()
 					switch fileName {
