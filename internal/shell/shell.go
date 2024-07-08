@@ -204,7 +204,6 @@ func MergeVariables(maps ...VariableMap) VariableSlice {
 //   - string containing the contents of the templated script
 //   - a slice of strings in `key=value` pair containing the merged variables to
 //     be provided to the script as environment variables
-//
 func Run(ctx context.Context, runID ulid.ULID, path, content string, allVars []string) (uint8, error) {
 	if content == "" {
 		return 1, fmt.Errorf("No script data provided")
