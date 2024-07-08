@@ -8,7 +8,7 @@ require (
 	github.com/go-sprout/sprout v0.4.1
 	github.com/gobwas/glob v0.2.3
 	github.com/hashicorp/go-sockaddr v1.0.6
-	github.com/moby/moby v27.0.0+incompatible
+	github.com/moby/moby v27.0.3+incompatible
 	github.com/oklog/run v1.1.0
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/prometheus/client_golang v1.19.1
