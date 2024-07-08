@@ -130,6 +130,7 @@ type Store interface {
 	GetRolesForHost(host string) []Role
 	GetGroupsForHost(host string) []Group
 	GetVariablesForHost(host string) []string
+	GetTemplatesForHost(host string) []string
 
 	// Self checks
 	GetDirectivesForSelf() []Directive
@@ -137,6 +138,7 @@ type Store interface {
 	GetRolesForSelf() []Role
 	GetGroupsForSelf() []Group
 	GetVariablesForSelf() []string
+	GetTemplatesForSelf() []string
 }
 
 // NewInventory parses the files/directories in the provided path
@@ -461,6 +463,36 @@ func (i *Inventory) GetVariablesForHost(host string) []string {
 // last (to allow for overriding default group variable data).
 func (i *Inventory) GetVariablesForSelf() []string {
 	return i.GetVariablesForHost(i.hostname)
+}
+
+// GetTemplatesForHost returns slice of strings, containing the paths of any
+// templates files found for this host. All role templates are provided first,
+// then group templates second, with host-specific templates provided last (to
+// allow for overriding default group variable data).
+func (i *Inventory) GetTemplatesForHost(host string) []string {
+	var tmpls []string
+
+	for _, role := range i.GetRolesForHost(host) {
+		tmpls = append(tmpls, role.templateFiles...)
+	}
+
+	for _, group := range i.GetGroupsForHost(host) {
+		tmpls = append(tmpls, group.templateFiles...)
+	}
+
+	if h, found := i.GetHost(host); found {
+		tmpls = append(tmpls, h.templateFiles...)
+	}
+
+	return tmpls
+}
+
+// GetTemplatesForSelf returns slice of strings, containing the paths of any
+// templates files found for the running host. All role templates are provided
+// first, then group templates second, with host-specific templates provided
+// last (to allow for overriding default group variable data).
+func (i *Inventory) GetTemplatesForSelf() []string {
+	return i.GetTemplatesForHost(i.hostname)
 }
 
 func filterDuplicateModules(input []Module) []Module {
