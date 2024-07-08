@@ -149,6 +149,7 @@ func NewInventory(path, name string) *Inventory {
 		modules:       []Module{},
 		roles:         []Role{},
 		directives:    []Directive{},
+		groups:        []Group{},
 	}
 	metricMangoInventoryInfoLabels["hostname"] = name
 	metricMangoInventoryInfoLabels["inventory_path"] = path
