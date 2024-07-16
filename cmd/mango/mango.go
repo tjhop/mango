@@ -146,14 +146,7 @@ func mango(ctx context.Context, logger *slog.Logger, inventoryPath, hostname str
 	inv.Reload(ctx, inventoryLogger)
 
 	// start manager, reload it with data from inventory, and then start a run of everything for the system
-	managerLogger := logger.With(
-		slog.String("worker", "manager"),
-		slog.Group(
-			"manager",
-			slog.String("inventory", inventoryPath),
-			slog.String("hostname", hostname),
-		),
-	)
+	managerLogger := logger.With(slog.String("worker", "manager"))
 	managerLogger.LogAttrs(
 		ctx,
 		slog.LevelInfo,

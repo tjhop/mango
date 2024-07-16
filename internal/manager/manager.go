@@ -89,6 +89,8 @@ func (mgr *Manager) ReloadAndRunAll(ctx context.Context, logger *slog.Logger, in
 	mLogger := logger.With(
 		slog.Group(
 			"manager",
+			slog.String("inventory", inv.GetInventoryPath()),
+			slog.String("hostname", inv.GetHostname()),
 			slog.Bool(string(contextKeyEnrolled), enrolled),
 			slog.String(string(contextKeyRunID), runID.String()),
 		),
