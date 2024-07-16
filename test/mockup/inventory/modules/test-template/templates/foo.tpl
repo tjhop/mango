@@ -1,7 +1,9 @@
 {{- define "foo" }}
 This part of the template was defined among the common templates in {{ list .Mango.Metadata.ModuleName "templates/*.tpl" | join "/" | quote }}
-
-{{ template "inspirational_quote" . | toString }}
+{{ template "group_template" . }}
+{{ template "role_template" . }}
+{{ template "host_template" . }}
+{{ template "inspirational_quote" . }}
 {{- end }}
 
 {{- define "inspirational_quote" }}

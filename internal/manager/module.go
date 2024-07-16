@@ -55,7 +55,7 @@ func (mgr *Manager) ReloadModules(ctx context.Context, logger *slog.Logger) {
 		// if the module has a variables file set, source it and store
 		// the expanded variables
 		if mod.Variables != "" {
-			newMod.Variables = mgr.ReloadVariables(ctx, modLogger, []string{mod.Variables}, shell.MakeVariableMap(mgr.hostVariables))
+			newMod.Variables = mgr.ReloadVariables(ctx, modLogger, []string{mod.Variables}, shell.MakeVariableMap(mgr.hostVariables), mgr.hostTemplates)
 		} else {
 			modLogger.DebugContext(ctx, "No module variables")
 		}
@@ -126,6 +126,7 @@ func (mgr *Manager) RunModule(ctx context.Context, logger *slog.Logger, mod Modu
 	allVars := shell.MergeVariables(hostVarsMap, modVarsMap)
 	allVarsMap := shell.MakeVariableMap(allVars)
 	allTemplateData := mgr.getTemplateData(ctx, mod.String(), hostVarsMap, modVarsMap, allVarsMap)
+	allUserTemplateFiles := append(mgr.hostTemplates, mod.m.TemplateFiles...)
 
 	var testRC uint8
 	if mod.m.Test == "" {
@@ -139,7 +140,7 @@ func (mgr *Manager) RunModule(ctx context.Context, logger *slog.Logger, mod Modu
 		labels["script"] = "test"
 		metricManagerModuleRunTimestamp.With(labels).Set(float64(testStart.Unix()))
 
-		renderedTest, err := templateScript(ctx, mod.m.Test, allTemplateData, mgr.funcMap, mod.m.TemplateFiles...)
+		renderedTest, err := templateScript(ctx, mod.m.Test, allTemplateData, mgr.funcMap, allUserTemplateFiles...)
 		if err != nil {
 			return fmt.Errorf("Failed to template script: %s", err)
 		}
@@ -187,7 +188,7 @@ func (mgr *Manager) RunModule(ctx context.Context, logger *slog.Logger, mod Modu
 	labels["script"] = "apply"
 	metricManagerModuleRunTimestamp.With(labels).Set(float64(applyStart.Unix()))
 
-	renderedApply, err := templateScript(ctx, mod.m.Apply, allTemplateData, mgr.funcMap, mod.m.TemplateFiles...)
+	renderedApply, err := templateScript(ctx, mod.m.Apply, allTemplateData, mgr.funcMap, allUserTemplateFiles...)
 	if err != nil {
 		return fmt.Errorf("Failed to template script: %s", err)
 	}

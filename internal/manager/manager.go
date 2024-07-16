@@ -39,6 +39,7 @@ type Manager struct {
 	directives         []Directive
 	executedDirectives map[string]struct{} // stores the ID of the directive as key
 	hostVariables      VariableSlice
+	hostTemplates      []string
 	runLock            sync.Mutex
 	funcMap            template.FuncMap
 	tmplData           templateData
@@ -127,18 +128,20 @@ func (mgr *Manager) Reload(ctx context.Context, logger *slog.Logger, inv invento
 	// triggered directly after a reload of data from inventory)
 	hostVarsPaths := inv.GetVariablesForSelf()
 	if len(hostVarsPaths) > 0 {
-		mgr.hostVariables = mgr.ReloadVariables(ctx, logger, hostVarsPaths, nil)
+		mgr.hostVariables = mgr.ReloadVariables(ctx, logger, hostVarsPaths, nil, nil)
 	} else {
 		logger.DebugContext(ctx, "No host variables")
 	}
+
+	mgr.hostTemplates = inv.GetTemplatesForSelf()
 }
 
-func (mgr *Manager) ReloadVariables(ctx context.Context, logger *slog.Logger, paths []string, hostVars VariableMap) VariableSlice {
+func (mgr *Manager) ReloadVariables(ctx context.Context, logger *slog.Logger, paths []string, hostVars VariableMap, hostTemplates []string) VariableSlice {
 	var varMaps []VariableMap
 
 	for _, path := range paths {
 		allTemplateData := mgr.getTemplateData(ctx, path, hostVars, nil, hostVars)
-		renderedVars, err := templateScript(ctx, path, allTemplateData, mgr.funcMap)
+		renderedVars, err := templateScript(ctx, path, allTemplateData, mgr.funcMap, hostTemplates...)
 		if err != nil {
 			logger.LogAttrs(
 				ctx,
