@@ -13,8 +13,10 @@ RUN pacman -Syu --needed --noconfirm && \
         iproute2 \
         jq \
         less \
+        pacman-contrib \
         && \
-pacman -Scc --needed --noconfirm
+        pacman -Scc --needed --noconfirm && \
+        paccache -rk0
 
 # setup mango
 COPY ./mango /usr/bin/mango
