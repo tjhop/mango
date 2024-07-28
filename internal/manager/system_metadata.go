@@ -219,7 +219,8 @@ func getStorageMetadata(ctx context.Context, logger *slog.Logger) storageMetadat
 	for _, blockDev := range blockDevs {
 		blockDevPath := filepath.Join(blockDevDir, blockDev)
 		qStats, err := fs.SysBlockDeviceQueueStats(blockDev)
-		if err != nil {
+		// block dev queue stats may not exist for all devices
+		if err != nil && !os.IsNotExist(err) {
 			mdLogger.LogAttrs(
 				ctx,
 				slog.LevelError,
