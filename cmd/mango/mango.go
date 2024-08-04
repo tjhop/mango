@@ -460,7 +460,7 @@ func main() {
 	}
 
 	// parse log level from flag
-	logLevelFlagVal := strings.TrimSpace(strings.ToLower(viper.GetString("logging.level")))
+	logLevelFlagVal := normalizeStringFlag(viper.GetString("logging.level"))
 	switch logLevelFlagVal {
 	case "info": // default is info, we're good
 	case "warn":
@@ -485,7 +485,7 @@ func main() {
 	metricMangoRuntimeInfo.With(metricMangoRuntimeInfoLabels).Set(1)
 
 	// parse log output format from flag
-	logOutputFormat := strings.TrimSpace(strings.ToLower(viper.GetString("logging.output")))
+	logOutputFormat := normalizeStringFlag(viper.GetString("logging.output"))
 	if logOutputFormat == "json" {
 		jsonLogHandler := slog.NewJSONHandler(os.Stdout, logHandlerOpts)
 		logger = slog.New(jsonLogHandler)
@@ -542,4 +542,8 @@ func main() {
 
 	// run mango daemon
 	mango(rootCtx, mainLogger, inventoryPath, me)
+}
+
+func normalizeStringFlag(s string) string {
+	return strings.TrimSpace(strings.ToLower(s))
 }
