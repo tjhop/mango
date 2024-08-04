@@ -462,6 +462,9 @@ func main() {
 	// parse log level from flag
 	logLevelFlagVal := normalizeStringFlag(viper.GetString("logging.level"))
 	switch logLevelFlagVal {
+	case "":
+		logLevel.Set(slog.LevelInfo)
+		logger.LogAttrs(rootCtx, slog.LevelWarn, "Log level flag not set, defaulting to <info> level")
 	case "info": // default is info, we're good
 	case "warn":
 		logLevel.Set(slog.LevelWarn)
