@@ -481,7 +481,7 @@ func main() {
 	}
 
 	// update runtime info metric
-	metricMangoRuntimeInfoLabels["log_level"] = strings.ToLower(logLevel.Level().String())
+	metricMangoRuntimeInfoLabels["log_level"] = logLevelFlagVal
 	metricMangoRuntimeInfo.With(metricMangoRuntimeInfoLabels).Set(1)
 
 	// parse log output format from flag
