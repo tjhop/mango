@@ -25,7 +25,7 @@ var (
 		[]string{"module", "script"},
 	)
 
-	metricManagerModuleRunDuration = prometheus.NewHistogramVec(
+	metricManagerModuleRunDuration = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Name:    "mango_manager_module_run_duration_seconds",
 			Help:    "Histogram of durations of how long it took a given module to run, in seconds",
