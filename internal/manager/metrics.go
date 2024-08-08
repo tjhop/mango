@@ -11,7 +11,7 @@ var (
 	// module run stat metrics
 	metricManagerModuleRunTimestamp = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "mango_manager_module_run_seconds",
+			Name: "mango_manager_module_run_timestamp_seconds",
 			Help: "Timestamp of the last run of the given module, in seconds since the epoch",
 		},
 		[]string{"module", "script"},
@@ -19,7 +19,7 @@ var (
 
 	metricManagerModuleRunSuccessTimestamp = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "mango_manager_module_run_success_seconds",
+			Name: "mango_manager_module_run_success_timestamp_seconds",
 			Help: "Timestamp of the last successful run of the given module, in seconds since the epoch",
 		},
 		[]string{"module", "script"},
@@ -53,7 +53,7 @@ var (
 	// directive run stat metrics
 	metricManagerDirectiveRunTimestamp = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "mango_manager_directive_run_seconds",
+			Name: "mango_manager_directive_run_timestamp_seconds",
 			Help: "Timestamp of the last run of the given directive, in seconds since the epoch",
 		},
 		[]string{"directive"},
@@ -61,7 +61,7 @@ var (
 
 	metricManagerDirectiveRunSuccessTimestamp = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "mango_manager_directive_run_success_seconds",
+			Name: "mango_manager_directive_run_success_timestamp_seconds",
 			Help: "Timestamp of the last successful run of the given directive, in seconds since the epoch",
 		},
 		[]string{"directive"},

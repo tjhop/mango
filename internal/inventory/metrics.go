@@ -41,7 +41,7 @@ var (
 
 	metricInventoryReloadSeconds = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "mango_inventory_reload_seconds",
+			Name: "mango_inventory_reload_timestamp_seconds",
 			Help: "Unix timestamp of the last successful mango inventory reload",
 		},
 		commonMetricLabels,
