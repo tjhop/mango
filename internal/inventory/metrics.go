@@ -25,16 +25,16 @@ var (
 
 	metricInventory = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "mango_inventory",
-			Help: "Number items in each component of the inventory",
+			Name: "mango_inventory_items",
+			Help: "Number of items in each component of the inventory",
 		},
 		commonMetricLabels,
 	)
 
 	metricInventoryApplicable = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "mango_inventory_applicable",
-			Help: "Number items in each component of the inventory that are applicable to this system",
+			Name: "mango_inventory_items_applicable",
+			Help: "Number of items in each component of the inventory that are applicable to this system",
 		},
 		commonMetricLabels,
 	)
