@@ -4,7 +4,8 @@ Wants=network.target
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/promtail -config.file=/etc/promtail/config.yaml
+Environment="HOSTNAME=%H"
+ExecStart=/usr/bin/promtail -config.file=/etc/promtail/config.yaml -config.expand-env=true
 Restart=on-failure
 KillSignal=SIGINT
 LimitNOFILE=8192
