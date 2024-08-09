@@ -193,21 +193,19 @@ func (mgr *Manager) RunModule(ctx context.Context, logger *slog.Logger, mod Modu
 	}
 
 	applyRC, err := shell.Run(ctx, runID, mod.m.Apply, renderedApply, allVars)
-
 	// update metrics regardless of error, so do them before handling error
-	applyEnd := time.Since(applyStart)
-	metricManagerModuleRunSuccessTimestamp.With(labels).Set(float64(applyStart.Unix()))
-	metricManagerModuleRunDuration.With(labels).Observe(float64(applyEnd))
+	metricManagerModuleRunDuration.With(labels).Observe(float64(time.Since(applyStart).Seconds()))
 	metricManagerModuleRunTotal.With(labels).Inc()
-
-	if err != nil {
+	switch {
+	case err != nil:
 		metricManagerModuleRunFailedTotal.With(labels).Inc()
 		return fmt.Errorf("Failed to run module apply: %v", err)
-	}
-
-	if applyRC != 0 {
+	case applyRC != 0:
+		// if apply script for a module fails, log a warning for user and continue with apply
 		metricManagerModuleRunFailedTotal.With(labels).Inc()
 		return fmt.Errorf("Failed to run module apply, non-zero exit code returned: %d", applyRC)
+	default:
+		metricManagerModuleRunSuccessTimestamp.With(labels).Set(float64(applyStart.Unix()))
 	}
 
 	return nil
