@@ -29,7 +29,7 @@ var (
 		prometheus.HistogramOpts{
 			Name:    "mango_manager_module_run_duration_seconds",
 			Help:    "Histogram of durations of how long it took a given module to run, in seconds",
-			Buckets: prometheus.ExponentialBuckets(1, 2, 8),
+			Buckets: prometheus.ExponentialBuckets(0.25, 2, 10),
 		},
 		[]string{"module", "script"},
 	)
