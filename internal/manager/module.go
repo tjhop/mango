@@ -146,6 +146,8 @@ func (mgr *Manager) RunModule(ctx context.Context, logger *slog.Logger, mod Modu
 		}
 
 		testRC, err = shell.Run(ctx, runID, mod.m.Test, renderedTest, allVars)
+		// update metrics regardless of error, so do them before handling error
+		metricManagerModuleRunTotal.With(labels).Inc()
 		switch {
 		case err != nil:
 			// if test script for a module fails, log a warning for user and continue with apply
@@ -166,7 +168,6 @@ func (mgr *Manager) RunModule(ctx context.Context, logger *slog.Logger, mod Modu
 				slog.Any("exit_code", testRC),
 			)
 		default:
-			metricManagerModuleRunTotal.With(labels).Inc()
 			metricManagerModuleRunSuccessTimestamp.With(labels).Set(float64(testStart.Unix()))
 		}
 
