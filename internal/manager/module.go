@@ -147,6 +147,7 @@ func (mgr *Manager) RunModule(ctx context.Context, logger *slog.Logger, mod Modu
 
 		testRC, err = shell.Run(ctx, runID, mod.m.Test, renderedTest, allVars)
 		// update metrics regardless of error, so do them before handling error
+		metricManagerModuleRunDuration.With(labels).Observe(float64(time.Since(testStart).Seconds()))
 		metricManagerModuleRunTotal.With(labels).Inc()
 		switch {
 		case err != nil:
@@ -170,9 +171,6 @@ func (mgr *Manager) RunModule(ctx context.Context, logger *slog.Logger, mod Modu
 		default:
 			metricManagerModuleRunSuccessTimestamp.With(labels).Set(float64(testStart.Unix()))
 		}
-
-		testEnd := time.Since(testStart)
-		metricManagerModuleRunDuration.With(labels).Observe(float64(testEnd))
 	}
 
 	if viper.GetBool("manager.skip-apply-on-test-success") && mod.m.Test != "" && testRC == 0 {
