@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"net"
 	"path/filepath"
 	"sync"
 	"text/template"
@@ -120,34 +119,4 @@ func (mgr *Manager) getTemplateData(ctx context.Context, name string, host, mod,
 	return templateView{
 		Mango: allTemplateData,
 	}
-}
-
-// custom template functions
-
-// isIPv4 returns true if the given string is an IPv4 address and false otherwise
-func isIPv4(s string) bool {
-	ip := net.ParseIP(s)
-	if ip == nil {
-		return false
-	}
-
-	ip4 := ip.To4()
-	return ip4 != nil
-}
-
-// isIPv6 returns true if the given string is an IPv6 address and false otherwise
-func isIPv6(s string) bool {
-	ip := net.ParseIP(s)
-	if ip == nil {
-		return false
-	}
-
-	// short circuit if it's an IPv4
-	ip4 := ip.To4()
-	if ip4 != nil {
-		return false
-	}
-
-	ip6 := ip.To16()
-	return ip6 != nil
 }

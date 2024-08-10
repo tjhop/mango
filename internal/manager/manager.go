@@ -15,6 +15,7 @@ import (
 
 	"github.com/tjhop/mango/internal/inventory"
 	"github.com/tjhop/mango/internal/shell"
+	"github.com/tjhop/mango/pkg/utils"
 )
 
 type contextKey string
@@ -51,8 +52,8 @@ func (mgr *Manager) String() string { return mgr.id }
 // NewManager returns a new Manager struct instantiated with the given ID
 func NewManager(id string) *Manager {
 	funcs := template.FuncMap{
-		"isIPv4":         isIPv4,
-		"isIPv6":         isIPv6,
+		"isIPv4":         utils.IsIPv4,
+		"isIPv6":         utils.IsIPv6,
 		"humanizeBytes":  humanize.Bytes,
 		"humanizeIBytes": humanize.IBytes,
 	}

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io/fs"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -81,4 +82,32 @@ func GetHostname() string {
 
 func IsHidden(path string) bool {
 	return strings.HasPrefix(path, ".")
+}
+
+// IsIPv4 returns true if the given string is an IPv4 address and false otherwise
+func IsIPv4(s string) bool {
+	ip := net.ParseIP(s)
+	if ip == nil {
+		return false
+	}
+
+	ip4 := ip.To4()
+	return ip4 != nil
+}
+
+// IsIPv6 returns true if the given string is an IPv6 address and false otherwise
+func IsIPv6(s string) bool {
+	ip := net.ParseIP(s)
+	if ip == nil {
+		return false
+	}
+
+	// short circuit if it's an IPv4
+	ip4 := ip.To4()
+	if ip4 != nil {
+		return false
+	}
+
+	ip6 := ip.To16()
+	return ip6 != nil
 }
