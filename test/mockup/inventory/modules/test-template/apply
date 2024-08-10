@@ -85,11 +85,11 @@ Checking IPv4 Validation:
     Google DNS 8.8.8.8: {{ isIPv4 "8.8.8.8" }}
     My IP {{ GetPrivateIP }}: {{ GetPrivateIP | isIPv4 }}
     Bad IP '1.2.j': {{ isIPv4 "1.2.j" }}
-{{- with $myipv6 := GetAllInterfaces | include "type" "IPv6" | include "flags" "global unicast" | attr "address" }}
 Checking IPv6 Validation:
     Google DNS 2001:4860:4860::8888: {{ isIPv6 "2001:4860:4860::8888" }}
-    My IP {{ $myipv6 }}: {{ $myipv6 | isIPv6 }}
     Bad IP '1.2.j': {{ isIPv6 "1.2.j" }}
+{{- with $myipv6 := GetAllInterfaces | include "type" "IPv6" | include "flags" "global unicast" | attr "address" }}
+    My IP {{ $myipv6 }}: {{ $myipv6 | isIPv6 }}
 {{- end }}
 Done.
 -------------------
