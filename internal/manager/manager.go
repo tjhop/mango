@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	"github.com/dominikbraun/graph"
+	"github.com/dustin/go-humanize"
 	"github.com/oklog/ulid/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"mvdan.cc/sh/v3/syntax"
@@ -52,8 +53,8 @@ func NewManager(id string) *Manager {
 	funcs := template.FuncMap{
 		"isIPv4":         isIPv4,
 		"isIPv6":         isIPv6,
-		"humanizeBytes":  humanizeBytes,
-		"humanizeIBytes": humanizeIBytes,
+		"humanizeBytes":  humanize.Bytes,
+		"humanizeIBytes": humanize.IBytes,
 	}
 
 	return &Manager{
