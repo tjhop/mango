@@ -138,13 +138,14 @@ func isIPv4(s string) bool {
 
 // isIPv6 returns true if the given string is an IPv6 address and false otherwise
 func isIPv6(s string) bool {
-	// short circuit if it's an IPv4
-	if isIPv4(s) {
+	ip := net.ParseIP(s)
+	if ip == nil {
 		return false
 	}
 
-	ip := net.ParseIP(s)
-	if ip == nil {
+	// short circuit if it's an IPv4
+	ip4 := ip.To4()
+	if ip4 != nil {
 		return false
 	}
 
