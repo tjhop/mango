@@ -156,9 +156,14 @@ func (i *Inventory) Reload(ctx context.Context, logger *slog.Logger) {
 		)
 	}
 
-	// update inventory metrics
-	metricMangoInventoryInfoLabels["enrolled"] = strconv.FormatBool(i.IsEnrolled())
-	metricMangoInventoryInfo.With(metricMangoInventoryInfoLabels).Set(1)
+	// update inventory metrics -- if enrollment status has changed, unset
+	// old metric value as well as set new value
+	enrolled := strconv.FormatBool(i.IsEnrolled())
+	if enrolled != metricMangoInventoryInfoLabels["enrolled"] {
+		metricMangoInventoryInfo.Reset()
+		metricMangoInventoryInfoLabels["enrolled"] = enrolled
+		metricMangoInventoryInfo.With(metricMangoInventoryInfoLabels).Set(1)
+	}
 }
 
 // IsHostEnrolled returns if the provided hostname of the system is defined in
