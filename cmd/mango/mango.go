@@ -425,7 +425,7 @@ func main() {
 	// prep and parse flags
 	flag.StringP("inventory.path", "i", "", "Path to mango configuration inventory")
 	flag.String("inventory.reload-interval", "", "Time duration for how frequently mango will auto reload and apply the inventory [default disabled]")
-	flag.StringP("logging.level", "l", "", "Logging level may be one of: [trace, debug, info, warning, error, fatal and panic]")
+	flag.StringP("logging.level", "l", "", "Logging level may be one of: [debug, info, warning, error]")
 	flag.String("logging.output", "logfmt", "Logging format may be one of: [logfmt, json]")
 	flag.String("hostname", "", "(Requires root) Custom hostname to use [default is system hostname]")
 	flag.Bool("manager.skip-apply-on-test-success", false, "If enabled, this will allow mango to skip running the module's idempotent `apply` script if the `test` script passes without issues")
