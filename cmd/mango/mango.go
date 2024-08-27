@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -413,15 +414,6 @@ func cleanup(ctx context.Context, logger *slog.Logger) {
 }
 
 func main() {
-	// create root logger with default configs, parse out updated configs from flags
-	logLevel := new(slog.LevelVar) // default to info level logging
-	logHandlerOpts := &slog.HandlerOptions{
-		Level: logLevel,
-	}
-	logHandler := slog.NewTextHandler(os.Stdout, logHandlerOpts) // use logfmt handler by default
-	logger := slog.New(logHandler)
-	rootCtx := context.Background()
-
 	// prep and parse flags
 	flag.StringP("inventory.path", "i", "", "Path to mango configuration inventory")
 	flag.String("inventory.reload-interval", "", "Time duration for how frequently mango will auto reload and apply the inventory [default disabled]")
@@ -439,13 +431,7 @@ func main() {
 
 	flag.Parse()
 	if err := viper.BindPFlags(flag.CommandLine); err != nil {
-		logger.LogAttrs(
-			rootCtx,
-			slog.LevelError,
-			"Failed to parse command line flags",
-			slog.String("err", err.Error()),
-		)
-		os.Exit(1)
+		panic(fmt.Errorf("Failed to parse command line flags: %s\n", err.Error()))
 	}
 
 	if viper.GetBool("help") {
@@ -457,6 +443,34 @@ func main() {
 	if viper.GetBool("version") {
 		fmt.Println(version.Print(programName))
 		os.Exit(0)
+	}
+
+	rootCtx := context.Background()
+
+	logLevel := new(slog.LevelVar) // default to info level logging
+	logHandlerOpts := &slog.HandlerOptions{
+		Level:     logLevel,
+		AddSource: true,
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			key := a.Key
+			switch key {
+			case slog.SourceKey:
+				src, _ := a.Value.Any().(*slog.Source)
+				a.Value = slog.StringValue(filepath.Base(src.File) + ":" + strconv.Itoa(src.Line))
+			default:
+			}
+
+			return a
+		},
+	}
+
+	// parse log output format from flag, create root logger with default configs
+	var logger *slog.Logger
+	logOutputFormat := normalizeStringFlag(viper.GetString("logging.output"))
+	if logOutputFormat == "json" {
+		logger = slog.New(slog.NewJSONHandler(os.Stdout, logHandlerOpts))
+	} else {
+		logger = slog.New(slog.NewTextHandler(os.Stdout, logHandlerOpts))
 	}
 
 	// parse log level from flag
@@ -486,17 +500,6 @@ func main() {
 	// update runtime info metric
 	metricMangoRuntimeInfoLabels["log_level"] = logLevelFlagVal
 	metricMangoRuntimeInfo.With(metricMangoRuntimeInfoLabels).Set(1)
-
-	// parse log output format from flag
-	logOutputFormat := normalizeStringFlag(viper.GetString("logging.output"))
-	if logOutputFormat == "json" {
-		jsonLogHandler := slog.NewJSONHandler(os.Stdout, logHandlerOpts)
-		logger = slog.New(jsonLogHandler)
-	}
-
-	if logger.Enabled(rootCtx, slog.LevelDebug) {
-		logHandlerOpts.AddSource = true
-	}
 
 	// ensure inventory is set
 	inventoryPath := viper.GetString("inventory.path")
