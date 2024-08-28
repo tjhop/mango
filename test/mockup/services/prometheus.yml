@@ -1,7 +1,7 @@
 global:
   scrape_interval: 5s # this should be increased for real deploys
   external_labels:
-    source: ns1-dell-prom
+    source: mango-test-prom
 
 rule_files:
   # - rules.yml
