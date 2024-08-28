@@ -15,12 +15,14 @@ networks:
 
 volumes:
   prometheus_data: {}
+  loki_data: {}
 
 services:
   loki:
     image: docker.io/grafana/loki:latest
     volumes:
       - ./test/mockup/services/loki-config.yaml:/etc/loki/local-config.yaml
+      - loki_data:/loki
     command: -config.file=/etc/loki/local-config.yaml
     networks:
       - mango
