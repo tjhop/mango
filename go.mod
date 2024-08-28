@@ -5,7 +5,7 @@ go 1.23.0
 require (
 	github.com/dominikbraun/graph v0.23.0
 	github.com/dustin/go-humanize v1.0.1
-	github.com/go-sprout/sprout v0.4.1
+	github.com/go-sprout/sprout v0.5.1
 	github.com/gobwas/glob v0.2.3
 	github.com/hashicorp/go-sockaddr v1.0.6
 	github.com/moby/moby v27.1.1+incompatible

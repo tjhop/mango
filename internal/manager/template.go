@@ -5,20 +5,29 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
-	"sync"
 	"text/template"
 
 	"github.com/go-sprout/sprout"
+	"github.com/go-sprout/sprout/registry/checksum"
+	"github.com/go-sprout/sprout/registry/conversion"
+	"github.com/go-sprout/sprout/registry/crypto"
+	"github.com/go-sprout/sprout/registry/encoding"
+	"github.com/go-sprout/sprout/registry/filesystem"
+	"github.com/go-sprout/sprout/registry/maps"
+	"github.com/go-sprout/sprout/registry/numeric"
+	"github.com/go-sprout/sprout/registry/random"
+	"github.com/go-sprout/sprout/registry/reflect"
+	"github.com/go-sprout/sprout/registry/regexp"
+	"github.com/go-sprout/sprout/registry/semver"
+	"github.com/go-sprout/sprout/registry/slices"
+	"github.com/go-sprout/sprout/registry/std"
+	"github.com/go-sprout/sprout/registry/strings"
+	"github.com/go-sprout/sprout/registry/time"
+	"github.com/go-sprout/sprout/registry/uniqueid"
 	socktmpl "github.com/hashicorp/go-sockaddr/template"
 	"github.com/oklog/ulid/v2"
 
 	"github.com/tjhop/mango/internal/shell"
-)
-
-var (
-	once                sync.Once
-	sproutFuncMap       template.FuncMap
-	sproutDisabledFuncs = []string{"env", "expandenv"}
 )
 
 type VariableSlice = shell.VariableSlice
@@ -49,20 +58,33 @@ type templateData struct {
 	Storage    storageMetadata
 }
 
-func init() {
-	once.Do(func() {
-		sproutFuncMap = sprout.TxtFuncMap()
-		for _, f := range sproutDisabledFuncs {
-			delete(sproutFuncMap, f)
-		}
-	})
-}
-
 func templateScript(ctx context.Context, path string, view templateView, funcMap template.FuncMap, invDefinedTemplates ...string) (string, error) {
 	var (
 		buf bytes.Buffer
 		err error
 	)
+
+	handler := sprout.New()
+	if err := handler.AddRegistries(
+		checksum.NewRegistry(),
+		conversion.NewRegistry(),
+		crypto.NewRegistry(),
+		encoding.NewRegistry(),
+		filesystem.NewRegistry(),
+		maps.NewRegistry(),
+		numeric.NewRegistry(),
+		random.NewRegistry(),
+		reflect.NewRegistry(),
+		regexp.NewRegistry(),
+		semver.NewRegistry(),
+		slices.NewRegistry(),
+		std.NewRegistry(),
+		strings.NewRegistry(),
+		time.NewRegistry(),
+		uniqueid.NewRegistry(),
+	); err != nil {
+		return "", fmt.Errorf("Failed to add sprout registries to handler: %s\n", err.Error())
+	}
 
 	// init template and funcs
 	t := template.New(filepath.Base(path)).
@@ -71,7 +93,7 @@ func templateScript(ctx context.Context, path string, view templateView, funcMap
 		Funcs(socktmpl.SortFuncs).
 		Funcs(socktmpl.FilterFuncs).
 		Funcs(socktmpl.HelperFuncs).
-		Funcs(sproutFuncMap)
+		Funcs(handler.Build())
 
 	if len(invDefinedTemplates) > 0 {
 		if t, err = t.ParseFiles(invDefinedTemplates...); err != nil {

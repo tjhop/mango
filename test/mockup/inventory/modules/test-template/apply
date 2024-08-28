@@ -70,8 +70,8 @@ Mount info:
 {{- end }}
 -------------------
 Testing template functions:
-String replacement (input 'foo foo foo', expected output 'bar foo foo'): {{ "foo foo foo" | replace "foo" "bar" }}
-Contrived regex replacement (input 'a   bc   d', expected output: 'abcd'): {{ mustRegexReplaceAll "([A-Za-z]+).+([A-Za-z]+).+([A-Za-z]+)" "a   bc   d" "$1$2$3" }}
+String replacement (input 'foo foo foo', expected output 'bar bar bar'): {{ "foo foo foo" | replace "foo" "bar" }}
+Contrived regex replacement (input 'a   bc   d', expected output: 'abcd'): {{ mustRegexReplaceAll "([A-Za-z]+) +([A-Za-z]+) +([A-Za-z]+)" "a   bc   d" "$1$2$3" }}
 Private IP: {{ GetPrivateIP }}
 Public IP: {{ GetPublicIP }}
 Interfaces: {{ GetAllInterfaces }}
