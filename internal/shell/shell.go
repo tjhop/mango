@@ -25,7 +25,7 @@ type VariableMap map[string]string
 // func with const []string return containing environment variables that get
 // removed from the environent when sourcing a file
 func getEnvVarBlacklist() []string {
-	return []string{"PWD", "HOME", "PATH", "IFS", "OPTIND", "GID", "UID"}
+	return []string{"PWD", "HOME", "PATH", "IFS", "OPTIND", "GID", "UID", "EUID"}
 }
 
 // SourceFile()/SourceNode() functions inspired heavily by old convenience
