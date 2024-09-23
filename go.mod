@@ -11,9 +11,9 @@ require (
 	github.com/moby/moby v27.2.0+incompatible
 	github.com/oklog/run v1.1.0
 	github.com/oklog/ulid/v2 v2.1.0
-	github.com/prometheus/client_golang v1.20.2
+	github.com/prometheus/client_golang v1.20.3
 	github.com/prometheus/procfs v0.15.1
-	github.com/quay/claircore v1.5.29
+	github.com/quay/claircore v1.5.31
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.19.0
 	mvdan.cc/sh/v3 v3.9.0
