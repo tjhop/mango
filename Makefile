@@ -24,12 +24,19 @@ lint:
 	mkdir -p ${GOLANGCILINT_CACHE} || true
 	podman run --rm -v ${CURDIR}:/app -v ${GOLANGCILINT_CACHE}:/root/.cache -w /app docker.io/golangci/golangci-lint:latest golangci-lint run -v
 
-## binary:		build a binary
-binary: fmt tidy lint
-	goreleaser build --clean --single-target --snapshot --output .
+## build-mango		build the `mango` configuration management server
+build-mango: fmt tidy lint
+	goreleaser build --clean --single-target --snapshot --output . --id "mango"
 
-## build:			alias for `binary`
-build: binary
+## build-mh		build `mh`, the helper tool for mango
+build-mh: fmt tidy lint
+	goreleaser build --clean --single-target --snapshot --output . --id "mh"
+
+## build:			alias for `build-mango build-mh`
+build: build-mango build-mh
+
+## binary:		alias for `build`
+binary: build
 
 ## container: 		build container image with binary
 container: binary
@@ -45,7 +52,7 @@ podman: container
 docker: container
 
 ## test-container:	build test containers with binary for testing purposes
-test-container: binary container
+test-container: binary
 	podman image build -t "mango-test-ubuntu" -f Dockerfile-testbox-ubuntu .
 	podman image build -t "mango-test-arch" -f Dockerfile-testbox-arch .
 

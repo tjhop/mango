@@ -11,6 +11,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+var (
+	ValidHostFiles = []string{"modules", "roles", "variables"}
+	ValidHostDirs  = []string{"templates"}
+)
+
 // Host contains fields that represent a given host in the inventory.
 // - id: string idenitfying the host (generally the hostname of the system)
 // - roles: a slice of roles that are applied to this host

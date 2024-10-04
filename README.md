@@ -28,7 +28,8 @@ While packages are built for several systems, there are currently no plans to at
 
 ## Usage
 
-### Binary Usage
+### `mango`
+#### Binary Usage
 
 ```bash
 mango --inventory.path /path/to/inventory
@@ -61,16 +62,99 @@ https://www.vim.org/iccf/
 https://www.iccf.nl/
 ```
 
-### Container Usage
+#### Container Usage
 
 Since `mango` is intended to be run on the system it is managing and thus requires access to the host system, if you must run `mango` as a container, you may want to use the `--privileged` flag.
 
-```
+```bash
 # docker works too, but podman is wonderful
 podman run \
 -v /path/to/inventory:/opt/mango/inventory \
 --privileged \
 ghcr.io/tjhop/mango
+```
+
+### `mango-helper`
+`mango-helper` is a helper utility that ships with `mango` to make it easier to interact with various aspects of `mango`:
+
+```bash
+mh -h
+Mango Helper is a utility tool to aid in working with mango
+
+Usage:
+  mh [command]
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  help        Help about any command
+  inventory   Command to interact with mango inventory
+  mango       Command to interact with a running mango server
+
+Flags:
+  -h, --help                    help for mh
+  -l, --logging.level string    Logging level may be one of: [debug, info, warning, error] (default "info")
+      --logging.output string   Logging format may be one of: [logfmt, json] (default "logfmt")
+  -v, --version                 version for mh
+
+Use "mh [command] --help" for more information about a command.
+```
+
+The `mh inventory` command has several subcommands available to assist in working with the mango inventory:
+
+```bash
+
+mh inventory -h
+Command to interact with the mango inventory, such as initializing skeleton inventory directory structures
+
+Usage:
+  mh inventory [command]
+
+Aliases:
+  inventory, inv
+
+Available Commands:
+  directive   Command to interact with mango directives in the inventory
+  group       Command to interact with mango groups in the inventory
+  host        Command to interact with mango hosts in the inventory
+  init        Create an empty inventory
+  module      Command to interact with mango modules in the inventory
+  role        Command to interact with mango roles in the inventory
+
+Flags:
+      --enrolled-only           Only return modules that the provided host is enrolled for
+  -h, --help                    help for inventory
+      --hostname string         (Requires root) Custom hostname to use [default is system hostname]
+  -i, --inventory.path string   Path to mango configuration inventory
+
+Global Flags:
+  -l, --logging.level string    Logging level may be one of: [debug, info, warning, error] (default "info")
+      --logging.output string   Logging format may be one of: [logfmt, json] (default "logfmt")
+
+Use "mh inventory [command] --help" for more information about a command.
+```
+
+The `mh mango` command has further subcommands available to interact with a running mango server:
+
+```bash
+mh mango -h
+Command to interact with a running mango server, including interacting with pprofs, metrics, etc
+
+Usage:
+  mh mango [command]
+
+Available Commands:
+  metrics     Command to simplify metrics interactions for mango
+  pprof       Command to simplify pprof interactions for mango
+
+Flags:
+      --address string   Address of the running mango server (default "127.0.0.1:9555")
+  -h, --help             help for mango
+
+Global Flags:
+  -l, --logging.level string    Logging level may be one of: [debug, info, warning, error] (default "info")
+      --logging.output string   Logging format may be one of: [logfmt, json] (default "logfmt")
+
+Use "mh mango [command] --help" for more information about a command.
 ```
 
 ## Configuration Management
@@ -81,20 +165,21 @@ ghcr.io/tjhop/mango
 
 ### Inventory
 `Mango`'s inventory is based on [aviary.sh's](https://github.com/frameable/aviary.sh) inventory.
-Initially, `mango` will be an aviary.sh-compatible daemon, with configurations written as scripts/executables.
+A detailed explanation of the differences between `mango` and `aviary.sh`, as well as a detailed explanation of each component/file in the mango inventory, can be found below.
 
 #### Inventory Setup
-Please see [aviary.sh's documentation on inventory setup](https://github.com/frameable/aviary.sh#inventory-setup) for more information.
+An inventory can be created using the companion `mango-helper` tool that ships with mango releases/builds:
 
-```
+```bash
 mkdir inventory
 cd inventory
-mkdir {groups,hosts,modules,roles,directives}
-touch {groups,hosts,modules,roles,directives}/.gitkeep
+mh inventory init
 git init
 git add .
 git commit -m "initial commit"
 ```
+
+The `mh inventory` command also has other utility functions to make working with the inventory easier. See [mango-helper](#mango-helper) for more details.
 
 *NOTE*: While `aviary.sh`'s inventory system is designed to work with bash
 scripts, it's possible to write a module in any language. Mango treats module

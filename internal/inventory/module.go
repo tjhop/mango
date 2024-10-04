@@ -11,6 +11,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+var (
+	ValidModuleFiles = []string{"apply", "test", "variables", "requires"}
+	ValidModuleDirs  = []string{"templates"}
+)
+
 // Module contains fields that represent a single module in the inventory.
 // - ID: string idenitfying the module (generally the file path to the module)
 // - Apply: path to apply script for the module

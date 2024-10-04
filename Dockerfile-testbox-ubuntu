@@ -21,6 +21,7 @@ RUN apt-get update && \
 
 # setup mango
 COPY ./mango /usr/bin/mango
+COPY ./mh /usr/bin/mh
 COPY ./packaging/systemd/mango.service /etc/systemd/system/
 COPY ./test/mockup/services/mango/test-flags.conf /etc/systemd/system/mango.service.d/test-flags.conf
 RUN systemctl enable mango.service

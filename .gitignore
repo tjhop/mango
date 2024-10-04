@@ -1,3 +1,4 @@
 dist/
 .golangci-lint/
 mango
+mh

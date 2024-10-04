@@ -1,7 +1,8 @@
 version: 2
 
 builds:
-  - env:
+  - id: mango
+    env:
       - CGO_ENABLED=0
     goos:
       - linux
@@ -11,6 +12,17 @@ builds:
       - -X github.com/tjhop/mango/internal/version.Commit={{ .Commit }}
     binary: mango
     main: './cmd/mango'
+  - id: mh
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    ldflags:
+      - -X github.com/tjhop/mango/internal/version.BuildDate={{ .CommitDate }}
+      - -X github.com/tjhop/mango/internal/version.Version={{ .Version }}
+      - -X github.com/tjhop/mango/internal/version.Commit={{ .Commit }}
+    binary: mh
+    main: './cmd/mh'
 gomod:
   proxy: true
   mod: mod

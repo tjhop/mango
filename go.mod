@@ -14,6 +14,7 @@ require (
 	github.com/prometheus/client_golang v1.20.2
 	github.com/prometheus/procfs v0.15.1
 	github.com/quay/claircore v1.5.29
+	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.19.0
 	mvdan.cc/sh/v3 v3.9.0
@@ -30,6 +31,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect

@@ -13,6 +13,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+var (
+	ValidGroupFiles = []string{"glob", "regex", "roles", "modules", "variables"}
+	ValidGroupDirs  = []string{"templates"}
+)
+
 // Group contains fields that represent a given group of hosts in the inventory.
 // - id: string idenitfying the group
 // - globs: a slice of glob patterns to match against the instance's hostname

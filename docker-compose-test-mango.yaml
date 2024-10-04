@@ -27,6 +27,7 @@ services:
       - mango
     volumes:
       - ./mango:/usr/bin/mango
+      - ./mh:/usr/bin/mh
       - ./test/mockup/inventory:/opt/mango/inventory/:ro
 
   mango-archlinux:
@@ -39,4 +40,4 @@ services:
       - mango
     volumes:
       - ./mango:/usr/bin/mango
-      - ./test/mockup/inventory:/opt/mango/inventory/:ro
+      - ./mh:/usr/bin/mh
