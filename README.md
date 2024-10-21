@@ -208,14 +208,18 @@ whatever other idempotent scripts/configs written in other languages.
 | `modules` | `requires` | Newline delimited list | List of other modules that are required to apply before this module can apply (dependency ordering) | No | No |
 | `modules` | `templates/` | Directory | Contains Go text templates as `.tpl` files  | No | No |
 | `roles` | `modules` | Newline delimited list | List of modules that are included in/executed as part of this role | No | No |
+| `roles` | `variables` | Bash script | script containing variables to set for the role's execution context for `apply` and `test` scripts | No | Yes |
+| `roles` | `templates/` | Directory | Contains Go text templates as `.tpl` files  | No | No |
 | `hosts` | `modules` | Newline delimited list | List of modules that are included in/executed as part of the defined host | No | No |
 | `hosts` | `roles` | Newline delimited list | List of roles that are included in/executed as part of the defined host | No | No |
 | `hosts` | `variables` | Bash script | script containing variables to set for the host's execution context for `apply` and `test` scripts | No | Yes |
+| `hosts` | `templates/` | Directory | Contains Go text templates as `.tpl` files  | No | No |
 | `groups` | `glob` | Newline delimited list | List of glob patterns that are members of this group. Glob patterns are matched against the hostname of the system | No | No |
 | `groups` | `regex` | Newline delimited list | List of regular expression patterns that are members of this group. Regular expression patterns are matched against the hostname of the system | No | No |
 | `groups` | `roles` | Newline delimited list | List of roles assigned to members of this group | No | No |
 | `groups` | `modules` | Newline delimited list | List of modules assigned to members of this group | No | No |
-| `groups` | `variables` | Bash script | script containing variables to set for the host's execution context for `apply` and `test` scripts | No | Yes |
+| `groups` | `variables` | Bash script | script containing variables to set for the group's execution context for `apply` and `test` scripts | No | Yes |
+| `groups` | `templates/` | Directory | Contains Go text templates as `.tpl` files  | No | No |
 
 ## Monitoring and Alerting
 
