@@ -80,6 +80,9 @@ func GetHostname() string {
 	return h
 }
 
+// IsHidden is a convenience function to check if a file/directory is hidden.
+// It returns true if the file/directory name begins with a ".", and false
+// otherwise.
 func IsHidden(path string) bool {
 	return strings.HasPrefix(path, ".")
 }
