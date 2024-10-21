@@ -46,7 +46,7 @@ dockers:
 checksum:
   name_template: 'checksums.txt'
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 nfpms:
   - package_name: 'mango'
     homepage: 'https://github.com/tjhop/mango'
