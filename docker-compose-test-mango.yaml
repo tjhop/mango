@@ -29,6 +29,7 @@ services:
       - ./mango:/usr/bin/mango
       - ./mh:/usr/bin/mh
       - ./test/mockup/inventory:/opt/mango/inventory/:ro
+      - ./test/mockup/testbox-ubuntu-mount/:/testbox-ubuntu-mount/
 
   mango-archlinux:
     image: mango-test-arch:latest
@@ -41,3 +42,5 @@ services:
     volumes:
       - ./mango:/usr/bin/mango
       - ./mh:/usr/bin/mh
+      - ./test/mockup/inventory/:/opt/mango/inventory/:ro
+      - ./test/mockup/testbox-arch-mount/:/testbox-arch-mount/
