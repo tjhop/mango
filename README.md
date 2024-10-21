@@ -29,6 +29,11 @@ While packages are built for several systems, there are currently no plans to at
 ## Usage
 
 ### `mango`
+
+`mango` is the configuration management daemon.
+It should run on the host it is intended to manage as a long-lived service.
+In order for `mango` to properly/effectively manage the system, it will likely need to be run as `root`.
+
 #### Binary Usage
 
 ```bash
