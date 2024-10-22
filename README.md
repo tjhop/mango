@@ -83,7 +83,7 @@ ghcr.io/tjhop/mango
 `mango-helper` is a helper utility that ships with `mango` to make it easier to interact with various aspects of `mango`:
 
 ```bash
-mh -h
+~/go/src/github.com/tjhop/mango (main [  ]) -> ./mh -h
 Mango Helper is a utility tool to aid in working with mango
 
 Usage:
@@ -108,7 +108,7 @@ The `mh inventory` command has several subcommands available to assist in workin
 
 ```bash
 
-mh inventory -h
+~/go/src/github.com/tjhop/mango (main [  ]) -> ./mh inventory -h
 Command to interact with the mango inventory, such as initializing skeleton inventory directory structures
 
 Usage:
@@ -141,7 +141,7 @@ Use "mh inventory [command] --help" for more information about a command.
 The `mh mango` command has further subcommands available to interact with a running mango server:
 
 ```bash
-mh mango -h
+~/go/src/github.com/tjhop/mango (main [  ]) -> ./mh mango -h
 Command to interact with a running mango server, including interacting with pprofs, metrics, etc
 
 Usage:
