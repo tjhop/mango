@@ -256,26 +256,32 @@ Most development work can be done with the included Makefile:
 
 ```bash
 ~/go/src/github.com/tjhop/mango (main [ ]) -> make help
-# autogenerate help messages for comment lines with 2 `#`
- help:                  print this help message
- tidy:                  tidy modules
- fmt:                   apply go code style formatter
- lint:                  run linters
- binary:                build a binary
- build:                 alias for `binary`
- container:             build container image with binary
- image:                 alias for `container`
- podman:                alias for `container`
- docker:                alias for `container`
- test-container:        build test containers with binary for testing purposes
- test-image:            alias for `container`
- test-podman:           alias for `container`
- test-docker:           alias for `container`
- services:              use podman compose to spin up local grafana, prometheus, etc
- run-test-containers    use podman compose to spin up test containers running systemd for use with the test inventory
- reload-test-inventory: use podman to reload the mango systemd service running in the ubuntu test container
- stop:                  stop test environment and any other cleanup
- clean:                 alias for `stop`
+
+Usage:
+  make <target>
+
+Targets:
+  help           print this help message
+  tidy           tidy modules
+  fmt            apply go code style formatter
+  lint           run linters
+  build-mango    build the `mango` configuration management server
+  build-mh       build `mh`, the helper tool for mango
+  build          alias for `build-mango build-mh`
+  binary         alias for `build`
+  container      build container image with binary
+  image          alias for `container`
+  podman         alias for `container`
+  docker         alias for `container`
+  test-container         build test containers with binary for testing purposes
+  test-image     alias for `container`
+  test-podman    alias for `container`
+  test-docker    alias for `container`
+  services       use podman compose to spin up local grafana, prometheus, etc
+  run-test-containers    use podman compose to spin up test containers running systemd for use with the test inventory
+  reload-test-inventory  use podman to reload the mango systemd service running in the ubuntu test container
+  stop           stop test environment and any other cleanup
+  clean          alias for `stop`
 ```
 
 ### Testing
