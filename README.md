@@ -284,7 +284,15 @@ Most development work can be done with the included Makefile:
 A [skeleton inventory ](./test/mockup/inventory/) is included for use with testing:
 
 ```bash
-make run-test-inventory
+make run-test-containers
+```
+
+This will run 2 containers, one with Ubuntu 22.04 and one with Archlinux, that are configured to run `mango` and several auxiliary services for use with testing and development.
+The containers run Systemd and are "fairly complete" systems for use with testing, without needing full a full VM.
+To directly interact/inspect a running test system, it's possible to exec into it:
+
+```bash
+podman-compose -f docker-compose-test-mango.yaml exec mango-archlinux /bin/bash
 ```
 
 #### Code Testing
