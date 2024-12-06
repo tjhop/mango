@@ -1,14 +1,13 @@
 GOCMD := go
 GOFMT := ${GOCMD} fmt
 GOMOD := ${GOCMD} mod
-COMMIT := $(shell git rev-parse HEAD)
 RELEASE_CONTAINER_NAME := mango
 GOLANGCILINT_CACHE := ${CURDIR}/.golangci-lint/build/cache
 
 # autogenerate help messages for comment lines with 2 `#`
 .PHONY: help
 help: ## print this help message
-	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n\nTargets:\n"} /^[a-z0-9A-Z_-]+:.*?##/ { printf "  \033[36m%-10s\033[0m\t%s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n\nTargets:\n"} /^[a-z0-9A-Z_-]+:.*?##/ { printf "  \033[36m%-30s\033[0m%s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 
 .PHONY: tidy
 tidy: ## tidy modules
