@@ -48,7 +48,7 @@ func init() {
 	pprofGetProfileCmdFlagSet.Int("gc", 0, "Corresponds to gc query param - https://pkg.go.dev/net/http/pprof#hdr-Parameters")
 	pprofGetProfileCmdFlagSet.Int("seconds", 0, "Corresponds to seconds query param - https://pkg.go.dev/net/http/pprof#hdr-Parameters")
 	if err := viper.BindPFlags(pprofGetProfileCmdFlagSet); err != nil {
-		panic(fmt.Errorf("Error binding flags for command <%s>: %s", "pprof get", err))
+		panic(fmt.Errorf("Error binding flags for command <%s>: %w", "pprof get", err))
 	}
 	pprofCmd.AddCommand(pprofGetProfileCmd)
 }

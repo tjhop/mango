@@ -21,7 +21,7 @@ func init() {
 	mangoCmdFlagSet := mangoCmd.PersistentFlags()
 	mangoCmdFlagSet.String("address", defaultMangoAddr, "Address of the running mango server")
 	if err := viper.BindPFlags(mangoCmdFlagSet); err != nil {
-		panic(fmt.Errorf("Error binding flags for command <%s>: %s", "mango", err))
+		panic(fmt.Errorf("Error binding flags for command <%s>: %w", "mango", err))
 	}
 	rootCmd.AddCommand(mangoCmd)
 }

@@ -85,7 +85,7 @@ func templateScript(ctx context.Context, path string, view templateView, funcMap
 		time.NewRegistry(),
 		uniqueid.NewRegistry(),
 	); err != nil {
-		return "", fmt.Errorf("Failed to add sprout registries to handler: %s\n", err.Error())
+		return "", fmt.Errorf("Failed to add sprout registries to handler: %w", err)
 	}
 
 	// init template and funcs
@@ -99,18 +99,18 @@ func templateScript(ctx context.Context, path string, view templateView, funcMap
 
 	if len(invDefinedTemplates) > 0 {
 		if t, err = t.ParseFiles(invDefinedTemplates...); err != nil {
-			return "", fmt.Errorf("Failed to parse common templates in %#v: %s", invDefinedTemplates, err)
+			return "", fmt.Errorf("Failed to parse common templates in %#v: %w", invDefinedTemplates, err)
 		}
 	}
 
 	t, err = t.ParseFiles(path)
 	if err != nil {
-		return "", fmt.Errorf("Failed to parse template %s: %s", path, err)
+		return "", fmt.Errorf("Failed to parse template %s: %w", path, err)
 	}
 
 	err = t.Execute(&buf, view)
 	if err != nil {
-		return "", fmt.Errorf("Failed to execute template for %s: %s", path, err)
+		return "", fmt.Errorf("Failed to execute template for %s: %w", path, err)
 	}
 
 	return buf.String(), nil

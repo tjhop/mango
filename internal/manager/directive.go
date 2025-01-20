@@ -49,7 +49,7 @@ func (mgr *Manager) ReloadDirectives(ctx context.Context) {
 func (mgr *Manager) RunDirective(ctx context.Context, ds Directive) error {
 	file, err := os.Stat(ds.String())
 	if err != nil {
-		return fmt.Errorf("Failed to stat directive script %s: %s", ds.String(), err)
+		return fmt.Errorf("Failed to stat directive script %s: %w", ds.String(), err)
 	}
 
 	// only run directive if modified within last 24h
@@ -66,7 +66,7 @@ func (mgr *Manager) RunDirective(ctx context.Context, ds Directive) error {
 
 		renderedScript, err := templateScript(ctx, ds.String(), allTemplateData, mgr.funcMap)
 		if err != nil {
-			return fmt.Errorf("Failed to template script: %s", err)
+			return fmt.Errorf("Failed to template script: %w", err)
 		}
 
 		rc, err := shell.Run(ctx, runID, ds.String(), renderedScript, nil)
@@ -80,7 +80,7 @@ func (mgr *Manager) RunDirective(ctx context.Context, ds Directive) error {
 
 		if err != nil {
 			metricManagerDirectiveRunFailedTotal.With(labels).Inc()
-			return fmt.Errorf("Failed to apply directive, error: %v", err)
+			return fmt.Errorf("Failed to apply directive, error: %w", err)
 		}
 
 		if rc != 0 {

@@ -48,7 +48,7 @@ func init() {
 	inventoryCmdFlagSet.StringP("inventory.path", "i", "", "Path to mango configuration inventory")
 	inventoryCmdFlagSet.String("hostname", "", "(Requires root) Custom hostname to use [default is system hostname]")
 	if err := viper.BindPFlags(inventoryCmdFlagSet); err != nil {
-		panic(fmt.Errorf("Error binding flags for command <%s>: %s", "inventory", err))
+		panic(fmt.Errorf("Error binding flags for command <%s>: %w", "inventory", err))
 	}
 	rootCmd.AddCommand(inventoryCmd)
 

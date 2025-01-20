@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"path/filepath"
@@ -113,7 +114,7 @@ func (mgr *Manager) RunModule(ctx context.Context, logger *slog.Logger, mod Modu
 	ctx, runID := getOrSetRunID(ctx)
 
 	if mod.m.Apply == "" {
-		return fmt.Errorf("Module has no apply script")
+		return errors.New("Module has no apply script")
 	}
 
 	labels := prometheus.Labels{
@@ -142,7 +143,7 @@ func (mgr *Manager) RunModule(ctx context.Context, logger *slog.Logger, mod Modu
 
 		renderedTest, err := templateScript(ctx, mod.m.Test, allTemplateData, mgr.funcMap, allUserTemplateFiles...)
 		if err != nil {
-			return fmt.Errorf("Failed to template script: %s", err)
+			return fmt.Errorf("Failed to template script: %w", err)
 		}
 
 		testRC, err = shell.Run(ctx, runID, mod.m.Test, renderedTest, allVars)
@@ -189,7 +190,7 @@ func (mgr *Manager) RunModule(ctx context.Context, logger *slog.Logger, mod Modu
 
 	renderedApply, err := templateScript(ctx, mod.m.Apply, allTemplateData, mgr.funcMap, allUserTemplateFiles...)
 	if err != nil {
-		return fmt.Errorf("Failed to template script: %s", err)
+		return fmt.Errorf("Failed to template script: %w", err)
 	}
 
 	applyRC, err := shell.Run(ctx, runID, mod.m.Apply, renderedApply, allVars)
@@ -199,7 +200,7 @@ func (mgr *Manager) RunModule(ctx context.Context, logger *slog.Logger, mod Modu
 	switch {
 	case err != nil:
 		metricManagerModuleRunFailedTotal.With(labels).Inc()
-		return fmt.Errorf("Failed to run module apply: %v", err)
+		return fmt.Errorf("Failed to run module apply: %w", err)
 	case applyRC != 0:
 		// if apply script for a module fails, log a warning for user and continue with apply
 		metricManagerModuleRunFailedTotal.With(labels).Inc()

@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
 	"github.com/tjhop/mango/internal/inventory"
 )
 
@@ -55,7 +56,7 @@ func init() {
 	modListCmdFlagSet := inventoryCmd.PersistentFlags()
 	modListCmdFlagSet.Bool("enrolled-only", false, "Only return modules that the provided host is enrolled for")
 	if err := viper.BindPFlags(modListCmdFlagSet); err != nil {
-		panic(fmt.Errorf("Error binding flags for command <%s>: %s", "inventory", err))
+		panic(fmt.Errorf("Error binding flags for command <%s>: %w", "inventory", err))
 	}
 	moduleCmd.AddCommand(modListCmd)
 }

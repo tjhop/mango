@@ -19,18 +19,18 @@ var (
 func inventoryAddFile(name string) error {
 	file, err := os.OpenFile(name, os.O_RDONLY|os.O_CREATE, 0o644)
 	if err != nil {
-		return fmt.Errorf("Error opening file <%s>: %s", name, err)
+		return fmt.Errorf("Error opening file <%s>: %w", name, err)
 	}
 	return file.Close()
 }
 
 func inventoryAddDir(name string) error {
 	if err := os.MkdirAll(name, 0o755); err != nil {
-		return fmt.Errorf("Error making directory <%s>: %s", name, err)
+		return fmt.Errorf("Error making directory <%s>: %w", name, err)
 	}
 
 	if err := inventoryAddFile(filepath.Join(name, ".gitkeep")); err != nil {
-		return fmt.Errorf("Error adding directory file <%s>: %s", name, err)
+		return fmt.Errorf("Error adding directory file <%s>: %w", name, err)
 	}
 
 	return nil
@@ -39,7 +39,7 @@ func inventoryAddDir(name string) error {
 func inventoryRemoveAll(name string) error {
 	err := os.RemoveAll(name)
 	if err != nil {
-		return fmt.Errorf("Error recursively removing <%s>: %s", name, err)
+		return fmt.Errorf("Error recursively removing <%s>: %w", name, err)
 	}
 
 	return nil
@@ -57,7 +57,7 @@ func httpGetBody(addr string, path string, urlParams []urlParam) (string, error)
 
 	pprofUrl, err := url.Parse(addr)
 	if err != nil {
-		return "", fmt.Errorf("Error parsing url <%s>: %s", addr, err)
+		return "", fmt.Errorf("Error parsing url <%s>: %w", addr, err)
 	}
 
 	if pprofUrl.Scheme == "" {
@@ -75,7 +75,7 @@ func httpGetBody(addr string, path string, urlParams []urlParam) (string, error)
 	// fmt.Printf("TJ DEBUG | assembled url is: %s\n", pprofUrl.String())
 	res, err := http.Get(pprofUrl.String())
 	if err != nil {
-		return "", fmt.Errorf("Error making HTTP Get request to <%s>: %s", addr, err)
+		return "", fmt.Errorf("Error making HTTP Get request to <%s>: %w", addr, err)
 	}
 
 	body, err := io.ReadAll(res.Body)
@@ -85,7 +85,7 @@ func httpGetBody(addr string, path string, urlParams []urlParam) (string, error)
 		return string(body), fmt.Errorf("HTTP response failed (status code: %d)", res.StatusCode)
 	}
 	if err != nil {
-		return "", fmt.Errorf("Error reading HTTP response body: %s", err)
+		return "", fmt.Errorf("Error reading HTTP response body: %w", err)
 	}
 
 	return string(body), nil

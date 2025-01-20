@@ -29,7 +29,7 @@ func init() {
 	rootCmdFlagSet.StringP("logging.level", "l", "info", "Logging level may be one of: [debug, info, warning, error]")
 	rootCmdFlagSet.String("logging.output", "logfmt", "Logging format may be one of: [logfmt, json]")
 	if err := viper.BindPFlags(rootCmdFlagSet); err != nil {
-		panic(fmt.Errorf("Error binding flags for command <%s>: %s", "mh", err))
+		panic(fmt.Errorf("Error binding flags for command <%s>: %w", "mh", err))
 	}
 
 	logHandlerOpts := &slog.HandlerOptions{
