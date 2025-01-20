@@ -12,7 +12,7 @@ import (
 
 // GetFilesInDirectory is a convenience function to DRY out some of the
 // basic file operations. It accepts a path, resolves it to an absolute path,
-// and then uses `os.ReadDir` to retreive and return a slice of `fs.DirEntry` structs.
+// and then uses `os.ReadDir` to retrieve and return a slice of `fs.DirEntry` structs.
 func GetFilesInDirectory(path string) ([]fs.DirEntry, error) {
 	absPath, err := filepath.Abs(path)
 	if err != nil {

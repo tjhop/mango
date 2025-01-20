@@ -246,7 +246,7 @@ func (mgr *Manager) RunModules(ctx context.Context, logger *slog.Logger) {
 			vLogger.LogAttrs(
 				ctx,
 				slog.LevelError,
-				"Failed to retreive module from directed acyclic graph vertex",
+				"Failed to retrieve module from directed acyclic graph vertex",
 				slog.String("err", err.Error()),
 			)
 		}
