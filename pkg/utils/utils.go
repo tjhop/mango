@@ -16,12 +16,12 @@ import (
 func GetFilesInDirectory(path string) ([]fs.DirEntry, error) {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to retrieve absolute path for '%s': %v", path, err)
+		return nil, fmt.Errorf("Failed to retrieve absolute path for '%s': %w", path, err)
 	}
 
 	files, err := os.ReadDir(absPath)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to read files in directory '%s': %v", absPath, err)
+		return nil, fmt.Errorf("Failed to read files in directory '%s': %w", absPath, err)
 	}
 
 	return files, nil
@@ -49,13 +49,13 @@ func ReadFileLines(path string) chan FileLine {
 		defer close(lines)
 		absPath, err := filepath.Abs(path)
 		if err != nil {
-			lines <- FileLine{Err: fmt.Errorf("Failed to retrieve absolute path for '%s': %v", path, err)}
+			lines <- FileLine{Err: fmt.Errorf("Failed to retrieve absolute path for '%s': %w", path, err)}
 			return
 		}
 
 		file, err := os.Open(absPath)
 		if err != nil {
-			lines <- FileLine{Err: fmt.Errorf("Failed to open file '%s': %v", path, err)}
+			lines <- FileLine{Err: fmt.Errorf("Failed to open file '%s': %w", path, err)}
 			return
 		}
 		defer file.Close()
