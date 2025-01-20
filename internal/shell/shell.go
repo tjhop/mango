@@ -215,39 +215,39 @@ func Run(ctx context.Context, runID ulid.ULID, path, content string, allVars []s
 	// example path (started with `inventory.path`: './test/mockup/inventory'):
 	//	/var/log/mango/manager/run/01GZF2QSPGTCKHFSECPBQ6H8FQ/test/mockup/inventory/modules/test-env-vars/apply/stdout
 	logDir := filepath.Join(viper.GetString("mango.log-dir"), "manager/run", runID.String(), path)
-	if err := os.MkdirAll(logDir, 0750); err != nil && !os.IsExist(err) {
+	if err := os.MkdirAll(logDir, 0o750); err != nil && !os.IsExist(err) {
 		return 1, fmt.Errorf("Failed to create directory for script logs: %v", err)
 	}
 
 	// log stdout from script
-	stdoutLog, err := os.OpenFile(filepath.Join(logDir, "stdout"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	stdoutLog, err := os.OpenFile(filepath.Join(logDir, "stdout"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		return 1, fmt.Errorf("Failed to open script log for stdout: %v", err)
 	}
 	defer stdoutLog.Close()
 
 	// log stderr from script
-	stderrLog, err := os.OpenFile(filepath.Join(logDir, "stderr"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	stderrLog, err := os.OpenFile(filepath.Join(logDir, "stderr"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		return 1, fmt.Errorf("Failed to open script log for stderr: %v", err)
 	}
 	defer stderrLog.Close()
 
 	// log exit status from script
-	exitStatusLog, err := os.OpenFile(filepath.Join(logDir, "exit_status"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	exitStatusLog, err := os.OpenFile(filepath.Join(logDir, "exit_status"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		return 1, fmt.Errorf("Failed to open script log for exit status: %v", err)
 	}
 	defer exitStatusLog.Close()
 
 	// log script content itself for testing template rendering
-	if err := os.WriteFile(filepath.Join(logDir, "script.mango-rendered"), []byte(content), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(logDir, "script.mango-rendered"), []byte(content), 0o644); err != nil {
 		return 1, fmt.Errorf("Failed to write rendered script to log file: %v", err)
 	}
 
 	// runtime dir prep
 	workDir := filepath.Join(viper.GetString("mango.temp-dir"), runID.String())
-	if err := os.MkdirAll(workDir, 0750); err != nil && !os.IsExist(err) {
+	if err := os.MkdirAll(workDir, 0o750); err != nil && !os.IsExist(err) {
 		return 1, fmt.Errorf("Failed to create working directory for script: %v", err)
 	}
 

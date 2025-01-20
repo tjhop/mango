@@ -17,7 +17,7 @@ var (
 )
 
 func inventoryAddFile(name string) error {
-	file, err := os.OpenFile(name, os.O_RDONLY|os.O_CREATE, 0644)
+	file, err := os.OpenFile(name, os.O_RDONLY|os.O_CREATE, 0o644)
 	if err != nil {
 		return fmt.Errorf("Error opening file <%s>: %s", name, err)
 	}
@@ -25,7 +25,7 @@ func inventoryAddFile(name string) error {
 }
 
 func inventoryAddDir(name string) error {
-	if err := os.MkdirAll(name, 0755); err != nil {
+	if err := os.MkdirAll(name, 0o755); err != nil {
 		return fmt.Errorf("Error making directory <%s>: %s", name, err)
 	}
 

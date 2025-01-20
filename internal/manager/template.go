@@ -30,8 +30,10 @@ import (
 	"github.com/tjhop/mango/internal/shell"
 )
 
-type VariableSlice = shell.VariableSlice
-type VariableMap = shell.VariableMap
+type (
+	VariableSlice = shell.VariableSlice
+	VariableMap   = shell.VariableMap
+)
 
 type templateView struct {
 	Mango templateData

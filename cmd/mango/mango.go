@@ -95,7 +95,7 @@ func mango(ctx context.Context, logger *slog.Logger, inventoryPath, hostname str
 
 	// create directory for persistent logs
 	logDir := filepath.Join("/var/log", programName)
-	err := os.MkdirAll(logDir, 0755)
+	err := os.MkdirAll(logDir, 0o755)
 	if err != nil && !os.IsExist(err) {
 		logger.LogAttrs(
 			ctx,
