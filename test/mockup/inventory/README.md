@@ -4,15 +4,4 @@ Small inventory for use with local testing and verifying functionality. Not nece
 
 ## Usage
 
-### Direct (Binary)
-
-```bash
-# from mango project root
-
-# build binary locally
-goreleaser build --clean --single-target --snapshot
-
-# run binary (with privileges, since it needs to create log dirs and launch privileged processes)
-# NOTE: explicitly set alternate hostname to match the host in this inventory
-sudo ./dist/mango_linux_amd64_v1/mango --inventory.path ./test/mockup/inventory --logging.level debug --hostname testbox
-```
+See Makefile for help. 
