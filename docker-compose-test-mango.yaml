@@ -19,7 +19,7 @@ networks:
 services:
   mango-ubuntu-2204:
     image: mango-test-ubuntu:latest
-    hostname: testbox-ubuntu
+    hostname: testbox-mango-ubuntu
     restart: unless-stopped
     ports:
       - "9555"
@@ -29,11 +29,11 @@ services:
       - ./mango:/usr/bin/mango
       - ./mh:/usr/bin/mh
       - ./test/mockup/inventory:/opt/mango/inventory/:ro
-      - ./test/mockup/testbox-ubuntu-mount/:/testbox-ubuntu-mount/
+      - ./test/mockup/testbox-mango-ubuntu-mount/:/testbox-mango-ubuntu-mount/
 
   mango-archlinux:
     image: mango-test-arch:latest
-    hostname: testbox-arch
+    hostname: testbox-mango-arch
     restart: unless-stopped
     ports:
       - "9555"
@@ -43,4 +43,18 @@ services:
       - ./mango:/usr/bin/mango
       - ./mh:/usr/bin/mh
       - ./test/mockup/inventory/:/opt/mango/inventory/:ro
-      - ./test/mockup/testbox-arch-mount/:/testbox-arch-mount/
+      - ./test/mockup/testbox-mango-arch-mount/:/testbox-mango-arch-mount/
+
+  unenrolled-archlinux:
+    image: mango-test-arch:latest
+    hostname: testbox-unenrolled-arch
+    restart: unless-stopped
+    ports:
+      - "9555"
+    networks:
+      - mango
+    volumes:
+      - ./mango:/usr/bin/mango
+      - ./mh:/usr/bin/mh
+      - ./test/mockup/inventory/:/opt/mango/inventory/:ro
+      - ./test/mockup/testbox-unenrolled-arch-mount/:/testbox-unenrolled-arch-mount/
